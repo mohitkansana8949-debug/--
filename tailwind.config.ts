@@ -45,6 +45,16 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+          bg: "hsl(var(--success-bg))",
+          fg: "hsl(var(--success-fg))",
+        },
+        error: {
+          bg: "hsl(var(--error-bg))",
+          fg: "hsl(var(--error-fg))",
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

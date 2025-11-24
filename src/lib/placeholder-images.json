@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "dashboard-banner",
+      "description": "A person studying with books and a laptop.",
+      "imageUrl": "https://images.unsplash.com/photo-1722864671434-cedda1132d82?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzdHVkeWluZyUyMGxhcHRvcHxlbnwwfHx8fDE3NjM4NjEwMjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "studying laptop"
+    },
+    {
+      "id": "deck-placeholder",
+      "description": "Abstract pattern for a flashcard deck cover.",
+      "imageUrl": "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhYnN0cmFjdCUyMHBhdHRlcm58ZW58MHx8fHwxNzYzODc4MzY3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract pattern"
+    }
+  ]
 }
