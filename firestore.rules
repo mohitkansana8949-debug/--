@@ -1,0 +1,188 @@
+/**
+ * This ruleset establishes a security model for the QuklyStudy application,
+ * combining strict user-ownership for personal data with role-based access
+ * control (RBAC) for administrative functions.
+ *
+ * Core Philosophy:
+ * The default posture is denial of all access. Rules grant specific permissions
+ * based on two main principles:
+ * 1. User Ownership: A user has exclusive control over their own profile and
+ *    related content (like decks and flashcards).
+ * 2. Admin Roles: Users designated as 'admins' have elevated privileges to manage
+ *    application-wide data, such as the course catalog and student enrollments.
+ *
+ * Data Structure:
+ * - /users/{userId}/... : All data private to a specific user (profile, decks,
+ *   flashcards) is nested under their unique user ID. This structure enables
+ *   simple and secure path-based authorization.
+ * - /courses/{courseId} : A top-level collection for the public course catalog,
+ *   readable by anyone but writable only by admins.
+ * - /courseEnrollments/{enrollmentId} : A top-level collection for managing
+ *   enrollment requests. Users can create their own requests, but only admins
+ *   can modify them (e.g., to approve).
+ * - /roles_admin/{userId} : An existence-based role system. A document's
+ *   presence in this collection signifies that the user is an admin.
+ *
+ * Key Security Decisions:
+ * - Admin status is determined by the existence of a document in the `/roles_admin`
+ *   collection, which is a highly performant way to check roles. This
+ *   collection is not writable by any client to prevent self-promotion.
+ * - Public `list` access is only granted to the `/courses` collection. All other
+ *   collections containing user data are protected from public listing to
+ *   prevent data scraping.
+ * - Course enrollments follow a request-approve workflow. A user creates an
+ *   enrollment document, which is then read-only for them. An admin must
+ *   update the document to grant access.
+ *
+ * Denormalization for Authorization:
+ * The `courseEnrollments` documents contain a `userId` field. This denormalization
+ * is critical, as it allows security rules to verify a user's ownership of an
+ * enrollment record without performing costly `get()` calls to other collections.
+ *
+ * Structural Segregation:
+ * The separation of user-private data (`/users/{userId}`) from public-read data
+ * (`/courses`) is intentional. This segregation ensures that a query on one
+ * collection cannot accidentally leak data from another and simplifies the
+ * rules required to secure `list` operations.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for reusable logic
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * Checks if a user has admin privileges.
+     * Admin status is determined by the existence of a document for the user
+     * in the /roles_admin collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /**
+     * Verifies that a document already exists.
+     * Crucial for update and delete operations to prevent acting on non-existent data.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership and existence checks for update/delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+
+
+    /**
+     * @description Manages user profile documents. A user can create their own profile
+     *   and has full control over it thereafter. No other user can read or write it.
+     * @path /users/{userId}
+     * @allow (create) An authenticated user with UID 'user123' creating their own
+     *   profile document at `/users/user123`.
+     * @deny (get) User 'user456' trying to read the profile of 'user123'.
+     * @principle Restricts access to a user's own data tree. Prevents user enumeration.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures user-owned flashcard decks. Only the owner of the user
+     *   account can create, read, update, or delete decks within their own space.
+     * @path /users/{userId}/decks/{deckId}
+     * @allow (create) User 'user123' creating a deck at `/users/user123/decks/deck_abc`.
+     * @deny (update) User 'user456' trying to modify a deck at `/users/user123/decks/deck_abc`.
+     * @principle Enforces strict document ownership within a user's private data tree.
+     */
+    match /users/{userId}/decks/{deckId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures individual flashcards. These are nested under a user's
+     *   path, so only that user can manage their own flashcards.
+     * @path /users/{userId}/flashcards/{flashcardId}
+     * @allow (list) User 'user123' listing all flashcards at `/users/user123/flashcards`.
+     * @deny (get) An anonymous user trying to read any flashcard.
+     * @principle Enforces strict document ownership within a user's private data tree.
+     */
+    match /users/{userId}/flashcards/{flashcardId} {
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages the public course catalog. All users, including anonymous
+     *   ones, can read course information. Only admins can create, update, or delete courses.
+     * @path /courses/{courseId}
+     * @allow (list) Any user, signed in or not, listing all available courses.
+     * @deny (create) A non-admin user trying to create a new course.
+     * @principle Implements a public-read, admin-only write access pattern.
+     */
+    match /courses/{courseId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Manages course enrollment requests. A user can create their own
+     *   enrollment request, but only an admin can approve (update) or delete it.
+     *   Users can only view their own enrollment status.
+     * @path /courseEnrollments/{courseEnrollmentId}
+     * @allow (create) User 'user123' creating an enrollment where the document's
+     *   `userId` field is also 'user123'.
+     * @deny (update) User 'user123' trying to update their own enrollment to approve it.
+     * @principle Manages a request-approve workflow. Users can initiate, but only
+     *   admins can complete the action. Denormalized `userId` enables ownership checks.
+     */
+    match /courseEnrollments/{courseEnrollmentId} {
+      allow get: if isOwner(resource.data.userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() && isExistingDoc();
+      allow delete: if isAdmin() && isExistingDoc();
+    }
+
+    /**
+     * @description Defines user roles. This collection is read-only for admins and
+     *   completely inaccessible to non-admins. Writes are forbidden for ALL clients
+     *   to prevent users from granting themselves admin privileges.
+     * @path /roles_admin/{userId}
+     * @allow (get) An admin user checking if 'user123' is an admin.
+     * @deny (create) Any user (even an admin) trying to create a role document from the client.
+     * @principle Secures role assignments by making them read-only from the client-side.
+     *   Role management must be done via a trusted server or the Firebase Console.
+     */
+    match /roles_admin/{userId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

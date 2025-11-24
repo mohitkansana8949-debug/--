@@ -1,0 +1,308 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the QuklyStudy application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "signUpDate": {
+          "type": "string",
+          "description": "Date and time the user signed up.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "signUpDate"
+      ]
+    },
+    "Flashcard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Flashcard",
+      "type": "object",
+      "description": "Represents a single flashcard with a question and answer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the flashcard entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Flashcard)"
+        },
+        "question": {
+          "type": "string",
+          "description": "The question on the flashcard."
+        },
+        "answer": {
+          "type": "string",
+          "description": "The answer to the question on the flashcard."
+        },
+        "deckId": {
+          "type": "string",
+          "description": "Reference to Deck. (Relationship: Deck 1:N Flashcard)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "question",
+        "answer",
+        "deckId"
+      ]
+    },
+    "Deck": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Deck",
+      "type": "object",
+      "description": "Represents a collection of flashcards.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the deck entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Deck)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the flashcard deck."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the flashcard deck."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "description"
+      ]
+    },
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Represents a course offered on the platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the course entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the course."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the course."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the course."
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "URL of the course thumbnail image.",
+          "format": "uri"
+        },
+        "isFree": {
+          "type": "boolean",
+          "description": "Indicates if the course is free or paid."
+        },
+        "content": {
+          "type": "string",
+          "description": "Course content."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "thumbnailUrl",
+        "isFree",
+        "content"
+      ]
+    },
+    "CourseEnrollment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CourseEnrollment",
+      "type": "object",
+      "description": "Represents a user's enrollment in a course.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the course enrollment entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N CourseEnrollment)"
+        },
+        "courseId": {
+          "type": "string",
+          "description": "Reference to Course. (Relationship: Course 1:N CourseEnrollment)"
+        },
+        "enrollmentDate": {
+          "type": "string",
+          "description": "Date and time the user enrolled in the course.",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method used for enrollment."
+        },
+        "paymentTransactionId": {
+          "type": "string",
+          "description": "Transaction ID of the payment."
+        },
+        "adminApproval": {
+          "type": "boolean",
+          "description": "Indicates if the enrollment is approved by the admin."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "courseId",
+        "enrollmentDate",
+        "paymentMethod",
+        "paymentTransactionId",
+        "adminApproval"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/decks/{deckId}",
+        "definition": {
+          "entityName": "Deck",
+          "schema": {
+            "$ref": "#/backend/entities/Deck"
+          },
+          "description": "Stores flashcard decks owned by a user. Path-based ownership: only the user can access decks under their ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "deckId",
+              "description": "The unique identifier of the deck."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/flashcards/{flashcardId}",
+        "definition": {
+          "entityName": "Flashcard",
+          "schema": {
+            "$ref": "#/backend/entities/Flashcard"
+          },
+          "description": "Stores flashcards owned by a user, belonging to a specific deck. Path-based ownership: only the user can access flashcards under their ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "flashcardId",
+              "description": "The unique identifier of the flashcard."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "Stores course information. Admin-only access for creation/modification.  No user-specific data here, enabling secure list operations.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courseEnrollments/{courseEnrollmentId}",
+        "definition": {
+          "entityName": "CourseEnrollment",
+          "schema": {
+            "$ref": "#/backend/entities/CourseEnrollment"
+          },
+          "description": "Stores course enrollment information. Includes denormalized 'userId' and 'courseId' for authorization independence. Admin approval is required.",
+          "params": [
+            {
+              "name": "courseEnrollmentId",
+              "description": "The unique identifier of the course enrollment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Indicates admin status by document existence. Authorization relies solely on request.auth.uid. Existence over Content.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `CourseEnrollment` collection includes both `userId` and `courseId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/courseEnrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
+  }
+}
