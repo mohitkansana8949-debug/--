@@ -50,6 +50,14 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Could not connect to authentication service."
+        });
+        return;
+    }
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
