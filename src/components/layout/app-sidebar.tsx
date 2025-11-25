@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, User, Shield, LogOut } from "lucide-react";
+import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -46,6 +46,8 @@ export function AppSidebar() {
   const navItems = [
     { href: "/", label: "Home", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "Courses", icon: BookOpen, tooltip: "Courses" },
+    { href: "/my-library", label: "My Library", icon: Library, tooltip: "My Library" },
+    { href: "/support", label: "Support", icon: LifeBuoy, tooltip: "Support" },
   ];
   
   const adminNavItems = [
@@ -76,7 +78,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
-          <Shield className="h-8 w-8 text-primary" />
+          <GraduationCap className="h-8 w-8 text-primary" />
           <span className="text-xl font-bold whitespace-nowrap">QuklyStudy</span>
         </Link>
       </SidebarHeader>
@@ -139,3 +141,23 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
+
+function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c0 1.66 4 3 10 3s10-1.34 10-3v-5" />
+      </svg>
+    )
+  }

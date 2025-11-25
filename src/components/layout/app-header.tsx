@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, ShoppingCart } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,10 @@ export function AppHeader() {
         {/* Future search bar can go here */}
       </div>
       <ThemeToggle />
+      <Button variant="ghost" size="icon">
+        <ShoppingCart className="h-5 w-5" />
+        <span className="sr-only">Shopping Cart</span>
+      </Button>
       <UserMenu />
     </header>
   );
@@ -121,6 +125,15 @@ function UserMenu() {
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+                 <DropdownMenuItem asChild>
+                    <Link href="/profile">
+                        <div className="flex flex-col">
+                            <span className="font-semibold">{user.displayName || 'User'}</span>
+                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link href="/profile">Profile</Link>
                 </DropdownMenuItem>
