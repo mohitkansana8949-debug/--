@@ -95,9 +95,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
     /**
@@ -109,11 +109,7 @@ service cloud.firestore {
      * @principle Enforces strict document ownership within a user's private data tree.
      */
     match /users/{userId}/decks/{deckId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
     /**
@@ -125,11 +121,7 @@ service cloud.firestore {
      * @principle Enforces strict document ownership within a user's private data tree.
      */
     match /users/{userId}/flashcards/{flashcardId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+       allow read, write: if isOwner(userId);
     }
 
     /**
@@ -143,9 +135,7 @@ service cloud.firestore {
     match /courses/{courseId} {
       allow get: if true;
       allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
@@ -163,8 +153,7 @@ service cloud.firestore {
       allow get: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin() && isExistingDoc();
-      allow delete: if isAdmin() && isExistingDoc();
+      allow update, delete: if isAdmin();
     }
 
     /**
@@ -178,11 +167,8 @@ service cloud.firestore {
      *   Role management must be done via a trusted server or the Firebase Console.
      */
     match /roles_admin/{userId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
-      allow create: if false;
-      allow update: if false;
-      allow delete: if false;
+      allow get, list: if isAdmin();
+      allow create, update, delete: if false; // Cannot be changed from client
     }
   }
 }
