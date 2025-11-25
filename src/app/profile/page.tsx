@@ -3,6 +3,8 @@ import { useUser } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -35,26 +37,29 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return <p>Please log in to view your profile.</p>;
+    return <p>कृपया अपनी प्रोफ़ाइल देखने के लिए लॉगिन करें।</p>;
   }
 
   return (
     <div className="space-y-6">
        <div>
-        <h1 className="text-3xl font-bold">My Profile</h1>
-        <p className="text-muted-foreground">View and manage your profile information.</p>
+        <h1 className="text-3xl font-bold">मेरी प्रोफ़ाइल</h1>
+        <p className="text-muted-foreground">अपनी प्रोफ़ाइल जानकारी देखें और प्रबंधित करें।</p>
        </div>
       <Card>
-        <CardHeader>
-          <CardTitle>User Details</CardTitle>
+        <CardHeader className="flex flex-row justify-between items-center">
+          <CardTitle>यूज़र की जानकारी</CardTitle>
+          <Button asChild variant="outline">
+            <Link href="/complete-profile">प्रोफ़ाइल संपादित करें</Link>
+          </Button>
         </CardHeader>
         <CardContent className="flex items-center gap-6">
           <Avatar className="h-20 w-20">
-             <AvatarImage src={user.photoURL || `https://i.pravatar.cc/80?u=${user.uid}`} data-ai-hint="person face" />
+             {user.photoURL && <AvatarImage src={user.photoURL} data-ai-hint="person face" />}
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
           <div>
-            <p className="text-xl font-semibold">{user.displayName || 'No name provided'}</p>
+            <p className="text-xl font-semibold">{user.displayName || 'नाम प्रदान नहीं किया गया'}</p>
             <p className="text-muted-foreground">{user.email}</p>
           </div>
         </CardContent>

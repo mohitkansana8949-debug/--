@@ -24,21 +24,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
 
-const signupSchema = z
-  .object({
-    name: z.string().min(2, 'Name must be at least 2 characters.'),
+const signupSchema = z.object({
     email: z.string().email('Invalid email address.'),
     password: z.string().min(6, 'Password must be at least 6 characters.'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match.",
-    path: ['confirmPassword'],
   });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
@@ -46,56 +38,44 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
   const router = useRouter();
   const auth = useAuth();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      name: '',
       email: '',
       password: '',
-      confirmPassword: '',
     },
   });
 
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
+      await createUserWithEmailAndPassword(
         auth,
         data.email,
         data.password
       );
-      const user = userCredential.user;
-
-      await setDoc(doc(firestore, 'users', user.uid), {
-        id: user.uid,
-        name: data.name,
-        email: data.email,
-        signUpDate: serverTimestamp(),
-      });
-
       toast({
-        title: 'Account Created',
-        description: "You've successfully signed up!",
+        title: 'अकाउंट बन गया',
+        description: "आपका सफलतापूर्वक साइन अप हो गया है!",
       });
-      router.push('/');
+      router.push('/complete-profile');
     } catch (error) {
       console.error(error);
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/email-already-in-use') {
           description =
-            'This email is already in use. Please try another one.';
+            'यह ईमेल पहले से उपयोग में है। कृपया दूसरा प्रयास करें।';
         } else {
           description = error.message;
         }
       }
       toast({
         variant: 'destructive',
-        title: 'Sign Up Failed',
+        title: 'साइन अप विफल',
         description,
       });
     } finally {
@@ -107,9 +87,9 @@ export default function SignupPage() {
     <div className="flex min-h-full items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Create an Account</CardTitle>
+          <CardTitle>अकाउंट बनाएं</CardTitle>
           <CardDescription>
-            Join QuklyStudy to start your learning journey.
+            अपनी सीखने की यात्रा शुरू करने के लिए QuklyStudy से जुड़ें।
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -117,23 +97,10 @@ export default function SignupPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>ईमेल</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -150,24 +117,7 @@ export default function SignupPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
+                    <FormLabel>पासवर्ड</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -180,16 +130,16 @@ export default function SignupPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? 'अकाउंट बन रहा है...' : 'अकाउंट बनाएं'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
+            क्या आपका पहले से एक खाता मौजूद है?{' '}
             <Button variant="link" asChild className="p-0 h-auto">
-              <Link href="/login">Sign In</Link>
+              <Link href="/login">साइन इन करें</Link>
             </Button>
           </p>
         </CardFooter>

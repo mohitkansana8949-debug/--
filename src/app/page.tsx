@@ -24,7 +24,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.push("/login");
+      router.push("/signup");
     }
   }, [user, isUserLoading, router]);
 
@@ -43,7 +43,7 @@ export default function HomePage() {
   return (
     <div className="p-4 space-y-6">
       <div className="text-left">
-        <h1 className="text-3xl font-bold">नमस्ते स्टूडेंट!</h1>
+        <h1 className="text-3xl font-bold">नमस्ते {user.displayName || 'स्टूडेंट'}!</h1>
       </div>
 
       <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold">
@@ -62,10 +62,9 @@ export default function HomePage() {
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold mb-4">मुख्य कोर्स</h2>
+        <h2 className="text-2xl font-bold mb-4">हमारे शिक्षक</h2>
         <Card className="p-4">
-          {/* Main Course content here */}
-          <p className="text-muted-foreground">मुख्य कोर्स जल्द ही आ रहे हैं।</p>
+          <p className="text-muted-foreground">शिक्षकों की सूची जल्द ही आ रही है।</p>
         </Card>
       </div>
     </div>

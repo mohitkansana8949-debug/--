@@ -21,7 +21,7 @@ import Link from "next/link";
 export function AppHeader() {
   const pathname = usePathname();
 
-  if (pathname === '/login' || pathname === '/signup') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile') {
     return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
          <ThemeToggle />
@@ -46,29 +46,14 @@ export function AppHeader() {
 }
 
 function ThemeToggle() {
-    const { setTheme } = useTheme();
+    const { setTheme, theme } = useTheme();
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-                    <span className="sr-only">Toggle theme</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setTheme("light")}>
-                    Light
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("dark")}>
-                    Dark
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setTheme("system")}>
-                    System
-                </DropdownMenuItem>
-            </DropdownMenuContent>
-        </DropdownMenu>
+      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+      </Button>
     )
 }
 
@@ -118,7 +103,7 @@ function UserMenu() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className='h-8 w-8'>
-                        <AvatarImage src={user.photoURL || `https://i.pravatar.cc/32?u=${user.uid}`} data-ai-hint="person face" />
+                        {user.photoURL && <AvatarImage src={user.photoURL} data-ai-hint="person face" />}
                         <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
                     </Avatar>
                     <span className="sr-only">Toggle user menu</span>

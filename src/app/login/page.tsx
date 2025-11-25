@@ -30,7 +30,7 @@ import { FirebaseError } from 'firebase/app';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address.'),
-  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  password: z.string().min(1, 'Password is required.'),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -54,8 +54,8 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
       toast({
-        title: 'Login Successful',
-        description: "You're now logged in.",
+        title: 'लॉगिन सफल',
+        description: "आप सफलतापूर्वक लॉगिन हो गए हैं।",
       });
       router.push('/');
     } catch (error) {
@@ -66,7 +66,7 @@ export default function LoginPage() {
           case 'auth/user-not-found':
           case 'auth/wrong-password':
           case 'auth/invalid-credential':
-            description = 'Invalid email or password.';
+            description = 'गलत ईमेल या पासवर्ड।';
             break;
           default:
             description = error.message;
@@ -74,7 +74,7 @@ export default function LoginPage() {
       }
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
+        title: 'लॉगिन विफल',
         description,
       });
     } finally {
@@ -86,9 +86,9 @@ export default function LoginPage() {
     <div className="flex min-h-full items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Welcome Back!</CardTitle>
+          <CardTitle>आपका स्वागत है!</CardTitle>
           <CardDescription>
-            Enter your credentials to access your account.
+            अपने अकाउंट में 접속 करने के लिए अपनी जानकारी दर्ज करें।
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>ईमेल</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
@@ -116,7 +116,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>पासवर्ड</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -129,16 +129,16 @@ export default function LoginPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? 'साइन इन हो रहा है...' : 'साइन इन करें'}
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
-            Don't have an account?{' '}
+            क्या आपका कोई खाता नहीं है?{' '}
             <Button variant="link" asChild className="p-0 h-auto">
-              <Link href="/signup">Sign Up</Link>
+              <Link href="/signup">साइन अप करें</Link>
             </Button>
           </p>
         </CardFooter>

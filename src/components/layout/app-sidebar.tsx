@@ -44,20 +44,20 @@ export function AppSidebar() {
 
 
   const navItems = [
-    { href: "/", label: "Home", icon: Home, tooltip: "Dashboard" },
-    { href: "/courses", label: "Courses", icon: BookOpen, tooltip: "Courses" },
-    { href: "/my-library", label: "My Library", icon: Library, tooltip: "My Library" },
-    { href: "/support", label: "Support", icon: LifeBuoy, tooltip: "Support" },
+    { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
+    { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
+    { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
+    { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
   const adminNavItems = [
-    { href: "/admin", label: "Admin Panel", icon: Shield, tooltip: "Admin Panel" },
+    { href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" },
   ];
 
-  const profileNavItem = { href: "/profile", label: "Profile", icon: User, tooltip: "Profile" };
+  const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
   // Hide sidebar on login/signup pages
-  if (pathname === '/login' || pathname === '/signup') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile') {
     return null;
   }
   
@@ -66,7 +66,7 @@ export function AppSidebar() {
           <Sidebar>
             <SidebarHeader>
                 <div className="flex items-center gap-2">
-                    <Shield className="h-8 w-8 text-primary" />
+                    <GraduationCap className="h-8 w-8 text-primary" />
                     <span className="text-xl font-bold whitespace-nowrap">QuklyStudy</span>
                 </div>
             </SidebarHeader>
@@ -133,7 +133,7 @@ export function AppSidebar() {
             <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout} tooltip={{children: 'Logout'}}>
                     <LogOut />
-                    <span>Logout</span>
+                    <span>लॉगआउट</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
         </SidebarMenu>
