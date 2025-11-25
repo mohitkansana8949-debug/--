@@ -22,14 +22,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useUser } from '@/firebase';
+import { useFirebase, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { initializeFirebase } from '@/firebase';
 
 const profileSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
@@ -42,7 +41,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const { auth, firestore } = useFirebase();
+  const { auth, firestore, storage } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -50,18 +49,6 @@ export default function CompleteProfilePage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { firebaseApp } = initializeFirebase();
-  const storage = getStorage(firebaseApp);
-
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: '',
-      mobile: '',
-      age: undefined,
-    },
-  });
-
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -78,7 +65,7 @@ export default function CompleteProfilePage() {
   }
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!user || !auth) {
+    if (!user || !auth || !firestore) {
       toast({
         variant: 'destructive',
         title: 'Authentication Error',
