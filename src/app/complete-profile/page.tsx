@@ -192,7 +192,7 @@ export default function CompleteProfilePage() {
                   <FormItem>
                     <FormLabel>मोबाइल नंबर</FormLabel>
                     <FormControl>
-                      <Input type="tel" placeholder="9876543210" {...field} />
+                      <Input type="tel" placeholder="9876543210" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -205,7 +205,7 @@ export default function CompleteProfilePage() {
                   <FormItem>
                     <FormLabel>आयु</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="21" {...field} />
+                      <Input type="number" placeholder="21" {...field} value={field.value ?? ''} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
