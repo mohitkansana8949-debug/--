@@ -48,6 +48,15 @@ export default function CompleteProfilePage() {
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: user?.displayName || '',
+      mobile: '',
+      age: undefined,
+    }
+  });
   
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -58,6 +67,7 @@ export default function CompleteProfilePage() {
   };
 
   const uploadPhoto = async (file: File, userId: string): Promise<string> => {
+    if (!storage) throw new Error("Firebase Storage is not configured.");
     const storageRef = ref(storage, `profile_pictures/${userId}`);
     await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(storageRef);
