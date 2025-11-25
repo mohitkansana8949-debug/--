@@ -21,10 +21,10 @@ export default function SupportPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold flex items-center">
           <LifeBuoy className="mr-3 h-8 w-8" />
-          Support Center
+          सहायता केंद्र
         </h1>
         <p className="text-muted-foreground">
-          Get help and contact us. We're here for you!
+          मदद प्राप्त करें और हमसे संपर्क करें। हम आपके लिए यहां हैं!
         </p>
       </div>
 
@@ -33,16 +33,16 @@ export default function SupportPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <MessageSquare className="mr-2 h-6 w-6 text-green-500" />
-              WhatsApp Support
+              व्हाट्सएप सपोर्ट
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Chat with us directly on WhatsApp for a quick response.
+              त्वरित प्रतिक्रिया के लिए व्हाट्सएप पर सीधे हमारे साथ चैट करें।
             </p>
             <p className="text-lg font-mono mb-4">{whatsappNumber}</p>
             <Button onClick={openWhatsApp} className="w-full bg-green-600 hover:bg-green-700">
-              Chat on WhatsApp
+              व्हाट्सएप पर चैट करें
             </Button>
           </CardContent>
         </Card>
@@ -51,16 +51,16 @@ export default function SupportPage() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Mail className="mr-2 h-6 w-6 text-blue-500" />
-              Email Support
+              ईमेल सपोर्ट
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              Send us an email and we'll get back to you as soon as possible.
+              हमें एक ईमेल भेजें और हम जल्द से जल्द आपसे संपर्क करेंगे।
             </p>
             <p className="text-lg font-mono mb-4 break-all">{email}</p>
             <Button onClick={openEmail} className="w-full">
-              Send Email
+              ईमेल भेजें
             </Button>
           </CardContent>
         </Card>

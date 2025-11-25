@@ -47,7 +47,7 @@ export default function HomePage() {
       </div>
 
       <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold">
-        <p>कृपया सब्सक्राइब करें 👍 क्लिक करें 👍</p>
+        <p>यहां प्रमोशन स्क्रॉल होगा!</p>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

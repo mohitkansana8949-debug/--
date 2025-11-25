@@ -114,21 +114,21 @@ export default function AdminDashboard() {
     <div className="container mx-auto p-4">
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold">एडमिन डैशबोर्ड</h1>
           <p className="text-muted-foreground">
-            Manage users, courses, and enrollments.
+            यूज़र, कोर्स और एनरोलमेंट मैनेज करें।
           </p>
         </div>
          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
-              Create Course
+              नया कोर्स बनाएं
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Create New Course</DialogTitle>
+              <DialogTitle>नया कोर्स बनाएं</DialogTitle>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -137,9 +137,9 @@ export default function AdminDashboard() {
                   name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Course Name</FormLabel>
+                      <FormLabel>कोर्स का नाम</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Intro to Programming" {...field} />
+                        <Input placeholder="जैसे, प्रोग्रामिंग का परिचय" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -150,9 +150,9 @@ export default function AdminDashboard() {
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>विवरण</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="A brief summary of the course" {...field} />
+                        <Textarea placeholder="कोर्स का संक्षिप्त सारांश" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
                   name="thumbnailUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Thumbnail URL</FormLabel>
+                      <FormLabel>थंबनेल URL</FormLabel>
                       <FormControl>
                         <Input placeholder="https://picsum.photos/seed/..." {...field} />
                       </FormControl>
@@ -176,9 +176,9 @@ export default function AdminDashboard() {
                   name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Content</FormLabel>
+                      <FormLabel>कंटेंट</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Course content (e.g., video links, text)" {...field} />
+                        <Textarea placeholder="कोर्स कंटेंट (जैसे, वीडियो लिंक, टेक्स्ट)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
                   name="price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price</FormLabel>
+                      <FormLabel>कीमत</FormLabel>
                       <FormControl>
                         <Input type="number" {...field} disabled={form.watch('isFree')} />
                       </FormControl>
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                     render={({ field }) => (
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                         <div className="space-y-0.5">
-                            <FormLabel>Free Course</FormLabel>
+                            <FormLabel>फ्री कोर्स</FormLabel>
                         </div>
                         <FormControl>
                             <Switch
@@ -224,10 +224,10 @@ export default function AdminDashboard() {
                   {isSubmitting ? (
                     <>
                       <Loader className="mr-2 h-4 w-4 animate-spin" />
-                      Creating...
+                      बनाया जा रहा है...
                     </>
                   ) : (
-                    'Create Course'
+                    'कोर्स बनाएं'
                   )}
                 </Button>
               </form>
@@ -239,7 +239,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Users</CardTitle>
+            <CardTitle className="text-sm font-medium">यूज़र्स</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
               <>
                 <div className="text-2xl font-bold">{users?.length ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  Total registered users
+                  कुल रजिस्टर्ड यूज़र्स
                 </p>
               </>
             )}
@@ -256,7 +256,7 @@ export default function AdminDashboard() {
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Courses</CardTitle>
+            <CardTitle className="text-sm font-medium">कोर्सेस</CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -264,7 +264,7 @@ export default function AdminDashboard() {
               <>
                 <div className="text-2xl font-bold">{courses?.length ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  Total courses available
+                  कुल उपलब्ध कोर्सेस
                 </p>
               </>
             )}
@@ -273,7 +273,7 @@ export default function AdminDashboard() {
 
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Enrollments</CardTitle>
+            <CardTitle className="text-sm font-medium">एनरोलमेंट्स</CardTitle>
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
               <>
                 <div className="text-2xl font-bold">{enrollments?.length ?? 0}</div>
                 <p className="text-xs text-muted-foreground">
-                  Total active enrollments
+                  कुल एक्टिव एनरोलमेंट्स
                 </p>
               </>
              )}
