@@ -53,8 +53,8 @@ export default function CompleteProfilePage() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       name: user?.displayName || '',
-      mobile: '',
-      age: undefined,
+      mobile:  '',
+      age: '' as any,
     }
   });
   
