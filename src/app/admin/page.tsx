@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useCollection } from '@/firebase';
+import { useState } from 'react';
+import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,7 @@ const courseSchema = z.object({
   price: z.coerce.number().min(0, 'Price must be a positive number'),
   thumbnailUrl: z.string().url('Must be a valid URL'),
   isFree: z.boolean().default(false),
+  content: z.string().optional(),
 });
 
 type CourseFormValues = z.infer<typeof courseSchema>;
@@ -52,16 +53,16 @@ export default function AdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const usersQuery = useMemo(
-    () => collection(firestore, 'users'),
+  const usersQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
   );
-  const coursesQuery = useMemo(
-    () => collection(firestore, 'courses'),
+  const coursesQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'courses') : null),
     [firestore]
   );
-  const enrollmentsQuery = useMemo(
-    () => collection(firestore, 'courseEnrollments'),
+  const enrollmentsQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'courseEnrollments') : null),
     [firestore]
   );
 
@@ -77,10 +78,12 @@ export default function AdminDashboard() {
       price: 0,
       thumbnailUrl: '',
       isFree: false,
+      content: '',
     },
   });
 
   const onSubmit = async (values: CourseFormValues) => {
+    if (!firestore) return;
     setIsSubmitting(true);
     try {
       await addDoc(collection(firestore, 'courses'), {
@@ -163,6 +166,19 @@ export default function AdminDashboard() {
                       <FormLabel>Thumbnail URL</FormLabel>
                       <FormControl>
                         <Input placeholder="https://picsum.photos/seed/..." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="content"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Content</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Course content (e.g., video links, text)" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
