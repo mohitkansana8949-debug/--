@@ -43,6 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 const courseSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -132,27 +133,29 @@ export default function AdminDashboard() {
   const onCourseSubmit = async (values: CourseFormValues) => {
     if (!firestore) return;
     setIsSubmitting(true);
-    try {
-      await addDoc(collection(firestore, 'courses'), {
-        ...values,
-        createdAt: serverTimestamp(),
-      });
-      toast({
-        title: 'सफलता!',
-        description: 'नया कोर्स बना दिया गया है।',
-      });
-      courseForm.reset();
-      setIsCourseDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating course:', error);
-      toast({
-        variant: 'destructive',
-        title: 'त्रुटि',
-        description: 'कोर्स नहीं बन सका। कृपया दोबारा प्रयास करें।',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    
+    const courseData = { ...values, createdAt: serverTimestamp() };
+
+    addDoc(collection(firestore, 'courses'), courseData)
+    .then(() => {
+        toast({
+            title: 'सफलता!',
+            description: 'नया कोर्स बना दिया गया है।',
+        });
+        courseForm.reset();
+        setIsCourseDialogOpen(false);
+    })
+    .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: 'courses',
+            requestResourceData: courseData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    })
+    .finally(() => {
+        setIsSubmitting(false);
+    });
   };
 
   const onEducatorSubmit = async (values: EducatorFormValues) => {
@@ -169,21 +172,34 @@ export default function AdminDashboard() {
         await uploadBytes(storageRef, educatorPhoto);
         const imageUrl = await getDownloadURL(storageRef);
 
-        await setDoc(docRef, {
+        const educatorData = {
             ...values,
             imageUrl: imageUrl,
             createdAt: serverTimestamp(),
+        };
+
+        setDoc(docRef, educatorData)
+        .then(() => {
+            toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});
+            educatorForm.reset();
+            setEducatorPhoto(null);
+            setIsEducatorDialogOpen(false);
+        })
+        .catch(error => {
+             const contextualError = new FirestorePermissionError({
+                operation: 'create',
+                path: docRef.path,
+                requestResourceData: educatorData,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        })
+        .finally(() => {
+             setIsSubmitting(false);
         });
 
-        toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});
-        educatorForm.reset();
-        setEducatorPhoto(null);
-        setIsEducatorDialogOpen(false);
-
       } catch (error) {
-          console.error("Error adding educator:", error);
-          toast({ variant: 'destructive', title: 'त्रुटि', description: 'एजुकेटर को नहीं जोड़ा जा सका।'});
-      } finally {
+          console.error("Error during photo upload:", error);
+          toast({ variant: 'destructive', title: 'त्रुटि', description: 'फोटो अपलोड नहीं हो सकी।'});
           setIsSubmitting(false);
       }
   };
@@ -191,28 +207,33 @@ export default function AdminDashboard() {
   const onPromotionSubmit = async (values: PromotionFormValues) => {
     if (!firestore) return;
     setIsSubmitting(true);
-    try {
-      await addDoc(collection(firestore, 'promotions'), {
+    
+    const promotionData = {
         ...values,
         createdAt: serverTimestamp(),
         isActive: true, // by default
-      });
-      toast({
-        title: 'सफलता!',
-        description: 'नया प्रमोशन जोड़ दिया गया है।',
-      });
-      promotionForm.reset();
-      setIsPromotionDialogOpen(false);
-    } catch (error) {
-      console.error('Error creating promotion:', error);
-      toast({
-        variant: 'destructive',
-        title: 'त्रुटि',
-        description: 'प्रमोशन नहीं बन सका।',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    };
+
+    addDoc(collection(firestore, 'promotions'), promotionData)
+    .then(() => {
+        toast({
+            title: 'सफलता!',
+            description: 'नया प्रमोशन जोड़ दिया गया है।',
+        });
+        promotionForm.reset();
+        setIsPromotionDialogOpen(false);
+    })
+    .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: 'promotions',
+            requestResourceData: promotionData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+    })
+    .finally(() => {
+        setIsSubmitting(false);
+    });
   };
 
 
@@ -498,10 +519,19 @@ export default function AdminDashboard() {
                                     <TableCell>{promo.name}</TableCell>
                                     <TableCell className="font-mono text-xs">{promo.link}</TableCell>
                                     <TableCell>
-                                        <Switch checked={promo.isActive} onCheckedChange={async (checked) => {
+                                        <Switch checked={promo.isActive} onCheckedChange={(checked) => {
                                             if (!firestore) return;
                                             const promoRef = doc(firestore, 'promotions', promo.id);
-                                            await updateDoc(promoRef, { isActive: checked });
+                                            const data = { isActive: checked };
+                                            updateDoc(promoRef, data)
+                                            .catch(error => {
+                                                const contextualError = new FirestorePermissionError({
+                                                    operation: 'update',
+                                                    path: promoRef.path,
+                                                    requestResourceData: data,
+                                                });
+                                                errorEmitter.emit('permission-error', contextualError);
+                                            });
                                         }} />
                                     </TableCell>
                                 </TableRow>
@@ -534,7 +564,7 @@ function AppSettings() {
     );
 
     const handleSettingsUpdate = async () => {
-        if (!firestore || !storage) {
+        if (!firestore || !storage || !settingsDocRef) {
             toast({ variant: 'destructive', title: 'Error', description: 'Firebase not configured.'});
             return;
         }
@@ -557,15 +587,25 @@ function AppSettings() {
                 settingsUpdate.qrCodeUrl = qrCodeUrl;
             }
 
-            await setDoc(settingsDocRef!, settingsUpdate, { merge: true });
-
-            toast({ title: 'Success!', description: 'Payment settings have been updated.'});
-            setQrCodeFile(null);
-            // setMobileNumber(''); // Keep mobile number in field
+            setDoc(settingsDocRef, settingsUpdate, { merge: true })
+            .then(() => {
+                 toast({ title: 'Success!', description: 'Payment settings have been updated.'});
+                 setQrCodeFile(null);
+            })
+            .catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    operation: 'update',
+                    path: settingsDocRef.path,
+                    requestResourceData: settingsUpdate,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            })
+            .finally(() => {
+                setIsSubmitting(false);
+            });
         } catch (error) {
             console.error('Error updating settings:', error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not update settings.'});
-        } finally {
             setIsSubmitting(false);
         }
     }
@@ -594,5 +634,7 @@ function AppSettings() {
         </Card>
     );
 }
+
+    
 
     
