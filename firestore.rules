@@ -48,7 +48,7 @@ service cloud.firestore {
     }
 
     match /educators/{educatorId} {
-        allow get, list: if isSignedIn();
+        allow read: if isSignedIn();
         allow write: if isAdmin();
     }
 
