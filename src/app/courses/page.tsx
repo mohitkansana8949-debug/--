@@ -34,7 +34,7 @@ export default function CoursesPage() {
                     हमारे कोर्स कैटलॉग को ब्राउज़ करें।
                 </p>
             </div>
-             {isLoading && <div className="flex h-full items-center justify-center"><Loader className="animate-spin" /></div>}
+             {isLoading && <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>}
 
             {!isLoading && courses?.length === 0 && (
                 <div className="text-center text-muted-foreground mt-16">
@@ -44,7 +44,7 @@ export default function CoursesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses?.map(course => (
-                    <Card key={course.id} className="overflow-hidden transition-shadow hover:shadow-lg">
+                    <Card key={course.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                         <Image 
                             src={course.thumbnailUrl} 
                             alt={course.name} 
@@ -54,9 +54,9 @@ export default function CoursesPage() {
                         />
                         <CardHeader>
                             <CardTitle>{course.name}</CardTitle>
-                            <CardDescription>{course.description}</CardDescription>
+                            <CardDescription className="line-clamp-2">{course.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex justify-between items-center">
+                        <CardContent className="flex-grow flex justify-between items-end">
                             <p className="text-lg font-bold">{course.isFree ? 'फ्री' : `₹${course.price}`}</p>
                             <Button asChild>
                                 <Link href={`/courses/${course.id}`}>कोर्स देखें</Link>
@@ -68,5 +68,7 @@ export default function CoursesPage() {
         </div>
     );
 }
+
+    
 
     

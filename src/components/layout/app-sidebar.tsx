@@ -11,7 +11,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter
+  SidebarFooter,
+  useSidebar
 } from "@/components/ui/sidebar";
 import { useUser, useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
@@ -29,6 +30,8 @@ export function AppSidebar() {
   const router = useRouter();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const { isMobile, setOpenMobile } = useSidebar();
+
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -61,6 +64,11 @@ export function AppSidebar() {
     }
   };
 
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const navItems = [
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
@@ -75,7 +83,6 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
-  // Hide sidebar on login/signup pages
   if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile' || pathname.includes('/payment')) {
     return null;
   }
@@ -84,10 +91,10 @@ export function AppSidebar() {
       return (
           <Sidebar>
             <SidebarHeader>
-                <div className="flex items-center gap-2">
+                <Link href="/" className="flex items-center gap-2" prefetch={false}>
                     <GraduationCap className="h-8 w-8 text-primary" />
                     <span className="text-xl font-bold whitespace-nowrap">QuklyStudy</span>
-                </div>
+                </Link>
             </SidebarHeader>
           </Sidebar>
       )
@@ -109,6 +116,7 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname === item.href}
                 tooltip={{ children: item.tooltip }}
+                onClick={handleLinkClick}
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -124,6 +132,7 @@ export function AppSidebar() {
                 asChild
                 isActive={pathname.startsWith(item.href)}
                 tooltip={{ children: item.tooltip }}
+                onClick={handleLinkClick}
               >
                 <Link href={item.href}>
                   <item.icon />
@@ -141,6 +150,7 @@ export function AppSidebar() {
                     asChild
                     isActive={pathname === profileNavItem.href}
                     tooltip={{ children: profileNavItem.tooltip }}
+                    onClick={handleLinkClick}
                 >
                     <Link href={profileNavItem.href}>
                     <profileNavItem.icon />

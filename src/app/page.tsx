@@ -15,6 +15,7 @@ import {
   Library,
   Newspaper,
   User as UserIcon,
+  Loader,
 } from 'lucide-react';
 import {
   Carousel,
@@ -24,7 +25,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import Image from 'next/image';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 
 const featureCards = [
   {
@@ -71,10 +72,15 @@ export default function HomePage() {
   const firestore = useFirestore();
 
   const educatorsQuery = useMemoFirebase(
-    () => (firestore ? query(collection(firestore, 'educators')) : null),
+    () => (firestore ? query(collection(firestore, 'educators'), orderBy('createdAt', 'desc')) : null),
     [firestore]
   );
-  const { data: educators } = useCollection(educatorsQuery);
+  const promotionsQuery = useMemoFirebase(
+    () => (firestore ? query(collection(firestore, 'promotions'), where('isActive', '==', true), orderBy('createdAt', 'desc')) : null),
+    [firestore]
+  );
+  const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
+  const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -85,7 +91,7 @@ export default function HomePage() {
   if (isUserLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p>लोड हो रहा है...</p>
+        <Loader className="animate-spin" />
       </div>
     );
   }
@@ -103,9 +109,25 @@ export default function HomePage() {
         <p className="text-muted-foreground">सीखने की अपनी यात्रा शुरू करें।</p>
       </div>
 
-      <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold">
-        <p>यहां प्रमोशन स्क्रॉल होगा!</p>
-      </div>
+      {promotionsLoading ? (
+         <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold animate-pulse">
+            <p>प्रमोशन लोड हो रहा है...</p>
+         </div>
+      ) : promotions && promotions.length > 0 ? (
+        <Carousel className="w-full" opts={{loop: true}} plugins={[require('embla-carousel-autoplay')({ delay: 3000 })]}>
+          <CarouselContent>
+             {promotions.map(promo => (
+              <CarouselItem key={promo.id}>
+                <Link href={promo.link} target="_blank" rel="noopener noreferrer">
+                  <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold">
+                    <p>{promo.name}</p>
+                  </div>
+                </Link>
+              </CarouselItem>
+             ))}
+          </CarouselContent>
+        </Carousel>
+      ) : null }
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card) => (
@@ -122,11 +144,11 @@ export default function HomePage() {
 
       <div>
         <h2 className="text-2xl font-bold mb-4">हमारे शिक्षक</h2>
-        {educators && educators.length > 0 ? (
+        {educatorsLoading ? <Card className="p-4 flex justify-center items-center h-48"><Loader className="animate-spin" /></Card> : (educators && educators.length > 0) ? (
           <Carousel
             opts={{
               align: 'start',
-              loop: true,
+              loop: educators.length > 2,
             }}
             className="w-full"
           >
@@ -160,8 +182,8 @@ export default function HomePage() {
             <CarouselNext className="mr-12" />
           </Carousel>
         ) : (
-          <Card className="p-4">
-            <p className="text-muted-foreground">शिक्षकों की सूची जल्द ही आ रही है।</p>
+          <Card className="p-8 flex items-center justify-center">
+            <p className="text-muted-foreground">एडमिन पैनल से नए शिक्षकों को जोड़ें।</p>
           </Card>
         )}
       </div>
