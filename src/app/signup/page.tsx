@@ -63,7 +63,6 @@ export default function SignupPage() {
       });
       router.push('/complete-profile');
     } catch (error) {
-      console.error(error);
       let description = 'An unexpected error occurred. Please try again.';
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/email-already-in-use') {
