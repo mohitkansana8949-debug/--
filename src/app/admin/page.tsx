@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState, ChangeEvent } from 'react';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { useState, ChangeEvent, useMemo } from 'react';
+import { useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, addDoc, serverTimestamp, doc, setDoc, updateDoc, query, orderBy, where } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -89,7 +89,7 @@ export default function AdminDashboard() {
     [firestore]
   );
   const promotionsQuery = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'promotions') : null),
+    () => (firestore ? query(collection(firestore, 'promotions'), where('isActive', '==', true), orderBy('createdAt', 'desc')) : null),
     [firestore]
   );
 
