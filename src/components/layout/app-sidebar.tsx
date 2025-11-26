@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -16,13 +17,31 @@ import { useUser, useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { useState, useEffect } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { useFirestore } from "@/firebase";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user && firestore) {
+        const adminRef = doc(firestore, "roles_admin", user.uid);
+        const adminDoc = await getDoc(adminRef);
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkAdminStatus();
+  }, [user, firestore]);
 
   const handleLogout = async () => {
     try {
@@ -57,7 +76,7 @@ export function AppSidebar() {
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
   // Hide sidebar on login/signup pages
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile' || pathname.includes('/payment')) {
     return null;
   }
   
@@ -98,8 +117,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          {/* Mock admin check, replace with real logic */}
-          {user && (
+          {isAdmin && (
             adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
@@ -161,3 +179,5 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
+
+    

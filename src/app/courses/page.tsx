@@ -1,49 +1,65 @@
+
 'use client';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-
-// Mock data, to be replaced with Firestore data
-const allCourses = [
-  { id: '1', name: 'Intro to React', description: 'Learn the fundamentals of React.', isFree: true, price: 0, thumbnailUrl: 'https://picsum.photos/seed/react/600/400' },
-  { id: '2', name: 'Advanced TypeScript', description: 'Master TypeScript for large-scale applications.', isFree: false, price: 99.99, thumbnailUrl: 'https://picsum.photos/seed/ts/600/400' },
-  { id: '3', name: 'Next.js for Beginners', description: 'Build server-rendered React apps with Next.js.', isFree: true, price: 0, thumbnailUrl: 'https://picsum.photos/seed/nextjs/600/400' },
-  { id: '4', name: 'Firebase Deep Dive', description: 'A comprehensive guide to the Firebase platform.', isFree: false, price: 129.99, thumbnailUrl: 'https://picsum.photos/seed/firebase/600/400' },
-];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import Image from 'next/image';
+import { Loader } from 'lucide-react';
 
 export default function CoursesPage() {
     const searchParams = useSearchParams();
     const filter = searchParams.get('filter');
+    const firestore = useFirestore();
 
-    const filteredCourses = allCourses.filter(course => {
-        if (filter === 'free') return course.isFree;
-        if (filter === 'paid') return !course.isFree;
-        return true;
-    });
+    const coursesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        const baseQuery = collection(firestore, 'courses');
+        if (filter === 'free') return query(baseQuery, where('isFree', '==', true));
+        if (filter === 'paid') return query(baseQuery, where('isFree', '==', false));
+        return baseQuery;
+    }, [firestore, filter]);
+
+    const { data: courses, isLoading } = useCollection(coursesQuery);
     
-    const title = filter === 'free' ? 'Free Courses' : filter === 'paid' ? 'Paid Courses' : 'All Courses';
+    const title = filter === 'free' ? 'फ्री कोर्सेस' : filter === 'paid' ? 'पेड कोर्सेस' : 'सभी कोर्सेस';
 
     return (
         <div className="container mx-auto p-4">
              <div className="mb-8">
                 <h1 className="text-3xl font-bold">{title}</h1>
                 <p className="text-muted-foreground">
-                    Browse our catalog of courses.
+                    हमारे कोर्स कैटलॉग को ब्राउज़ करें।
                 </p>
             </div>
+             {isLoading && <div className="flex h-full items-center justify-center"><Loader className="animate-spin" /></div>}
+
+            {!isLoading && courses?.length === 0 && (
+                <div className="text-center text-muted-foreground mt-16">
+                    <p>इस श्रेणी में कोई कोर्स उपलब्ध नहीं है।</p>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCourses.map(course => (
-                    <Card key={course.id}>
-                        <img src={course.thumbnailUrl} alt={course.name} className="rounded-t-lg object-cover w-full h-48" />
+                {courses?.map(course => (
+                    <Card key={course.id} className="overflow-hidden transition-shadow hover:shadow-lg">
+                        <Image 
+                            src={course.thumbnailUrl} 
+                            alt={course.name} 
+                            width={600}
+                            height={400}
+                            className="rounded-t-lg object-cover w-full h-48"
+                        />
                         <CardHeader>
                             <CardTitle>{course.name}</CardTitle>
                             <CardDescription>{course.description}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex justify-between items-center">
-                            <p className="text-lg font-bold">{course.isFree ? 'Free' : `$${course.price}`}</p>
+                            <p className="text-lg font-bold">{course.isFree ? 'फ्री' : `₹${course.price}`}</p>
                             <Button asChild>
-                                <Link href={`/courses/${course.id}`}>View Course</Link>
+                                <Link href={`/courses/${course.id}`}>कोर्स देखें</Link>
                             </Button>
                         </CardContent>
                     </Card>
@@ -52,3 +68,5 @@ export default function CoursesPage() {
         </div>
     );
 }
+
+    

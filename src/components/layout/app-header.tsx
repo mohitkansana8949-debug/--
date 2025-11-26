@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useTheme } from "next-themes";
@@ -17,11 +18,33 @@ import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { useMemo } from 'react';
+
+
+// Helper function to get a color based on user ID
+const getColorForId = (id: string) => {
+  const colors = [
+    'bg-red-500',
+    'bg-green-500',
+    'bg-blue-500',
+    'bg-yellow-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-teal-500',
+  ];
+  // Simple hash function to get a consistent color
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[hash % colors.length];
+};
 
 export function AppHeader() {
   const pathname = usePathname();
 
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile') {
+  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile' || pathname.includes('/payment')) {
     return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
          <ThemeToggle />
@@ -62,6 +85,8 @@ function UserMenu() {
     const auth = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    
+    const avatarColor = useMemo(() => user ? getColorForId(user.uid) : 'bg-muted', [user]);
 
     const handleLogout = async () => {
         try {
@@ -92,10 +117,10 @@ function UserMenu() {
     const getInitials = (name: string | null | undefined) => {
         if (!name) return 'QS';
         const names = name.split(' ');
-        if (names.length > 1) {
-            return names[0][0] + names[names.length - 1][0];
+        if (names.length > 1 && names[0] && names[names.length - 1]) {
+            return (names[0][0] + names[names.length - 1][0]).toUpperCase();
         }
-        return name.substring(0, 2);
+        return name.substring(0, 2).toUpperCase();
     }
 
     return (
@@ -103,8 +128,11 @@ function UserMenu() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
                     <Avatar className='h-8 w-8'>
-                        {user.photoURL && <AvatarImage src={user.photoURL} data-ai-hint="person face" />}
-                        <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
+                        {user.photoURL ? (
+                           <AvatarImage src={user.photoURL} data-ai-hint="person face" />
+                        ) : (
+                           <AvatarFallback className={`text-white ${avatarColor}`}>{getInitials(user.displayName)}</AvatarFallback>
+                        )}
                     </Avatar>
                     <span className="sr-only">Toggle user menu</span>
                 </Button>
@@ -132,3 +160,5 @@ function UserMenu() {
         </DropdownMenu>
     );
 }
+
+    

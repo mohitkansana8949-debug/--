@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,6 +7,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Pencil } from 'lucide-react';
+import { useMemo } from 'react';
+
+// Helper function to get a color based on user ID
+const getColorForId = (id: string) => {
+  const colors = [
+    'bg-red-500',
+    'bg-green-500',
+    'bg-blue-500',
+    'bg-yellow-500',
+    'bg-purple-500',
+    'bg-pink-500',
+    'bg-indigo-500',
+    'bg-teal-500',
+  ];
+  // Simple hash function to get a consistent color
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[hash % colors.length];
+};
+
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -14,10 +37,12 @@ export default function ProfilePage() {
     if (!name) return 'QS';
     const names = name.split(' ');
     if (names.length > 1 && names[0] && names[names.length - 1]) {
-        return names[0][0] + names[names.length - 1][0];
+        return (names[0][0] + names[names.length - 1][0]).toUpperCase();
     }
-    return name.substring(0, 2);
+    return name.substring(0, 2).toUpperCase();
   }
+  
+  const avatarColor = useMemo(() => user ? getColorForId(user.uid) : 'bg-muted', [user]);
 
   if (isUserLoading) {
     return (
@@ -59,8 +84,11 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="flex items-center gap-6">
           <Avatar className="h-24 w-24">
-             {user.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User Photo'} data-ai-hint="person face" />}
-            <AvatarFallback className="text-3xl">{getInitials(user.displayName)}</AvatarFallback>
+             {user.photoURL ? (
+                <AvatarImage src={user.photoURL} alt={user.displayName || 'User Photo'} data-ai-hint="person face" />
+             ) : (
+                <AvatarFallback className={`text-3xl text-white ${avatarColor}`}>{getInitials(user.displayName)}</AvatarFallback>
+             )}
           </Avatar>
           <div>
             <p className="text-2xl font-semibold">{user.displayName || 'नाम प्रदान नहीं किया गया'}</p>
@@ -71,3 +99,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
