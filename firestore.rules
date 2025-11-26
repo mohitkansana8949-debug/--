@@ -52,7 +52,10 @@ service cloud.firestore {
         allow get, list: if true;
         allow write: if isAdmin();
     }
+
+    match /promotions/{promotionId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
   }
 }
-
-    
