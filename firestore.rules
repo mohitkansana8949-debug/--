@@ -3,54 +3,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-    }
-
-    // Default read access for any signed-in user to prevent permission errors
     match /{document=**} {
-      allow read: if isSignedIn();
-      allow write: if false; // Secure write access by default
-    }
-
-    // Specific write rules
-    match /users/{userId}/{document=**} {
-      allow read, write: if isOwner(userId) || isAdmin();
-    }
-    
-    match /courses/{courseId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
-    match /courseEnrollments/{enrollmentId} {
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if (isSignedIn() && resource.data.userId == request.auth.uid) || isAdmin();
-      allow update, delete: if isAdmin();
-    }
-    
-    match /settings/payment {
-        allow read: if isSignedIn();
-        allow write: if isAdmin();
-    }
-    
-    match /educators/{educatorId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /promotions/{promotionId} {
-        allow read: if isSignedIn();
-        allow write: if isAdmin();
+      allow read, write: if false;
     }
   }
 }
