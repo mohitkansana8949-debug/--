@@ -61,12 +61,6 @@ const educatorSchema = z.object({
 });
 type EducatorFormValues = z.infer<typeof educatorSchema>;
 
-const promotionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  link: z.string().url('Must be a valid URL'),
-});
-type PromotionFormValues = z.infer<typeof promotionSchema>;
-
 
 export default function AdminDashboard() {
   const { firestore, storage } = useFirebase();
@@ -74,7 +68,6 @@ export default function AdminDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
   const [isEducatorDialogOpen, setIsEducatorDialogOpen] = useState(false);
-  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [educatorPhoto, setEducatorPhoto] = useState<File | null>(null);
 
   const usersQuery = useMemoFirebase(
@@ -89,18 +82,12 @@ export default function AdminDashboard() {
     () => (firestore ? collection(firestore, 'courseEnrollments') : null),
     [firestore]
   );
-  const promotionsQuery = useMemoFirebase(
-    () => (firestore ? query(collection(firestore, 'promotions'), where('isActive', '==', true), orderBy('createdAt', 'desc')) : null),
-    [firestore]
-  );
-
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } =
     useCollection(coursesQuery);
   const { data: enrollments, isLoading: enrollmentsLoading } =
     useCollection(enrollmentsQuery);
-  const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
 
   const courseForm = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
@@ -122,13 +109,6 @@ export default function AdminDashboard() {
       },
   });
   
-  const promotionForm = useForm<PromotionFormValues>({
-    resolver: zodResolver(promotionSchema),
-    defaultValues: {
-      name: '',
-      link: '',
-    },
-  });
 
   const onCourseSubmit = async (values: CourseFormValues) => {
     if (!firestore) return;
@@ -204,38 +184,6 @@ export default function AdminDashboard() {
       }
   };
 
-  const onPromotionSubmit = async (values: PromotionFormValues) => {
-    if (!firestore) return;
-    setIsSubmitting(true);
-    
-    const promotionData = {
-        ...values,
-        createdAt: serverTimestamp(),
-        isActive: true, // by default
-    };
-
-    addDoc(collection(firestore, 'promotions'), promotionData)
-    .then(() => {
-        toast({
-            title: 'सफलता!',
-            description: 'नया प्रमोशन जोड़ दिया गया है।',
-        });
-        promotionForm.reset();
-        setIsPromotionDialogOpen(false);
-    })
-    .catch((error) => {
-        const contextualError = new FirestorePermissionError({
-            operation: 'create',
-            path: 'promotions',
-            requestResourceData: promotionData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-    })
-    .finally(() => {
-        setIsSubmitting(false);
-    });
-  };
-
 
   const loading = usersLoading || coursesLoading || enrollmentsLoading;
 
@@ -249,11 +197,10 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">अवलोकन</TabsTrigger>
           <TabsTrigger value="users">यूज़र्स</TabsTrigger>
           <TabsTrigger value="educators">एजुकेटर्स</TabsTrigger>
-          <TabsTrigger value="promotions">प्रमोशन</TabsTrigger>
           <TabsTrigger value="settings">ऐप सेटिंग्स</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
@@ -463,85 +410,6 @@ export default function AdminDashboard() {
             </Card>
         </TabsContent>
 
-        <TabsContent value="promotions">
-             <Card className="mt-6">
-                <CardHeader className="flex flex-row justify-between items-center">
-                    <div>
-                        <CardTitle>प्रमोशन</CardTitle>
-                        <CardDescription>होम स्क्रीन पर दिखने वाले प्रमोशन मैनेज करें।</CardDescription>
-                    </div>
-                     <Dialog open={isPromotionDialogOpen} onOpenChange={setIsPromotionDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button>
-                                <Megaphone className="mr-2 h-4 w-4" />
-                                नया प्रमोशन जोड़ें
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader><DialogTitle>नया प्रमोशन जोड़ें</DialogTitle></DialogHeader>
-                            <Form {...promotionForm}>
-                            <form onSubmit={promotionForm.handleSubmit(onPromotionSubmit)} className="space-y-4">
-                                <FormField control={promotionForm.control} name="name" render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>प्रमोशन का नाम</FormLabel>
-                                    <FormControl><Input placeholder="जैसे, दिवाली ऑफर" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                 <FormField control={promotionForm.control} name="link" render={({ field }) => (
-                                    <FormItem>
-                                    <FormLabel>लिंक</FormLabel>
-                                    <FormControl><Input placeholder="https://example.com/offer" {...field} /></FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}/>
-                                <Button type="submit" disabled={isSubmitting} className="w-full">
-                                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> जोड़ा जा रहा है...</> : 'प्रमोशन जोड़ें'}
-                                </Button>
-                            </form>
-                            </Form>
-                        </DialogContent>
-                    </Dialog>
-                </CardHeader>
-                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>नाम</TableHead>
-                                <TableHead>लिंक</TableHead>
-                                <TableHead>स्टेटस</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {promotionsLoading && <TableRow><TableCell colSpan={3} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
-                            {promotions?.map(promo => (
-                                <TableRow key={promo.id}>
-                                    <TableCell>{promo.name}</TableCell>
-                                    <TableCell className="font-mono text-xs">{promo.link}</TableCell>
-                                    <TableCell>
-                                        <Switch checked={promo.isActive} onCheckedChange={(checked) => {
-                                            if (!firestore) return;
-                                            const promoRef = doc(firestore, 'promotions', promo.id);
-                                            const data = { isActive: checked };
-                                            updateDoc(promoRef, data)
-                                            .catch(error => {
-                                                const contextualError = new FirestorePermissionError({
-                                                    operation: 'update',
-                                                    path: promoRef.path,
-                                                    requestResourceData: data,
-                                                });
-                                                errorEmitter.emit('permission-error', contextualError);
-                                            });
-                                        }} />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </TabsContent>
-
         <TabsContent value="settings">
           <AppSettings />
         </TabsContent>
@@ -636,6 +504,3 @@ function AppSettings() {
 }
 
     
-
-    
-

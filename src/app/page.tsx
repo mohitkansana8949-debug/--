@@ -75,12 +75,9 @@ export default function HomePage() {
     () => (firestore ? query(collection(firestore, 'educators'), orderBy('createdAt', 'desc')) : null),
     [firestore]
   );
-  const promotionsQuery = useMemoFirebase(
-    () => (firestore ? query(collection(firestore, 'promotions'), where('isActive', '==', true), orderBy('createdAt', 'desc')) : null),
-    [firestore]
-  );
+  
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
-  const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
+  
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -109,25 +106,7 @@ export default function HomePage() {
         <p className="text-muted-foreground">सीखने की अपनी यात्रा शुरू करें।</p>
       </div>
 
-      {promotionsLoading ? (
-         <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold animate-pulse">
-            <p>प्रमोशन लोड हो रहा है...</p>
-         </div>
-      ) : promotions && promotions.length > 0 ? (
-        <Carousel className="w-full" opts={{loop: true}} plugins={[require('embla-carousel-autoplay')({ delay: 3000 })]}>
-          <CarouselContent>
-             {promotions.map(promo => (
-              <CarouselItem key={promo.id}>
-                <Link href={promo.link} target="_blank" rel="noopener noreferrer">
-                  <div className="bg-yellow-400 text-black p-3 rounded-lg text-center font-semibold">
-                    <p>{promo.name}</p>
-                  </div>
-                </Link>
-              </CarouselItem>
-             ))}
-          </CarouselContent>
-        </Carousel>
-      ) : null }
+      
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card) => (
