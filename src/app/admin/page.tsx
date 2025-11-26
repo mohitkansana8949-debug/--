@@ -486,14 +486,14 @@ export default function AdminDashboard() {
                                     <FormLabel>प्रमोशन का नाम</FormLabel>
                                     <FormControl><Input placeholder="जैसे, दिवाली ऑफर" {...field} /></FormControl>
                                     <FormMessage />
-                                    </Item>
+                                    </FormItem>
                                 )}/>
                                  <FormField control={promotionForm.control} name="link" render={({ field }) => (
                                     <FormItem>
                                     <FormLabel>लिंक</FormLabel>
                                     <FormControl><Input placeholder="https://example.com/offer" {...field} /></FormControl>
                                     <FormMessage />
-                                    </Item>
+                                    </FormItem>
                                 )}/>
                                 <Button type="submit" disabled={isSubmitting} className="w-full">
                                     {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> जोड़ा जा रहा है...</> : 'प्रमोशन जोड़ें'}
@@ -638,3 +638,4 @@ function AppSettings() {
     
 
     
+
