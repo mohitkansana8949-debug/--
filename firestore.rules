@@ -27,13 +27,12 @@ service cloud.firestore {
     }
 
     match /courses/{courseId} {
-      allow read: if true;
+      allow read: if isSignedIn();
       allow write: if isAdmin();
     }
     
     match /courseEnrollments/{enrollmentId} {
-        allow get: if isOwner(resource.data.userId) || isAdmin();
-        allow list: if isAdmin();
+        allow read: if isSignedIn();
         allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
         allow update, delete: if isAdmin();
     }
@@ -44,12 +43,12 @@ service cloud.firestore {
     }
 
     match /settings/payment {
-        allow get: if true;
+        allow get: if isSignedIn();
         allow write: if isAdmin();
     }
 
     match /educators/{educatorId} {
-        allow get, list: if true;
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
 
