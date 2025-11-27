@@ -41,11 +41,6 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-// Helper function to remove undefined properties from an object
-const removeUndefined = (obj: any) => {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null && v !== ''));
-};
-
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -114,22 +109,22 @@ export default function CompleteProfilePage() {
         photoURL: photoURL || null,
       };
 
-      const cleanedProfileData = removeUndefined(profileData);
       const userRef = doc(firestore, 'users', user.uid);
 
-      await setDoc(
-        userRef,
-        cleanedProfileData,
-        { merge: true } // Merge to avoid overwriting existing fields like email
-      ).catch(error => {
-          const contextualError = new FirestorePermissionError({
+      // Use a try-catch for the Firestore operation itself to show specific errors
+      try {
+        await setDoc(userRef, profileData, { merge: true });
+      } catch (dbError) {
+        const contextualError = new FirestorePermissionError({
             operation: 'update',
             path: userRef.path,
-            requestResourceData: cleanedProfileData,
-          });
-          errorEmitter.emit('permission-error', contextualError);
-          throw error;
-      });
+            requestResourceData: profileData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        // Re-throw the original error to be caught by the outer catch block
+        throw dbError;
+      }
+      
 
       toast({
         title: 'प्रोफ़ाइल अपडेट हो गई',
@@ -140,6 +135,8 @@ export default function CompleteProfilePage() {
       console.error("Profile update error:", error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {
+        description = error.message;
+      } else if (error instanceof Error) {
         description = error.message;
       }
       toast({
