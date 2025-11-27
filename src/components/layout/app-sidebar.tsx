@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy } from "lucide-react";
+import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy, Youtube } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -29,34 +29,8 @@ export function AppSidebar() {
   const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
   const { isMobile, setOpenMobile } = useSidebar();
 
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user && firestore) {
-        if (user.email === 'Qukly@study.com') {
-            setIsAdmin(true);
-            return;
-        }
-        try {
-          const adminRef = doc(firestore, "roles_admin", user.uid);
-          const adminDoc = await getDoc(adminRef);
-          setIsAdmin(adminDoc.exists());
-        } catch (error) {
-          console.error("Error checking admin status:", error);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
-      }
-    };
-
-    if (!isUserLoading) {
-        checkAdminStatus();
-    }
-  }, [user, firestore, isUserLoading]);
 
   const handleLogout = async () => {
     try {
@@ -86,6 +60,7 @@ export function AppSidebar() {
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
+    { href: "/watch", label: "वीडियो देखें", icon: Youtube, tooltip: "Watch Video" },
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
@@ -143,7 +118,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          {isAdmin && adminNavItems.map((item) => (
+          {adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild

@@ -1,0 +1,196 @@
+
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { Loader, Youtube, Calendar as CalendarIcon, Trash2 } from 'lucide-react';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+const liveClassSchema = z.object({
+  youtubeVideoId: z.string().min(5, 'यूट्यूब वीडियो ID आवश्यक है।'),
+  teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
+  startTime: z.date({
+    required_error: "लाइव क्लास का समय आवश्यक है।",
+  }),
+});
+type LiveClassFormValues = z.infer<typeof liveClassSchema>;
+
+export default function ManageLiveClassPage() {
+  const { firestore } = useFirebase();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const liveClassesQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'liveClasses') : null),
+    [firestore]
+  );
+  const { data: liveClasses, isLoading: liveClassesLoading } = useCollection(liveClassesQuery);
+
+  const form = useForm<LiveClassFormValues>({
+    resolver: zodResolver(liveClassSchema),
+  });
+
+  const onSubmit = async (values: LiveClassFormValues) => {
+    if (!firestore) return;
+
+    setIsSubmitting(true);
+    const liveClassData = {
+      ...values,
+      startTime: Timestamp.fromDate(values.startTime),
+      createdAt: serverTimestamp(),
+    };
+
+    try {
+      const liveClassesCollection = collection(firestore, 'liveClasses');
+      await addDoc(liveClassesCollection, liveClassData);
+      toast({
+        title: 'सफलता!',
+        description: 'नई लाइव क्लास जोड़ दी गई है।',
+      });
+      form.reset();
+    } catch (error) {
+      console.error("Error adding live class: ", error);
+      const contextualError = new FirestorePermissionError({
+        operation: 'create',
+        path: 'liveClasses',
+        requestResourceData: liveClassData,
+      });
+      errorEmitter.emit('permission-error', contextualError);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>नई लाइव क्लास जोड़ें</CardTitle>
+          <CardDescription>यहां से यूट्यूब लाइव क्लास की जानकारी जोड़ें।</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="youtubeVideoId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>यूट्यूब वीडियो ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="जैसे, dQw4w9WgXcQ" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="teacherName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>टीचर का नाम</FormLabel>
+                    <FormControl>
+                      <Input placeholder="जैसे, मोहित सर" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="startTime"
+                render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>लाइव क्लास का समय</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>एक तारीख चुनें</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? (
+                  <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</>
+                ) : (
+                  'लाइव क्लास सेव करें'
+                )}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>शेड्यूल की गई लाइव क्लासेस</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {liveClassesLoading ? (
+             <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>
+          ) : (
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>टीचर</TableHead>
+                        <TableHead>वीडियो ID</TableHead>
+                        <TableHead>समय</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {liveClasses?.map(lc => (
+                        <TableRow key={lc.id}>
+                            <TableCell>{lc.teacherName}</TableCell>
+                            <TableCell className="font-mono">{lc.youtubeVideoId}</TableCell>
+                            <TableCell>{lc.startTime ? format(lc.startTime.toDate(), 'PPp') : 'N/A'}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

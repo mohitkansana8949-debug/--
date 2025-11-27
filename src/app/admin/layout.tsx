@@ -12,12 +12,15 @@ import {
   LayoutDashboard,
   Settings,
   FileText,
+  Youtube,
 } from 'lucide-react';
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
   { href: '/admin/courses', label: 'कोर्सेस', icon: BookOpen },
+  { href: '/admin/create-course', label: 'नया कोर्स', icon: FileText },
   { href: '/admin/content', label: 'कंटेंट', icon: FileText },
+  { href: '/admin/live-class', label: 'लाइव क्लास', icon: Youtube },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
