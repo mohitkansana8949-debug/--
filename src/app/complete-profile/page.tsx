@@ -30,6 +30,8 @@ import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
+
 
 const profileSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
@@ -107,19 +109,27 @@ export default function CompleteProfilePage() {
       // Prepare data for Firestore, ensuring no undefined values
       const profileData = {
         name: data.name,
-        mobile: data.mobile,
-        age: data.age,
-        photoURL: photoURL,
+        mobile: data.mobile || null,
+        age: data.age || null,
+        photoURL: photoURL || null,
       };
 
       const cleanedProfileData = removeUndefined(profileData);
+      const userRef = doc(firestore, 'users', user.uid);
 
-      // Update Firestore document
       await setDoc(
-        doc(firestore, 'users', user.uid),
+        userRef,
         cleanedProfileData,
         { merge: true } // Merge to avoid overwriting existing fields like email
-      );
+      ).catch(error => {
+          const contextualError = new FirestorePermissionError({
+            operation: 'update',
+            path: userRef.path,
+            requestResourceData: cleanedProfileData,
+          });
+          errorEmitter.emit('permission-error', contextualError);
+          throw error;
+      });
 
       toast({
         title: 'प्रोफ़ाइल अपडेट हो गई',
@@ -127,7 +137,7 @@ export default function CompleteProfilePage() {
       });
       router.push('/');
     } catch (error) {
-      console.error(error);
+      console.error("Profile update error:", error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {
         description = error.message;
