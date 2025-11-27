@@ -106,13 +106,15 @@ export default function MyLibraryPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {enrolledCourses.map(course => (
                         <Card key={course.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
-                            <Image 
+                           {course.thumbnailUrl && (
+                             <Image 
                                 src={course.thumbnailUrl} 
                                 alt={course.name} 
                                 width={600}
                                 height={400}
                                 className="rounded-t-lg object-cover w-full h-48"
                             />
+                           )}
                             <CardHeader>
                                 <CardTitle>{course.name}</CardTitle>
                                 <CardDescription className="line-clamp-2">{course.description}</CardDescription>

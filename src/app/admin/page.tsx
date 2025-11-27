@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -185,7 +185,7 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
       return (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center p-8">
               <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
               <h1 className="text-2xl font-bold">पहुंच प्रतिबंधित है</h1>
               <p className="text-muted-foreground">आपके पास इस पेज को देखने की अनुमति नहीं है।</p>
@@ -224,7 +224,7 @@ export default function AdminDashboard() {
         <TabsContent value="courses">
             <Card className="mt-6">
                 <CardHeader><CardTitle>सभी कोर्सेस</CardTitle></CardHeader>
-                <CardContent>{coursesLoading && <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>}<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{courses?.map(course => (<Card key={course.id}><Image src={course.thumbnailUrl} alt={course.name} width={400} height={200} className="rounded-t-lg object-cover w-full h-32"/><CardHeader><CardTitle className="text-lg line-clamp-1">{course.name}</CardTitle></CardHeader><CardContent><Button asChild className="w-full"><Link href={`/courses/${course.id}`}>देखें</Link></Button></CardContent></Card>))}</div></CardContent>
+                <CardContent>{coursesLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{courses?.map(course => (<Card key={course.id}>{course.thumbnailUrl && <Image src={course.thumbnailUrl} alt={course.name} width={400} height={200} className="rounded-t-lg object-cover w-full h-32"/>}<CardHeader><CardTitle className="text-lg line-clamp-1">{course.name}</CardTitle></CardHeader><CardContent><Button asChild className="w-full"><Link href={`/courses/${course.id}`}>देखें</Link></Button></CardContent></Card>))}</div>}</CardContent>
             </Card>
         </TabsContent>
         
@@ -292,7 +292,7 @@ export default function AdminDashboard() {
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
-                 <CardContent>{educatorsLoading && <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>}<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center"><Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/><CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent></Card>))}</div></CardContent>
+                 <CardContent>{educatorsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center"><Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/><CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent></Card>))}</div>}</CardContent>
             </Card>
         </TabsContent>
         
