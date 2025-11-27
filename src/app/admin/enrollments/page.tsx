@@ -10,11 +10,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { useState } from 'react';
 
 
 export default function AdminEnrollmentsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const enrollmentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courseEnrollments') : null), [firestore]);
   const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
@@ -22,15 +25,25 @@ export default function AdminEnrollmentsPage() {
   const handleEnrollmentStatusChange = async (enrollmentId: string, status: 'approved' | 'rejected') => {
     if (!firestore) return;
 
+    setUpdatingId(enrollmentId);
     const enrollmentRef = doc(firestore, 'courseEnrollments', enrollmentId);
-    try {
-        const updateData = { status: status };
-        await updateDoc(enrollmentRef, updateData);
+    const updateData = { status: status };
+
+    updateDoc(enrollmentRef, updateData)
+      .then(() => {
         toast({ title: 'सफलता!', description: `एनरोलमेंट को ${status} के रूप में अपडेट कर दिया गया है।`});
-    } catch (error) {
-        console.error("Enrollment update error:", error);
-        toast({ variant: 'destructive', title: 'त्रुटि', description: 'एनरोलमेंट स्थिति को अपडेट करने में विफल।'});
-    }
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          operation: 'update',
+          path: enrollmentRef.path,
+          requestResourceData: updateData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      })
+      .finally(() => {
+        setUpdatingId(null);
+      });
   }
 
   const getStatusBadge = (status: string) => {
@@ -57,8 +70,12 @@ export default function AdminEnrollmentsPage() {
                             <TableCell className="font-mono text-xs">{enrollment.courseId}</TableCell>
                             <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
                             <TableCell className="space-x-2">
-                                {enrollment.status !== 'approved' && <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')}>Approve</Button>}
-                                {enrollment.status !== 'rejected' && <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')}>Reject</Button>}
+                                <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id || enrollment.status === 'approved'}>
+                                    {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Approve'}
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')} disabled={updatingId === enrollment.id || enrollment.status === 'rejected'}>
+                                     {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Reject'}
+                                </Button>
                             </TableCell>
                         </TableRow>
                     ))}
