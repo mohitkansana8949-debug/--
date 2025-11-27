@@ -44,13 +44,17 @@ const getColorForId = (id: string) => {
 export function AppHeader() {
   const pathname = usePathname();
 
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile' || pathname.includes('/payment')) {
+  const noHeaderPaths = ['/login', '/signup', '/complete-profile', '/admin/create-course'];
+  const isPaymentPath = pathname.includes('/payment');
+
+  if (noHeaderPaths.includes(pathname) || isPaymentPath) {
     return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
          <ThemeToggle />
        </header>
     );
   }
+
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">

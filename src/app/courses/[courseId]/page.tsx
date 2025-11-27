@@ -37,13 +37,14 @@ export default function CourseDetailPage() {
         <div className="container mx-auto p-4">
             <Card>
                 {course.thumbnailUrl && (
-                    <Image 
-                        src={course.thumbnailUrl}
-                        alt={course.name}
-                        width={1200}
-                        height={400}
-                        className="rounded-t-lg object-cover w-full h-64"
-                    />
+                    <div className="w-full aspect-video relative">
+                        <Image 
+                            src={course.thumbnailUrl}
+                            alt={course.name}
+                            fill
+                            className="rounded-t-lg object-cover"
+                        />
+                    </div>
                 )}
                 <CardHeader>
                     <CardTitle className="text-3xl">{course.name}</CardTitle>
@@ -63,5 +64,7 @@ export default function CourseDetailPage() {
     );
 }
 
+
+    
 
     

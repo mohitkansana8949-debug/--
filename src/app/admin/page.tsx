@@ -1,12 +1,13 @@
 
 'use client';
 
-import { useState, ChangeEvent, useMemo } from 'react';
-import { useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, setDoc, updateDoc, query, orderBy, where } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Users,
   BookOpen,
@@ -15,45 +16,24 @@ import {
   Loader,
   Settings,
   UserPlus,
-  Megaphone,
+  CheckCircle,
+  XCircle,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from "@/components/ui/label";
-import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { setDoc } from 'firebase/firestore';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
-
-const courseSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().min(1, 'Description is required'),
-  price: z.coerce.number().min(0, 'Price must be a positive number'),
-  thumbnailUrl: z.string().url('Must be a valid URL'),
-  isFree: z.boolean().default(false),
-  content: z.string().optional(),
-});
-type CourseFormValues = z.infer<typeof courseSchema>;
+import { Badge } from '@/components/ui/badge';
 
 const educatorSchema = z.object({
     name: z.string().min(1, 'नाम आवश्यक है'),
@@ -66,7 +46,6 @@ export default function AdminDashboard() {
   const { firestore, storage } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCourseDialogOpen, setIsCourseDialogOpen] = useState(false);
   const [isEducatorDialogOpen, setIsEducatorDialogOpen] = useState(false);
   const [educatorPhoto, setEducatorPhoto] = useState<File | null>(null);
 
@@ -82,24 +61,15 @@ export default function AdminDashboard() {
     () => (firestore ? collection(firestore, 'courseEnrollments') : null),
     [firestore]
   );
+  const educatorsQuery = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'educators') : null),
+    [firestore]
+  );
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
-  const { data: courses, isLoading: coursesLoading } =
-    useCollection(coursesQuery);
-  const { data: enrollments, isLoading: enrollmentsLoading } =
-    useCollection(enrollmentsQuery);
-
-  const courseForm = useForm<CourseFormValues>({
-    resolver: zodResolver(courseSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-      price: 0,
-      thumbnailUrl: '',
-      isFree: false,
-      content: '',
-    },
-  });
+  const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
+  const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
+  const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
 
   const educatorForm = useForm<EducatorFormValues>({
       resolver: zodResolver(educatorSchema),
@@ -108,35 +78,6 @@ export default function AdminDashboard() {
           experience: '',
       },
   });
-  
-
-  const onCourseSubmit = async (values: CourseFormValues) => {
-    if (!firestore) return;
-    setIsSubmitting(true);
-    
-    const courseData = { ...values, createdAt: serverTimestamp() };
-
-    addDoc(collection(firestore, 'courses'), courseData)
-    .then(() => {
-        toast({
-            title: 'सफलता!',
-            description: 'नया कोर्स बना दिया गया है।',
-        });
-        courseForm.reset();
-        setIsCourseDialogOpen(false);
-    })
-    .catch((error) => {
-        const contextualError = new FirestorePermissionError({
-            operation: 'create',
-            path: 'courses',
-            requestResourceData: courseData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-    })
-    .finally(() => {
-        setIsSubmitting(false);
-    });
-  };
 
   const onEducatorSubmit = async (values: EducatorFormValues) => {
       if (!firestore || !storage) return;
@@ -163,7 +104,7 @@ export default function AdminDashboard() {
             toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});
             educatorForm.reset();
             setEducatorPhoto(null);
-            setIsEducatorDialogOpen(false);
+setIsEducatorDialogOpen(false);
         })
         .catch(error => {
              const contextualError = new FirestorePermissionError({
@@ -184,8 +125,38 @@ export default function AdminDashboard() {
       }
   };
 
+  const handleEnrollmentStatusChange = async (enrollmentId: string, status: 'approved' | 'rejected') => {
+    if (!firestore) return;
 
-  const loading = usersLoading || coursesLoading || enrollmentsLoading;
+    const enrollmentRef = doc(firestore, 'courseEnrollments', enrollmentId);
+    try {
+        await updateDoc(enrollmentRef, {
+            status: status,
+            ...(status === 'approved' && { adminApproval: true }),
+            ...(status === 'rejected' && { adminApproval: false }),
+        });
+        toast({ title: 'सफलता!', description: `एनरोलमेंट को ${status} के रूप में अपडेट कर दिया गया है।`});
+    } catch (error) {
+        console.error("Enrollment update error:", error);
+        toast({ variant: 'destructive', title: 'त्रुटि', description: 'एनरोलमेंट स्थिति को अपडेट करने में विफल।'});
+    }
+  }
+
+
+  const loading = usersLoading || coursesLoading || enrollmentsLoading || educatorsLoading;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+        case 'approved':
+            return <Badge variant="success"><CheckCircle className="mr-1 h-3 w-3" />Approved</Badge>;
+        case 'pending':
+            return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" />Pending</Badge>;
+        case 'rejected':
+            return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" />Rejected</Badge>;
+        default:
+            return <Badge>{status}</Badge>;
+    }
+  }
 
   return (
     <div className="container mx-auto p-4">
@@ -197,11 +168,12 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview">अवलोकन</TabsTrigger>
+          <TabsTrigger value="courses">कोर्सेस</TabsTrigger>
+          <TabsTrigger value="enrollments">एनरोलमेंट्स</TabsTrigger>
           <TabsTrigger value="users">यूज़र्स</TabsTrigger>
           <TabsTrigger value="educators">एजुकेटर्स</TabsTrigger>
-          <TabsTrigger value="settings">ऐप सेटिंग्स</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
@@ -256,79 +228,80 @@ export default function AdminDashboard() {
                 </CardContent>
                 </Card>
             </div>
-             <div className="mt-8">
-                 <Dialog open={isCourseDialogOpen} onOpenChange={setIsCourseDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
+             <div className="mt-8 flex gap-4">
+                <Button asChild>
+                    <Link href="/admin/create-course">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         नया कोर्स बनाएं
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                        <DialogTitle>नया कोर्स बनाएं</DialogTitle>
-                        </DialogHeader>
-                        <Form {...courseForm}>
-                        <form onSubmit={courseForm.handleSubmit(onCourseSubmit)} className="space-y-4">
-                            <FormField control={courseForm.control} name="name" render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>कोर्स का नाम</FormLabel>
-                                <FormControl><Input placeholder="जैसे, प्रोग्रामिंग का परिचय" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={courseForm.control} name="description" render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>विवरण</FormLabel>
-                                <FormControl><Textarea placeholder="कोर्स का संक्षिप्त सारांश" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={courseForm.control} name="thumbnailUrl" render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>थंबनेल URL</FormLabel>
-                                <FormControl><Input placeholder="https://picsum.photos/seed/..." {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={courseForm.control} name="content" render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>कंटेंट</FormLabel>
-                                <FormControl><Textarea placeholder="कोर्स कंटेंट (जैसे, वीडियो लिंक, टेक्स्ट)" {...field} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={courseForm.control} name="price" render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>कीमत</FormLabel>
-                                <FormControl><Input type="number" {...field} disabled={courseForm.watch('isFree')} /></FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <FormField control={courseForm.control} name="isFree" render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5"><FormLabel>फ्री कोर्स</FormLabel></div>
-                                <FormControl>
-                                    <Switch
-                                    checked={field.value}
-                                    onCheckedChange={(checked) => {
-                                        field.onChange(checked);
-                                        if (checked) {
-                                            courseForm.setValue('price', 0);
-                                        }
-                                    }}
-                                    />
-                                </FormControl>
-                                </FormItem>
-                            )}/>
-                            <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? (<><Loader className="mr-2 h-4 w-4 animate-spin" /> बनाया जा रहा है...</>) : ('कोर्स बनाएं')}
-                            </Button>
-                        </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                    </Link>
+                </Button>
+                <Button asChild variant="outline">
+                   <Link href="/admin/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        ऐप सेटिंग्स
+                   </Link>
+                </Button>
             </div>
+        </TabsContent>
+        
+        <TabsContent value="courses">
+            <Card className="mt-6">
+                <CardHeader>
+                    <CardTitle>सभी कोर्सेस</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     {coursesLoading && <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>}
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {courses?.map(course => (
+                            <Card key={course.id}>
+                                <Image src={course.thumbnailUrl} alt={course.name} width={400} height={200} className="rounded-t-lg object-cover w-full h-32"/>
+                                <CardHeader>
+                                    <CardTitle className="text-lg line-clamp-1">{course.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button asChild className="w-full">
+                                        <Link href={`/courses/${course.id}`}>देखें</Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ))}
+                     </div>
+                </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="enrollments">
+            <Card className="mt-6">
+                <CardHeader><CardTitle>सभी एनरोलमेंट्स</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Enrollment ID</TableHead>
+                                <TableHead>User ID</TableHead>
+                                <TableHead>Course ID</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {enrollmentsLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
+                            {enrollments?.map(enrollment => (
+                                <TableRow key={enrollment.id}>
+                                    <TableCell className="font-mono text-xs">{enrollment.id}</TableCell>
+                                    <TableCell className="font-mono text-xs">{enrollment.userId}</TableCell>
+                                    <TableCell className="font-mono text-xs">{enrollment.courseId}</TableCell>
+                                    <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
+                                    <TableCell className="space-x-2">
+                                        {enrollment.status !== 'approved' && <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')}>Approve</Button>}
+                                        {enrollment.status !== 'rejected' && <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')}>Reject</Button>}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </TabsContent>
 
         <TabsContent value="users">
@@ -405,102 +378,28 @@ export default function AdminDashboard() {
                     </Dialog>
                 </CardHeader>
                  <CardContent>
-                    {/* List educators here */}
+                     {educatorsLoading && <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>}
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {educators?.map(educator => (
+                            <Card key={educator.id} className="text-center">
+                                <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/>
+                                <CardHeader className="p-4">
+                                    <CardTitle className="text-base">{educator.name}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <p className="text-sm text-muted-foreground">{educator.experience}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                     </div>
                 </CardContent>
             </Card>
-        </TabsContent>
-
-        <TabsContent value="settings">
-          <AppSettings />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-
-function AppSettings() {
-    const { firestore, storage } = useFirebase();
-    const { toast } = useToast();
-    const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
-    const [mobileNumber, setMobileNumber] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
     
-    const settingsDocRef = useMemoFirebase(
-      () => (firestore ? doc(firestore, 'settings', 'payment') : null),
-      [firestore]
-    );
-
-    const handleSettingsUpdate = async () => {
-        if (!firestore || !storage || !settingsDocRef) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Firebase not configured.'});
-            return;
-        }
-        if (!qrCodeFile && !mobileNumber) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a QR code or a mobile number.'});
-            return;
-        }
-
-        setIsSubmitting(true);
-        try {
-            const settingsUpdate: any = {};
-            if (mobileNumber) {
-                settingsUpdate.mobileNumber = mobileNumber;
-            }
-
-            if (qrCodeFile) {
-                const storageRef = ref(storage, 'app_settings/payment_qr_code.png');
-                await uploadBytes(storageRef, qrCodeFile);
-                const qrCodeUrl = await getDownloadURL(storageRef);
-                settingsUpdate.qrCodeUrl = qrCodeUrl;
-            }
-
-            setDoc(settingsDocRef, settingsUpdate, { merge: true })
-            .then(() => {
-                 toast({ title: 'Success!', description: 'Payment settings have been updated.'});
-                 setQrCodeFile(null);
-            })
-            .catch(error => {
-                const contextualError = new FirestorePermissionError({
-                    operation: 'update',
-                    path: settingsDocRef.path,
-                    requestResourceData: settingsUpdate,
-                });
-                errorEmitter.emit('permission-error', contextualError);
-            })
-            .finally(() => {
-                setIsSubmitting(false);
-            });
-        } catch (error) {
-            console.error('Error updating settings:', error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update settings.'});
-            setIsSubmitting(false);
-        }
-    }
-
-    return (
-        <Card className="mt-6">
-            <CardHeader>
-                <CardTitle>पेमेंट सेटिंग्स</CardTitle>
-                <CardDescription>पेमेंट के लिए QR कोड और मोबाइल नंबर सेट करें।</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="qr-code-upload">पेमेंट QR कोड</Label>
-                    <Input id="qr-code-upload" type="file" accept="image/png, image/jpeg" onChange={(e: ChangeEvent<HTMLInputElement>) => setQrCodeFile(e.target.files ? e.target.files[0] : null)} />
-                    <p className="text-sm text-muted-foreground">यहां अपना पेमेंट QR कोड अपलोड करें।</p>
-                </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="mobile-number">पेमेंट मोबाइल नंबर</Label>
-                    <Input id="mobile-number" type="tel" placeholder="जैसे, 9876543210" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
-                    <p className="text-sm text-muted-foreground">यहां अपना पेमेंट के लिए मोबाइल नंबर दर्ज करें।</p>
-                </div>
-                <Button onClick={handleSettingsUpdate} disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> अपडेट हो रहा है...</> : 'सेटिंग्स अपडेट करें'}
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
 
     

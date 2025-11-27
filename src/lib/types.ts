@@ -1,3 +1,6 @@
+
+import { Timestamp } from "firebase/firestore";
+
 export type Flashcard = {
   id: string;
   question: string;
@@ -35,8 +38,11 @@ export interface CourseEnrollment {
   id: string;
   userId: string;
   courseId: string;
-  enrollmentDate: string; // ISO string for date
+  enrollmentDate: Timestamp;
   paymentMethod: string;
   paymentTransactionId: string;
   adminApproval: boolean;
+  status: 'pending' | 'approved' | 'rejected';
 }
+
+    

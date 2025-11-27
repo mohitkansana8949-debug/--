@@ -83,7 +83,8 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
-  if (pathname === '/login' || pathname === '/signup' || pathname === '/complete-profile' || pathname.includes('/payment')) {
+  const noSidebarPaths = ['/login', '/signup', '/complete-profile', '/admin/create-course'];
+  if (noSidebarPaths.includes(pathname) || pathname.includes('/payment')) {
     return null;
   }
   
