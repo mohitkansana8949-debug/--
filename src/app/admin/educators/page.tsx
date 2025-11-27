@@ -35,29 +35,34 @@ export default function AdminEducatorsPage() {
 
     const educatorForm = useForm<EducatorFormValues>({ resolver: zodResolver(educatorSchema), defaultValues: { name: '', experience: '', imageUrl: '' } });
 
-    const onEducatorSubmit = async (values: EducatorFormValues) => {
+    const onEducatorSubmit = (values: EducatorFormValues) => {
       if (!firestore) return;
 
       setIsSubmitting(true);
-      try {
-        const docRef = doc(collection(firestore, 'educators'));
-        
-        const educatorData = { 
-            ...values, 
-            createdAt: serverTimestamp() 
-        };
+      const educatorsCollection = collection(firestore, 'educators');
+      const docRef = doc(educatorsCollection);
+      const educatorData = { 
+          ...values, 
+          createdAt: serverTimestamp() 
+      };
 
-        await setDoc(docRef, educatorData);
-        toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});
-        educatorForm.reset();
-        setIsEducatorDialogOpen(false);
-      } catch (error: any) {
-        console.error("Educator creation error:", error);
-        const contextualError = new FirestorePermissionError({ operation: 'create', path: 'educators', requestResourceData: values });
-        errorEmitter.emit('permission-error', contextualError);
-      } finally {
-        setIsSubmitting(false);
-      }
+      setDoc(docRef, educatorData)
+        .then(() => {
+          toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});
+          educatorForm.reset();
+          setIsEducatorDialogOpen(false);
+        })
+        .catch((error) => {
+          const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: docRef.path,
+            requestResourceData: educatorData
+          });
+          errorEmitter.emit('permission-error', contextualError);
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
     };
 
     return (
