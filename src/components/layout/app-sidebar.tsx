@@ -95,7 +95,7 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
-  const noSidebarPaths = ['/login', '/signup', '/complete-profile'];
+  const noSidebarPaths = ['/login', '/signup'];
   if (noSidebarPaths.includes(pathname)) {
     return null;
   }

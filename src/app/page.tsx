@@ -3,7 +3,7 @@
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   BookOpen,
   Gift,
@@ -18,7 +18,8 @@ import {
   Home,
   Bell,
   Rss,
-  ClipboardList
+  ClipboardList,
+  Users
 } from 'lucide-react';
 import {
   Carousel,
@@ -60,7 +61,11 @@ export default function HomePage() {
     [firestore]
   );
   
+  const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
+
   const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
+  const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
+
 
   if (isUserLoading) {
     return (
@@ -121,17 +126,22 @@ export default function HomePage() {
       </div>
       
        <div>
-        <h2 className="text-2xl font-bold mb-4">Main Course</h2>
-         <Card className="overflow-hidden">
-            <Image
-                src="https://picsum.photos/seed/main-course/800/400"
-                alt="Main Course"
-                width={800}
-                height={400}
-                className="w-full object-cover"
-                data-ai-hint="online course banner"
-            />
-        </Card>
+        <h2 className="text-2xl font-bold mb-4 flex items-center"><Users className="mr-2 h-6 w-6" /> हमारे एजुकेटर्स</h2>
+         {educatorsLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (educators && educators.length > 0) ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {educators.map(educator => (
+                <Card key={educator.id} className="text-center overflow-hidden transition-transform hover:scale-105">
+                  {educator.imageUrl && <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>}
+                  <CardHeader className="p-2">
+                      <CardTitle className="text-sm font-semibold truncate">{educator.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 pt-0">
+                      <p className="text-xs text-muted-foreground truncate">{educator.experience}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+         ) : <p className="text-muted-foreground">अभी कोई एजुकेटर नहीं है।</p>}
        </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t p-2 flex justify-around md:hidden">
