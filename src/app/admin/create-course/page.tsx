@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, ChangeEvent } from 'react';
+import { useState, ChangeEvent, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,6 +37,7 @@ export default function CreateCoursePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const courseForm = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
@@ -86,7 +87,7 @@ export default function CreateCoursePage() {
       });
       router.push('/admin');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Course creation error:", error);
       const contextualError = new FirestorePermissionError({
         operation: 'create',
@@ -94,7 +95,7 @@ export default function CreateCoursePage() {
         requestResourceData: values,
       });
       errorEmitter.emit('permission-error', contextualError);
-      toast({ variant: 'destructive', title: 'त्रुटि', description: 'कोर्स बनाने में विफल।'});
+      toast({ variant: 'destructive', title: 'त्रुटि', description: error.message || 'कोर्स बनाने में विफल।'});
     } finally {
       setIsSubmitting(false);
     }
@@ -118,18 +119,29 @@ export default function CreateCoursePage() {
         <CardContent>
           <Form {...courseForm}>
             <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
-                <FormItem>
-                    <FormLabel>थंबनेल इमेज</FormLabel>
-                    <FormControl>
-                        <Input type="file" accept="image/*" onChange={handleFileChange} />
-                    </FormControl>
-                    {thumbnailPreview && (
-                        <div className="mt-4 w-full aspect-video relative">
-                            <Image src={thumbnailPreview} alt="Thumbnail Preview" layout="fill" objectFit="cover" className="rounded-md border" />
-                        </div>
+                <FormField
+                    control={courseForm.control}
+                    name="name" // A dummy name for the form field, not used in schema
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>थंबनेल इमेज (गैलरी से चुनें)</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    onChange={handleFileChange} 
+                                    ref={fileInputRef}
+                                />
+                            </FormControl>
+                            {thumbnailPreview && (
+                                <div className="mt-4 w-full aspect-video relative">
+                                    <Image src={thumbnailPreview} alt="Thumbnail Preview" layout="fill" objectFit="cover" className="rounded-md border" />
+                                </div>
+                            )}
+                            <FormMessage />
+                        </FormItem>
                     )}
-                    <FormMessage />
-                </FormItem>
+                />
 
               <FormField control={courseForm.control} name="name" render={({ field }) => (
                 <FormItem>
@@ -190,5 +202,3 @@ export default function CreateCoursePage() {
     </div>
   );
 }
-
-    
