@@ -18,7 +18,11 @@ import {
   Loader,
   Megaphone,
   ShoppingBag,
-  Star
+  Star,
+  Home,
+  Bell,
+  Rss,
+  ClipboardList
 } from 'lucide-react';
 import {
   Carousel,
@@ -41,6 +45,15 @@ const featureCards = [
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
   { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
 ];
+
+const footerItems = [
+    { name: 'Home', icon: Home },
+    { name: 'Library', icon: Library },
+    { name: 'Orders', icon: ClipboardList },
+    { name: 'Feed', icon: Rss },
+    { name: 'Alerts', icon: Bell },
+];
+
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -73,7 +86,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="p-4 space-y-8">
+    <div className="p-4 space-y-8 pb-20 md:pb-8">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">
           नमस्ते {user.displayName || 'स्टूडेंट'}!
@@ -108,7 +121,7 @@ export default function HomePage() {
           </Carousel>
         ) : null }
 
-      <div className="grid grid-cols-3 gap-2 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {featureCards.map((card) => (
           <Link href={card.href} key={card.title}>
             <Card
@@ -136,12 +149,15 @@ export default function HomePage() {
        </div>
 
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t p-2 flex justify-around md:hidden">
-        {['Home', 'Library', 'Orders', 'Feed', 'Alerts'].map(item => (
-            <div key={item} className="flex flex-col items-center text-xs text-muted-foreground">
-                <Home className="h-5 w-5 mb-1"/> 
-                <span>{item}</span>
-            </div>
-        ))}
+        {footerItems.map(item => {
+            const Icon = item.icon;
+            return (
+                <div key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center">
+                    <Icon className="h-5 w-5 mb-1"/> 
+                    <span>{item.name}</span>
+                </div>
+            )
+        })}
       </footer>
 
     </div>
