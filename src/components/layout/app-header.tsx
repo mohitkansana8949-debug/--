@@ -20,7 +20,7 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useMemo, useState, useEffect } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 
 
@@ -46,13 +46,19 @@ const getColorForId = (id: string) => {
 
 export function AppHeader() {
   const pathname = usePathname();
+  const { user } = useUser();
 
+  // Paths that should not have the full header
   const noHeaderPaths = ['/login', '/signup', '/complete-profile'];
-  const isPaymentPath = pathname.includes('/payment');
-  const isCreateCoursePath = pathname.includes('/admin/create-course');
 
-  if (noHeaderPaths.includes(pathname) || isPaymentPath || isCreateCoursePath) {
-    return (
+  // Don't render header at all on certain paths
+  if (noHeaderPaths.includes(pathname)) {
+    return null;
+  }
+  
+  // A simplified header for paths where user is not fully logged in or in special sections
+  if (!user) {
+     return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
          <ThemeToggle />
        </header>
@@ -90,7 +96,7 @@ function ThemeToggle() {
 
 function UserMenu() {
     const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
+    const { firestore } = useFirebase();
     const auth = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -115,15 +121,13 @@ function UserMenu() {
                 } finally {
                     setIsAdminLoading(false);
                 }
-            } else {
+            } else if (!isUserLoading) {
                 setIsAdmin(false);
                 setIsAdminLoading(false);
             }
         };
 
-        if (!isUserLoading) {
-            checkAdminStatus();
-        }
+        checkAdminStatus();
     }, [user, firestore, isUserLoading]);
     
     const avatarColor = useMemo(() => user ? getColorForId(user.uid) : 'bg-muted', [user]);
@@ -203,5 +207,3 @@ function UserMenu() {
         </DropdownMenu>
     );
 }
-
-    

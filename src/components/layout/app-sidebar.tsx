@@ -20,13 +20,13 @@ import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { useFirebase } from "@/firebase";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
+  const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -95,8 +95,8 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
-  const noSidebarPaths = ['/login', '/signup', '/complete-profile', '/admin/create-course'];
-  if (noSidebarPaths.includes(pathname) || pathname.includes('/payment')) {
+  const noSidebarPaths = ['/login', '/signup', '/complete-profile'];
+  if (noSidebarPaths.includes(pathname)) {
     return null;
   }
   
@@ -143,7 +143,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          {adminNavItems.map((item) => (
+          {isAdmin && adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
@@ -206,5 +206,3 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
-
-    
