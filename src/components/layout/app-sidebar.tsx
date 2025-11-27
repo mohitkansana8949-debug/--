@@ -71,7 +71,9 @@ export function AppSidebar() {
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
   const noSidebarPaths = ['/login', '/signup'];
-  if (noSidebarPaths.includes(pathname)) {
+  const fullScreenPaths = ['/live-classes/'];
+
+  if (noSidebarPaths.includes(pathname) || (pathname && fullScreenPaths.some(p => pathname.startsWith(p)))) {
     return null;
   }
   

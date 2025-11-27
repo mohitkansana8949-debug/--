@@ -7,15 +7,39 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { useToast } from '@/hooks/use-toast';
+
+
+// Function to extract YouTube Video ID from various URL formats
+const getYouTubeID = (url: string) => {
+    const arr = url.split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
+    return (arr[2] !== undefined) ? arr[2].split(/[^0-9a-z_\-]/i)[0] : arr[0];
+}
+
 
 export default function WatchPage() {
     const searchParams = useSearchParams();
-    const initialVideoId = searchParams.get('v') || '';
-    const [videoId, setVideoId] = useState(initialVideoId);
-    const [inputVideoId, setInputVideoId] = useState(initialVideoId);
+    const { toast } = useToast();
+    
+    // Check for a video URL from the query params
+    const initialVideoUrl = searchParams.get('v') || '';
+    
+    // State for the currently playing video ID
+    const [videoId, setVideoId] = useState(initialVideoUrl ? getYouTubeID(initialVideoUrl) : '');
+    // State for the input field
+    const [inputUrl, setInputUrl] = useState(initialVideoUrl);
 
     const handleWatchClick = () => {
-        setVideoId(inputVideoId);
+        if (!inputUrl.trim()) {
+            toast({ variant: 'destructive', title: 'URL खाली है', description: 'कृपया एक यूट्यूब URL दर्ज करें।'});
+            return;
+        }
+        const newVideoId = getYouTubeID(inputUrl);
+        if (newVideoId) {
+            setVideoId(newVideoId);
+        } else {
+            toast({ variant: 'destructive', title: 'गलत URL', description: 'इस URL से वीडियो ID नहीं मिल सका। कृपया सही यूट्यूब URL दर्ज करें।'});
+        }
     };
 
     // Construct the YouTube embed URL for privacy-enhanced mode and without related videos
@@ -26,15 +50,15 @@ export default function WatchPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>वीडियो देखें</CardTitle>
-                    <CardDescription>यूट्यूब वीडियो ID दर्ज करें और देखें।</CardDescription>
+                    <CardDescription>यूट्यूब वीडियो का लिंक दर्ज करें और देखें।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex w-full items-center space-x-2">
                         <Input
                             type="text"
-                            placeholder="यूट्यूब वीडियो ID (जैसे, dQw4w9WgXcQ)"
-                            value={inputVideoId}
-                            onChange={(e) => setInputVideoId(e.target.value)}
+                            placeholder="यूट्यूब वीडियो URL (जैसे, https://www.youtube.com/watch?v=...)"
+                            value={inputUrl}
+                            onChange={(e) => setInputUrl(e.target.value)}
                         />
                         <Button onClick={handleWatchClick}>देखें</Button>
                     </div>

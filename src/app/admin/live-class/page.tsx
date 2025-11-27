@@ -20,8 +20,14 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+// Function to extract YouTube Video ID from URL
+const getYouTubeID = (url: string) => {
+    const arr = url.split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
+    return (arr[2] !== undefined) ? arr[2].split(/[^0-9a-z_\-]/i)[0] : arr[0];
+}
+
 const liveClassSchema = z.object({
-  youtubeVideoId: z.string().min(5, 'यूट्यूब वीडियो ID आवश्यक है।'),
+  youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),
   teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
   startTime: z.date({
     required_error: "लाइव क्लास का समय आवश्यक है।",
@@ -42,15 +48,30 @@ export default function ManageLiveClassPage() {
 
   const form = useForm<LiveClassFormValues>({
     resolver: zodResolver(liveClassSchema),
+    defaultValues: {
+      youtubeUrl: '',
+      teacherName: '',
+    }
   });
 
   const onSubmit = (values: LiveClassFormValues) => {
     if (!firestore) return;
 
+    const videoId = getYouTubeID(values.youtubeUrl);
+    if (!videoId) {
+        toast({
+            variant: 'destructive',
+            title: 'गलत URL',
+            description: 'इस URL से वीडियो ID नहीं मिल सका। कृपया सही यूट्यूब URL दर्ज करें।'
+        });
+        return;
+    }
+
     setIsSubmitting(true);
     const liveClassesCollection = collection(firestore, 'liveClasses');
     const liveClassData = {
-      ...values,
+      youtubeVideoId: videoId,
+      teacherName: values.teacherName,
       startTime: Timestamp.fromDate(values.startTime),
       createdAt: serverTimestamp(),
     };
@@ -88,12 +109,12 @@ export default function ManageLiveClassPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="youtubeVideoId"
+                name="youtubeUrl"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>यूट्यूब वीडियो ID</FormLabel>
+                    <FormLabel>यूट्यूब वीडियो URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="जैसे, dQw4w9WgXcQ" {...field} />
+                      <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

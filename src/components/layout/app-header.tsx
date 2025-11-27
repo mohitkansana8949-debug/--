@@ -50,9 +50,10 @@ export function AppHeader() {
 
   // Paths that should not have the full header
   const noHeaderPaths = ['/login', '/signup', '/complete-profile'];
+  const fullScreenPaths = ['/live-classes/'];
 
   // Don't render header at all on certain paths
-  if (noHeaderPaths.includes(pathname)) {
+  if (noHeaderPaths.includes(pathname) || (pathname && fullScreenPaths.some(p => pathname.startsWith(p)))) {
     return null;
   }
   

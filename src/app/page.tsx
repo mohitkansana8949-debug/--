@@ -18,7 +18,8 @@ import {
   Bell,
   Rss,
   ClipboardList,
-  Users
+  Users,
+  Youtube
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -29,7 +30,7 @@ const featureCards = [
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'लाइव क्लासेस', href: '/live-classes', icon: Laptop, color: 'bg-pink-500' },
-  { title: 'बुक शाला', href: '/book-shala', icon: Library, color: 'bg-red-500' },
+  { title: 'Channels', href: '/channels', icon: Youtube, color: 'bg-red-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
   { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
 ];
