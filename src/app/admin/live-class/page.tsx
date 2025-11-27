@@ -44,35 +44,36 @@ export default function ManageLiveClassPage() {
     resolver: zodResolver(liveClassSchema),
   });
 
-  const onSubmit = async (values: LiveClassFormValues) => {
+  const onSubmit = (values: LiveClassFormValues) => {
     if (!firestore) return;
 
     setIsSubmitting(true);
+    const liveClassesCollection = collection(firestore, 'liveClasses');
     const liveClassData = {
       ...values,
       startTime: Timestamp.fromDate(values.startTime),
       createdAt: serverTimestamp(),
     };
 
-    try {
-      const liveClassesCollection = collection(firestore, 'liveClasses');
-      await addDoc(liveClassesCollection, liveClassData);
-      toast({
-        title: 'सफलता!',
-        description: 'नई लाइव क्लास जोड़ दी गई है।',
+    addDoc(liveClassesCollection, liveClassData)
+      .then(() => {
+        toast({
+          title: 'सफलता!',
+          description: 'नई लाइव क्लास जोड़ दी गई है।',
+        });
+        form.reset();
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          operation: 'create',
+          path: liveClassesCollection.path,
+          requestResourceData: liveClassData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      form.reset();
-    } catch (error) {
-      console.error("Error adding live class: ", error);
-      const contextualError = new FirestorePermissionError({
-        operation: 'create',
-        path: 'liveClasses',
-        requestResourceData: liveClassData,
-      });
-      errorEmitter.emit('permission-error', contextualError);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   return (
