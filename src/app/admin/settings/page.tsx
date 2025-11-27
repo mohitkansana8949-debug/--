@@ -14,20 +14,37 @@ import { Loader } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
 
 export default function AppSettingsPage() {
     const { firestore } = useFirebase();
     const { toast } = useToast();
+    
+    // Payment settings state
     const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isPaymentSubmitting, setIsPaymentSubmitting] = useState(false);
+
+    // App settings state
+    const [appLogoUrl, setAppLogoUrl] = useState('');
+    const [isAppSubmitting, setIsAppSubmitting] = useState(false);
     
-    const settingsDocRef = useMemoFirebase(
+    // Firestore refs
+    const paymentSettingsDocRef = useMemoFirebase(
       () => (firestore ? doc(firestore, 'settings', 'payment') : null),
       [firestore]
     );
-    const {data: paymentSettings, isLoading: settingsLoading} = useDoc(settingsDocRef);
+     const appSettingsDocRef = useMemoFirebase(
+      () => (firestore ? doc(firestore, 'settings', 'app') : null),
+      [firestore]
+    );
 
+    // Data hooks
+    const {data: paymentSettings, isLoading: paymentSettingsLoading} = useDoc(paymentSettingsDocRef);
+    const {data: appSettings, isLoading: appSettingsLoading} = useDoc(appSettingsDocRef);
+
+    // Effects to populate state from Firestore
     useEffect(() => {
         if (paymentSettings) {
             setMobileNumber(paymentSettings.mobileNumber || '');
@@ -35,82 +52,109 @@ export default function AppSettingsPage() {
         }
     }, [paymentSettings]);
 
-
-    const handleSettingsUpdate = async () => {
-        if (!firestore || !settingsDocRef) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Firebase not configured.'});
-            return;
+    useEffect(() => {
+        if (appSettings) {
+            setAppLogoUrl(appSettings.logoUrl || '');
         }
+    }, [appSettings]);
 
-        setIsSubmitting(true);
-        try {
-            const settingsUpdate: any = {};
-            if (mobileNumber !== (paymentSettings?.mobileNumber || '')) {
-                settingsUpdate.mobileNumber = mobileNumber;
-            }
-            if (qrCodeUrl !== (paymentSettings?.qrCodeUrl || '')) {
-                settingsUpdate.qrCodeUrl = qrCodeUrl;
-            }
 
-            if (Object.keys(settingsUpdate).length === 0) {
-                 toast({ title: 'कोई बदलाव नहीं', description: 'अपडेट करने के लिए कोई नई जानकारी नहीं है।'});
-                 setIsSubmitting(false);
-                 return;
-            }
-            
-            setDoc(settingsDocRef, settingsUpdate, { merge: true }).then(() => {
-                toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
-            }).catch(error => {
-                console.error('Error updating settings:', error);
-                const contextualError = new FirestorePermissionError({
-                    operation: 'update',
-                    path: settingsDocRef.path,
-                    requestResourceData: settingsUpdate,
-                });
-                errorEmitter.emit('permission-error', contextualError);
+    const handlePaymentSettingsUpdate = async () => {
+        if (!firestore || !paymentSettingsDocRef) return;
+        setIsPaymentSubmitting(true);
+        const settingsUpdate = { mobileNumber, qrCodeUrl };
+        
+        setDoc(paymentSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
+            toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
+        }).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'update', path: paymentSettingsDocRef.path, requestResourceData: settingsUpdate,
             });
-
-        } catch (error: any) {
-            console.error('Synchronous error during settings update:', error);
-            toast({ variant: 'destructive', title: 'त्रुटि', description: 'सेटिंग्स अपडेट करने में अप्रत्याशित त्रुटि हुई।'});
-        } finally {
-            setIsSubmitting(false);
-        }
+            errorEmitter.emit('permission-error', contextualError);
+        }).finally(() => setIsPaymentSubmitting(false));
+    }
+    
+    const handleAppSettingsUpdate = async () => {
+        if (!firestore || !appSettingsDocRef) return;
+        setIsAppSubmitting(true);
+        const settingsUpdate = { logoUrl: appLogoUrl };
+        
+        setDoc(appSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
+            toast({ title: 'सफलता!', description: 'ऐप सेटिंग्स अपडेट हो गई हैं।'});
+        }).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'update', path: appSettingsDocRef.path, requestResourceData: settingsUpdate,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        }).finally(() => setIsAppSubmitting(false));
     }
 
     return (
-        <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>पेमेंट सेटिंग्स</CardTitle>
-                    <CardDescription>पेमेंट के लिए QR कोड और मोबाइल नंबर सेट करें।</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    {settingsLoading ? <SettingsSkeleton /> : (
-                        <>
-                            <div className="space-y-4">
-                                <Label htmlFor="qr-code-url">पेमेंट QR कोड URL</Label>
-                                {qrCodeUrl && (
-                                    <div className="mt-2 w-48 h-48 relative">
-                                        <Image src={qrCodeUrl} alt="QR Code Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
-                                    </div>
-                                )}
-                                <Input id="qr-code-url" type="text" placeholder="https://example.com/qr.png" value={qrCodeUrl} onChange={e => setQrCodeUrl(e.target.value)} />
-                                <p className="text-sm text-muted-foreground">यहां अपना पेमेंट QR कोड का लिंक पेस्ट करें।</p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="mobile-number">पेमेंट मोबाइल नंबर</Label>
-                                <Input id="mobile-number" type="tel" placeholder="जैसे, 9876543210" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
-                                <p className="text-sm text-muted-foreground">यहां अपना पेमेंट के लिए मोबाइल नंबर दर्ज करें।</p>
-                            </div>
-                        </>
-                    )}
-                    <Button onClick={handleSettingsUpdate} disabled={isSubmitting || settingsLoading}>
-                        {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> अपडेट हो रहा है...</> : 'सेटिंग्स अपडेट करें'}
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        <Tabs defaultValue="app" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="app">ऐप सेटिंग्स</TabsTrigger>
+                <TabsTrigger value="payment">पेमेंट सेटिंग्स</TabsTrigger>
+            </TabsList>
+            <TabsContent value="app">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>ऐप सेटिंग्स</CardTitle>
+                        <CardDescription>ऐप का लोगो और अन्य जानकारी मैनेज करें।</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        {appSettingsLoading ? <SettingsSkeleton /> : (
+                            <>
+                                <div className="space-y-4">
+                                    <Label htmlFor="app-logo-url">ऐप लोगो URL</Label>
+                                     {appLogoUrl && (
+                                        <div className="mt-2 w-48 h-48 relative">
+                                            <Image src={appLogoUrl} alt="App Logo Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
+                                        </div>
+                                    )}
+                                    <Input id="app-logo-url" type="text" placeholder="https://example.com/logo.png" value={appLogoUrl} onChange={e => setAppLogoUrl(e.target.value)} />
+                                    <p className="text-sm text-muted-foreground">यह लोगो PWA (प्रोग्रेसिव वेब ऐप) के लिए इस्तेमाल होगा। बदलने के बाद ऐप को दोबारा डिप्लॉय करना पड़ सकता है।</p>
+                                </div>
+                            </>
+                        )}
+                        <Button onClick={handleAppSettingsUpdate} disabled={isAppSubmitting || appSettingsLoading}>
+                            {isAppSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> अपडेट हो रहा है...</> : 'ऐप सेटिंग्स अपडेट करें'}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="payment">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>पेमेंट सेटिंग्स</CardTitle>
+                        <CardDescription>पेमेंट के लिए QR कोड और मोबाइल नंबर सेट करें।</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        {paymentSettingsLoading ? <SettingsSkeleton /> : (
+                            <>
+                                <div className="space-y-4">
+                                    <Label htmlFor="qr-code-url">पेमेंट QR कोड URL</Label>
+                                    {qrCodeUrl && (
+                                        <div className="mt-2 w-48 h-48 relative">
+                                            <Image src={qrCodeUrl} alt="QR Code Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
+                                        </div>
+                                    )}
+                                    <Input id="qr-code-url" type="text" placeholder="https://example.com/qr.png" value={qrCodeUrl} onChange={e => setQrCodeUrl(e.target.value)} />
+                                    <p className="text-sm text-muted-foreground">यहां अपना पेमेंट QR कोड का लिंक पेस्ट करें।</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="mobile-number">पेमेंट मोबाइल नंबर</Label>
+                                    <Input id="mobile-number" type="tel" placeholder="जैसे, 9876543210" value={mobileNumber} onChange={(e) => setMobileNumber(e.target.value)} />
+                                    <p className="text-sm text-muted-foreground">यहां अपना पेमेंट के लिए मोबाइल नंबर दर्ज करें।</p>
+                                </div>
+                            </>
+                        )}
+                        <Button onClick={handlePaymentSettingsUpdate} disabled={isPaymentSubmitting || paymentSettingsLoading}>
+                            {isPaymentSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> अपडेट हो रहा है...</> : 'पेमेंट सेटिंग्स अपडेट करें'}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
     );
 }
 
