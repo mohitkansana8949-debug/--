@@ -1,10 +1,9 @@
 
 'use client';
 
-import { useState, ChangeEvent, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useDoc, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,10 +16,9 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AppSettingsPage() {
-    const { firestore, storage } = useFirebase();
+    const { firestore } = useFirebase();
     const { toast } = useToast();
-    const [qrCodeFile, setQrCodeFile] = useState<File | null>(null);
-    const [qrPreview, setQrPreview] = useState<string | null>(null);
+    const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [mobileNumber, setMobileNumber] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     
@@ -33,20 +31,13 @@ export default function AppSettingsPage() {
     useEffect(() => {
         if (paymentSettings) {
             setMobileNumber(paymentSettings.mobileNumber || '');
-            setQrPreview(paymentSettings.qrCodeUrl || null);
+            setQrCodeUrl(paymentSettings.qrCodeUrl || '');
         }
     }, [paymentSettings]);
 
-    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const file = e.target.files[0];
-            setQrCodeFile(file);
-            setQrPreview(URL.createObjectURL(file));
-        }
-    }
 
     const handleSettingsUpdate = async () => {
-        if (!firestore || !storage || !settingsDocRef) {
+        if (!firestore || !settingsDocRef) {
             toast({ variant: 'destructive', title: 'Error', description: 'Firebase not configured.'});
             return;
         }
@@ -54,14 +45,10 @@ export default function AppSettingsPage() {
         setIsSubmitting(true);
         try {
             const settingsUpdate: any = {};
-            if (mobileNumber) {
+            if (mobileNumber !== (paymentSettings?.mobileNumber || '')) {
                 settingsUpdate.mobileNumber = mobileNumber;
             }
-            
-            if (qrCodeFile) {
-                const storageRef = ref(storage, 'app_settings/payment_qr_code.png');
-                await uploadBytes(storageRef, qrCodeFile);
-                const qrCodeUrl = await getDownloadURL(storageRef);
+            if (qrCodeUrl !== (paymentSettings?.qrCodeUrl || '')) {
                 settingsUpdate.qrCodeUrl = qrCodeUrl;
             }
 
@@ -71,19 +58,21 @@ export default function AppSettingsPage() {
                  return;
             }
             
-            await setDoc(settingsDocRef, settingsUpdate, { merge: true });
-            
-            toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
-            setQrCodeFile(null);
+            setDoc(settingsDocRef, settingsUpdate, { merge: true }).then(() => {
+                toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
+            }).catch(error => {
+                console.error('Error updating settings:', error);
+                const contextualError = new FirestorePermissionError({
+                    operation: 'update',
+                    path: settingsDocRef.path,
+                    requestResourceData: settingsUpdate,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+            });
 
         } catch (error: any) {
-            console.error('Error updating settings:', error);
-            const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: settingsDocRef.path,
-                requestResourceData: {mobileNumber}, // only send relevant data
-            });
-            errorEmitter.emit('permission-error', contextualError);
+            console.error('Synchronous error during settings update:', error);
+            toast({ variant: 'destructive', title: 'त्रुटि', description: 'सेटिंग्स अपडेट करने में अप्रत्याशित त्रुटि हुई।'});
         } finally {
             setIsSubmitting(false);
         }
@@ -100,14 +89,14 @@ export default function AppSettingsPage() {
                     {settingsLoading ? <SettingsSkeleton /> : (
                         <>
                             <div className="space-y-4">
-                                <Label htmlFor="qr-code-upload">पेमेंट QR कोड</Label>
-                                {qrPreview && (
+                                <Label htmlFor="qr-code-url">पेमेंट QR कोड URL</Label>
+                                {qrCodeUrl && (
                                     <div className="mt-2 w-48 h-48 relative">
-                                        <Image src={qrPreview} alt="QR Code Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
+                                        <Image src={qrCodeUrl} alt="QR Code Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
                                     </div>
                                 )}
-                                <Input id="qr-code-upload" type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
-                                <p className="text-sm text-muted-foreground">यहां अपना पेमेंट QR कोड अपलोड करें।</p>
+                                <Input id="qr-code-url" type="text" placeholder="https://example.com/qr.png" value={qrCodeUrl} onChange={e => setQrCodeUrl(e.target.value)} />
+                                <p className="text-sm text-muted-foreground">यहां अपना पेमेंट QR कोड का लिंक पेस्ट करें।</p>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="mobile-number">पेमेंट मोबाइल नंबर</Label>

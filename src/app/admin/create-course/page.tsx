@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, ChangeEvent, useRef } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,7 +15,6 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Loader, ArrowLeft } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Image from 'next/image';
@@ -27,6 +26,7 @@ const courseSchema = z.object({
   price: z.coerce.number().min(0, 'कीमत 0 या उससे ज़्यादा होनी चाहिए'),
   isFree: z.boolean().default(false),
   content: z.string().min(1, 'कंटेंट आवश्यक है'),
+  thumbnailUrl: z.string().url('कृपया एक मान्य URL दर्ज करें।').min(1, 'थंबनेल URL आवश्यक है'),
 });
 type CourseFormValues = z.infer<typeof courseSchema>;
 
@@ -44,12 +44,9 @@ const removeUndefined = (obj: any) => {
 
 export default function CreateCoursePage() {
   const router = useRouter();
-  const { firestore, storage } = useFirebase();
+  const { firestore } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
-  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const courseForm = useForm<CourseFormValues>({
     resolver: zodResolver(courseSchema),
@@ -59,60 +56,51 @@ export default function CreateCoursePage() {
       price: 0,
       isFree: false,
       content: '',
+      thumbnailUrl: '',
     },
   });
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setThumbnailFile(file);
-      setThumbnailPreview(URL.createObjectURL(file));
-    }
-  };
+  const thumbnailUrl = courseForm.watch('thumbnailUrl');
 
   const onSubmit = async (values: CourseFormValues) => {
-    if (!firestore || !storage) return;
-    if (!thumbnailFile) {
-      toast({ variant: 'destructive', title: 'थंबनेल आवश्यक है', description: 'कृपया एक थंबनेल इमेज अपलोड करें।' });
-      return;
-    }
+    if (!firestore) return;
 
     setIsSubmitting(true);
 
     try {
-      // 1. Upload image to storage
-      const storageRef = ref(storage, `course_thumbnails/${Date.now()}_${thumbnailFile.name}`);
-      const uploadTask = await uploadBytes(storageRef, thumbnailFile);
-      const thumbnailUrl = await getDownloadURL(uploadTask.ref);
-
-      // 2. Add course data to Firestore
       const courseData = { 
           ...values, 
-          thumbnailUrl,
           createdAt: serverTimestamp() 
       };
       
       const cleanedCourseData = removeUndefined(courseData);
-
       const coursesCollection = collection(firestore, 'courses');
       
-      await addDoc(coursesCollection, cleanedCourseData);
-
-      toast({
-        title: 'सफलता!',
-        description: 'नया कोर्स बना दिया गया है।',
-      });
-      router.push('/admin/courses');
+      addDoc(coursesCollection, cleanedCourseData)
+        .then(() => {
+            toast({
+                title: 'सफलता!',
+                description: 'नया कोर्स बना दिया गया है।',
+            });
+            router.push('/admin/courses');
+        })
+        .catch((error) => {
+            console.error("Error adding document: ", error);
+            const contextualError = new FirestorePermissionError({
+                operation: 'create',
+                path: 'courses',
+                requestResourceData: cleanedCourseData,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        });
 
     } catch (error: any) {
-        const contextualError = new FirestorePermissionError({
-            operation: 'create',
-            path: 'courses',
-            requestResourceData: values,
-        });
-        errorEmitter.emit('permission-error', contextualError);
+        // This outer catch is for any synchronous errors during setup
+        console.error("Course creation error:", error);
+        toast({ variant: 'destructive', title: 'त्रुटि', description: 'कोर्स बनाने में एक अप्रत्याशित त्रुटि हुई।' });
     } finally {
-      setIsSubmitting(false);
+      // Note: We don't set isSubmitting to false here because the page will redirect on success.
+      // If there's a permission error, it will be caught by the global error handler.
     }
   };
 
@@ -134,23 +122,24 @@ export default function CreateCoursePage() {
         <CardContent>
           <Form {...courseForm}>
             <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
-                <FormItem>
-                    <FormLabel>थंबनेल इमेज</FormLabel>
-                    <FormControl>
-                        <Input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleFileChange} 
-                            ref={fileInputRef}
-                        />
-                    </FormControl>
-                    {thumbnailPreview && (
-                        <div className="mt-4 w-full aspect-video relative">
-                            <Image src={thumbnailPreview} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
-                        </div>
+                <FormField
+                    control={courseForm.control}
+                    name="thumbnailUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>थंबनेल इमेज URL</FormLabel>
+                            <FormControl>
+                                <Input placeholder="https://example.com/image.jpg" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
                     )}
-                    <FormMessage />
-                </FormItem>
+                />
+                {thumbnailUrl && (
+                    <div className="mt-4 w-full aspect-video relative">
+                        <Image src={thumbnailUrl} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
+                    </div>
+                )}
 
               <FormField control={courseForm.control} name="name" render={({ field }) => (
                 <FormItem>

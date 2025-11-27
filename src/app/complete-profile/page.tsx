@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader, Upload } from 'lucide-react';
@@ -37,20 +36,28 @@ const profileSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
   mobile: z.string().optional(),
   age: z.coerce.number().positive().optional(),
+  photoURL: z.string().url('कृपया एक मान्य URL दर्ज करें।').optional().or(z.literal('')),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
+const removeUndefined = (obj: any) => {
+    const newObj: any = {};
+    for (const key in obj) {
+      if (obj[key] !== undefined) {
+        newObj[key] = obj[key] ?? null;
+      }
+    }
+    return newObj;
+  };
+
 
 export default function CompleteProfilePage() {
   const router = useRouter();
-  const { auth, firestore, storage } = useFirebase();
+  const { auth, firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -58,25 +65,12 @@ export default function CompleteProfilePage() {
       name: user?.displayName || '',
       mobile:  '',
       age: undefined,
+      photoURL: user?.photoURL || '',
     }
   });
+
+  const photoURL = form.watch('photoURL');
   
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setPhoto(file);
-      setPhotoPreview(URL.createObjectURL(file));
-    }
-  };
-
-  const uploadPhoto = async (file: File, userId: string): Promise<string> => {
-    if (!storage) throw new Error("Firebase Storage is not configured.");
-    const storageRef = ref(storage, `profile_pictures/${userId}`);
-    await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
-  }
-
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user || !auth || !firestore) {
       toast({
@@ -89,48 +83,40 @@ export default function CompleteProfilePage() {
 
     setIsLoading(true);
     try {
-      let photoURL = user.photoURL;
-
-      if (photo) {
-        photoURL = await uploadPhoto(photo, user.uid);
-      }
-
       // Update Firebase Auth profile
       await updateProfile(user, {
         displayName: data.name,
-        photoURL: photoURL,
+        photoURL: data.photoURL || null,
       });
 
       // Prepare data for Firestore, ensuring no undefined values
       const profileData = {
         name: data.name,
-        mobile: data.mobile || null,
-        age: data.age || null,
-        photoURL: photoURL || null,
+        mobile: data.mobile,
+        age: data.age,
+        photoURL: data.photoURL,
       };
 
+      const cleanedProfileData = removeUndefined(profileData);
       const userRef = doc(firestore, 'users', user.uid);
 
-      // Use a try-catch for the Firestore operation itself to show specific errors
-      try {
-        await setDoc(userRef, profileData, { merge: true });
-      } catch (dbError) {
-        const contextualError = new FirestorePermissionError({
-            operation: 'update',
-            path: userRef.path,
-            requestResourceData: profileData,
+      setDoc(userRef, cleanedProfileData, { merge: true })
+        .then(() => {
+            toast({
+                title: 'प्रोफ़ाइल अपडेट हो गई',
+                description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
+              });
+            router.push('/');
+        })
+        .catch((dbError) => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'update',
+                path: userRef.path,
+                requestResourceData: cleanedProfileData,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+            // We don't need to re-throw here because the emitter handles it.
         });
-        errorEmitter.emit('permission-error', contextualError);
-        // Re-throw the original error to be caught by the outer catch block
-        throw dbError;
-      }
-      
-
-      toast({
-        title: 'प्रोफ़ाइल अपडेट हो गई',
-        description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
-      });
-      router.push('/');
     } catch (error) {
       console.error("Profile update error:", error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
@@ -144,8 +130,7 @@ export default function CompleteProfilePage() {
         title: 'प्रोफ़ाइल अपडेट विफल',
         description,
       });
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Only set loading to false in case of an error.
     }
   };
   
@@ -174,21 +159,24 @@ export default function CompleteProfilePage() {
               
               <div className="flex flex-col items-center space-y-4">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={photoPreview || user.photoURL || undefined} data-ai-hint="person face" />
+                  <AvatarImage src={photoURL || undefined} data-ai-hint="person face" />
                   <AvatarFallback>{user.displayName?.substring(0, 2) || 'QS'}</AvatarFallback>
                 </Avatar>
-                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  फोटो अपलोड करें
-                </Button>
-                <Input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*"
-                  onChange={handleFileChange} 
-                />
               </div>
+
+               <FormField
+                control={form.control}
+                name="photoURL"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>फोटो URL</FormLabel>
+                    <FormControl>
+                      <Input placeholder="https://example.com/photo.jpg" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}
