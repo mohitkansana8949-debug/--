@@ -41,11 +41,14 @@ function DummyChat() {
   useEffect(() => {
     const interval = setInterval(() => {
       setMessages(prev => {
-        const nextMessage = dummyMessages[prev.length % dummyMessages.length];
+        const nextMessageIndex = prev.length % dummyMessages.length;
+        const nextMessage = dummyMessages[nextMessageIndex];
+        // Create a new unique object for the key prop
+        const newMesage = {...nextMessage, uniqueId: `${Date.now()}-${nextMessage.id}`};
         if (prev.length >= 10) {
-          return [...prev.slice(1), nextMessage];
+          return [...prev.slice(1), newMesage];
         }
-        return [...prev, nextMessage];
+        return [...prev, newMesage];
       });
     }, 2000); // Add a new message every 2 seconds
 
@@ -58,8 +61,8 @@ function DummyChat() {
             <h3 className="font-semibold text-center">Live Chat</h3>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg) => (
-                <div key={msg.id} className="flex items-start gap-2">
+            {messages.map((msg: any) => (
+                <div key={msg.uniqueId} className="flex items-start gap-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${getColorForId(msg.id).replace('text-', 'bg-')}`}>
                         {msg.name.charAt(0)}
                     </div>
@@ -89,7 +92,7 @@ export default function LiveClassWatchPage() {
   const { data: liveClass, isLoading } = useDoc(liveClassRef);
   
   const youtubeVideoId = liveClass?.youtubeVideoId;
-  const videoSrc = youtubeVideoId ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0` : '';
+  const videoSrc = youtubeVideoId ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0&hl=hi&controls=0` : '';
   
   useEffect(() => {
     if (youtubeVideoId) {

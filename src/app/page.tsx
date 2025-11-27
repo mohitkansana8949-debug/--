@@ -50,12 +50,27 @@ function InstallPWA() {
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (e: Event) => {
+            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
+            // Stash the event so it can be triggered later.
             setInstallPrompt(e);
-            setIsVisible(true);
+            // Show the install button if the app is not already installed
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                setIsVisible(false);
+            } else {
+                setIsVisible(true);
+            }
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // Listen for app installation
+        window.addEventListener('appinstalled', () => {
+            // Hide the install prompt
+            setIsVisible(false);
+            setInstallPrompt(null);
+            console.log('PWA was installed');
+        });
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -71,8 +86,8 @@ function InstallPWA() {
             } else {
                 console.log('User dismissed the install prompt');
             }
-            setInstallPrompt(null);
-            setIsVisible(false);
+            // We don't need to set the prompt to null here, it can only be used once.
+            // The `appinstalled` event will handle hiding the button.
         }
     };
 

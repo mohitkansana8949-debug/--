@@ -26,7 +26,7 @@ export default function YouTubePlayerPage() {
                 <CardContent>
                     <AspectRatio ratio={16 / 9} className="bg-muted rounded-lg overflow-hidden">
                         <iframe
-                            src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&autoplay=1`}
+                            src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&autoplay=1&hl=hi&controls=0`}
                             title="YouTube video player"
                             frameBorder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
