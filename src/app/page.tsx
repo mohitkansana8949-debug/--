@@ -7,14 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ArrowRight,
   BookOpen,
   Gift,
   GraduationCap,
   Laptop,
   Library,
   Newspaper,
-  User as UserIcon,
   Loader,
   Megaphone,
   ShoppingBag,
@@ -32,7 +30,7 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import Image from 'next/image';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
@@ -47,11 +45,11 @@ const featureCards = [
 ];
 
 const footerItems = [
-    { name: 'Home', icon: Home },
-    { name: 'Library', icon: Library },
-    { name: 'Orders', icon: ClipboardList },
-    { name: 'Feed', icon: Rss },
-    { name: 'Alerts', icon: Bell },
+    { name: 'Home', icon: Home, href: '/' },
+    { name: 'Library', icon: Library, href: '/my-library' },
+    { name: 'Orders', icon: ClipboardList, href: '/orders' },
+    { name: 'Feed', icon: Rss, href: '/feed' },
+    { name: 'Alerts', icon: Bell, href: '/alerts' },
 ];
 
 
@@ -152,10 +150,10 @@ export default function HomePage() {
         {footerItems.map(item => {
             const Icon = item.icon;
             return (
-                <div key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center">
+                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center">
                     <Icon className="h-5 w-5 mb-1"/> 
                     <span>{item.name}</span>
-                </div>
+                </Link>
             )
         })}
       </footer>

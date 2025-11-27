@@ -2,9 +2,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, Loader, ShieldCheck, ShieldX } from "lucide-react";
+import { BookOpen, Loader, ShieldCheck } from "lucide-react";
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection, query, where, orderBy, doc, getDoc, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,34 +36,40 @@ export default function MyLibraryPage() {
 
     const fetchCourseDetails = useCallback(async () => {
         if (!enrollments || !firestore) {
-            if (!enrollmentsLoading) setIsLoading(false);
+            if (!enrollmentsLoading && !isUserLoading) setIsLoading(false);
             return;
         }
 
         setIsLoading(true);
         try {
-            const coursePromises: Promise<DocumentSnapshot<DocumentData>>[] = enrollments.map(enrollment => {
-                const courseDocRef = doc(firestore, 'courses', enrollment.courseId);
-                return getDoc(courseDocRef);
-            });
-            
-            const courseDocs = await Promise.all(coursePromises);
-
-            const coursesData = courseDocs
-                .filter(docSnap => docSnap.exists())
-                .map(docSnap => ({ id: docSnap.id, ...docSnap.data() } as EnrolledCourse));
-            
-            setEnrolledCourses(coursesData);
+            if (enrollments.length > 0) {
+                const courseIds = enrollments.map(e => e.courseId);
+                const coursesRef = collection(firestore, 'courses');
+                const coursesQuery = query(coursesRef, where('__name__', 'in', courseIds));
+                const courseSnapshots = await getDocs(coursesQuery);
+                
+                const coursesData = courseSnapshots.docs.map(docSnap => ({
+                    id: docSnap.id,
+                    ...docSnap.data()
+                } as EnrolledCourse));
+                
+                setEnrolledCourses(coursesData);
+            } else {
+                setEnrolledCourses([]);
+            }
         } catch (error) {
             console.error("Error fetching course details:", error);
+            setEnrolledCourses([]);
         } finally {
             setIsLoading(false);
         }
-    }, [enrollments, firestore, enrollmentsLoading]);
+    }, [enrollments, firestore, enrollmentsLoading, isUserLoading]);
 
     useEffect(() => {
-        fetchCourseDetails();
-    }, [fetchCourseDetails]);
+        if (!enrollmentsLoading) {
+            fetchCourseDetails();
+        }
+    }, [enrollments, enrollmentsLoading, fetchCourseDetails]);
 
     const finalLoading = isUserLoading || isLoading;
 

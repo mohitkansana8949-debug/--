@@ -36,15 +36,23 @@ export function AppSidebar() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user && firestore) {
-        const adminRef = doc(firestore, "roles_admin", user.uid);
-        const adminDoc = await getDoc(adminRef);
-        setIsAdmin(adminDoc.exists());
+        try {
+          const adminRef = doc(firestore, "roles_admin", user.uid);
+          const adminDoc = await getDoc(adminRef);
+          setIsAdmin(adminDoc.exists());
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          setIsAdmin(false);
+        }
       } else {
         setIsAdmin(false);
       }
     };
-    checkAdminStatus();
-  }, [user, firestore]);
+
+    if (!isUserLoading) {
+        checkAdminStatus();
+    }
+  }, [user, firestore, isUserLoading]);
 
   const handleLogout = async () => {
     try {
@@ -190,5 +198,3 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
-
-    

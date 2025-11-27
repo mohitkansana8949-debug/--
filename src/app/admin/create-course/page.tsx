@@ -69,8 +69,8 @@ export default function CreateCoursePage() {
     try {
       // 1. Upload image to storage
       const storageRef = ref(storage, `course_thumbnails/${Date.now()}_${thumbnailFile.name}`);
-      await uploadBytes(storageRef, thumbnailFile);
-      const thumbnailUrl = await getDownloadURL(storageRef);
+      const uploadTask = await uploadBytes(storageRef, thumbnailFile);
+      const thumbnailUrl = await getDownloadURL(uploadTask.ref);
 
       // 2. Add course data to Firestore
       const courseData = { 
@@ -89,13 +89,20 @@ export default function CreateCoursePage() {
 
     } catch (error: any) {
       console.error("Course creation error:", error);
+      
       const contextualError = new FirestorePermissionError({
         operation: 'create',
-        path: 'courses',
+        path: `courses/some-course-id`, // Use a placeholder path
         requestResourceData: values,
       });
+
       errorEmitter.emit('permission-error', contextualError);
-      toast({ variant: 'destructive', title: 'त्रुटि', description: error.message || 'कोर्स बनाने में विफल।'});
+      
+      toast({ 
+        variant: 'destructive', 
+        title: 'कोर्स बनाने में विफल', 
+        description: error.message || 'एक अज्ञात त्रुटि हुई। कृपया कंसोल देखें।'
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -120,7 +127,7 @@ export default function CreateCoursePage() {
           <Form {...courseForm}>
             <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
                 <FormItem>
-                    <FormLabel>थंबनेल इमेज (गैलरी से चुनें)</FormLabel>
+                    <FormLabel>थंबनेल इमेज</FormLabel>
                     <FormControl>
                         <Input 
                             type="file" 
