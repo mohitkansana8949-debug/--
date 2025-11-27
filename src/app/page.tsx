@@ -121,7 +121,7 @@ export default function HomePage() {
           </Carousel>
         ) : null }
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card) => (
           <Link href={card.href} key={card.title}>
             <Card

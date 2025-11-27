@@ -79,7 +79,7 @@ export default function CreateCoursePage() {
           createdAt: serverTimestamp() 
       };
 
-      await addDoc(collection(firestore, 'courses'), courseData);
+      const docRef = await addDoc(collection(firestore, 'courses'), courseData);
 
       toast({
         title: 'सफलता!',
@@ -119,29 +119,23 @@ export default function CreateCoursePage() {
         <CardContent>
           <Form {...courseForm}>
             <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={courseForm.control}
-                    name="name" // A dummy name for the form field, not used in schema
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>थंबनेल इमेज (गैलरी से चुनें)</FormLabel>
-                            <FormControl>
-                                <Input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    onChange={handleFileChange} 
-                                    ref={fileInputRef}
-                                />
-                            </FormControl>
-                            {thumbnailPreview && (
-                                <div className="mt-4 w-full aspect-video relative">
-                                    <Image src={thumbnailPreview} alt="Thumbnail Preview" layout="fill" objectFit="cover" className="rounded-md border" />
-                                </div>
-                            )}
-                            <FormMessage />
-                        </FormItem>
+                <FormItem>
+                    <FormLabel>थंबनेल इमेज (गैलरी से चुनें)</FormLabel>
+                    <FormControl>
+                        <Input 
+                            type="file" 
+                            accept="image/*" 
+                            onChange={handleFileChange} 
+                            ref={fileInputRef}
+                        />
+                    </FormControl>
+                    {thumbnailPreview && (
+                        <div className="mt-4 w-full aspect-video relative">
+                            <Image src={thumbnailPreview} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
+                        </div>
                     )}
-                />
+                    <FormMessage />
+                </FormItem>
 
               <FormField control={courseForm.control} name="name" render={({ field }) => (
                 <FormItem>
