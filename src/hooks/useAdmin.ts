@@ -14,6 +14,14 @@ export function useAdmin() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user && firestore) {
+        // Hardcoded admin check
+        if (user.email === 'Qukly@study.com') {
+          setIsAdmin(true);
+          setIsAdminLoading(false);
+          return;
+        }
+
+        // Firestore-based admin check
         try {
           const adminRef = doc(firestore, 'roles_admin', user.uid);
           const adminDoc = await getDoc(adminRef);
