@@ -71,26 +71,19 @@ export default function AppSettingsPage() {
                  return;
             }
             
-            await setDoc(settingsDocRef, settingsUpdate, { merge: true }).catch(error => {
-                const contextualError = new FirestorePermissionError({
-                    operation: 'update',
-                    path: settingsDocRef.path,
-                    requestResourceData: settingsUpdate,
-                });
-                errorEmitter.emit('permission-error', contextualError);
-                throw error;
-            });
+            await setDoc(settingsDocRef, settingsUpdate, { merge: true });
             
             toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
             setQrCodeFile(null);
 
         } catch (error: any) {
             console.error('Error updating settings:', error);
-            toast({ 
-                variant: 'destructive', 
-                title: 'त्रुटि', 
-                description: 'An error occurred. See the console for details.'
+            const contextualError = new FirestorePermissionError({
+                operation: 'update',
+                path: settingsDocRef.path,
+                requestResourceData: {mobileNumber}, // only send relevant data
             });
+            errorEmitter.emit('permission-error', contextualError);
         } finally {
             setIsSubmitting(false);
         }

@@ -78,6 +78,7 @@ export default function CreateCoursePage() {
     }
 
     setIsSubmitting(true);
+
     try {
       // 1. Upload image to storage
       const storageRef = ref(storage, `course_thumbnails/${Date.now()}_${thumbnailFile.name}`);
@@ -95,30 +96,21 @@ export default function CreateCoursePage() {
 
       const coursesCollection = collection(firestore, 'courses');
       
-      addDoc(coursesCollection, cleanedCourseData).catch(error => {
-        const contextualError = new FirestorePermissionError({
-            operation: 'create',
-            path: coursesCollection.path,
-            requestResourceData: cleanedCourseData,
-        });
-        errorEmitter.emit('permission-error', contextualError);
-        throw error; // re-throw to be caught by outer catch
-      });
-
+      await addDoc(coursesCollection, cleanedCourseData);
 
       toast({
         title: 'सफलता!',
         description: 'नया कोर्स बना दिया गया है।',
       });
-      router.push('/admin');
+      router.push('/admin/courses');
 
     } catch (error: any) {
-      console.error("Course creation error:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'कोर्स बनाने में विफल', 
-        description: 'An error occurred. See the console for details.'
-      });
+        const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: 'courses',
+            requestResourceData: values,
+        });
+        errorEmitter.emit('permission-error', contextualError);
     } finally {
       setIsSubmitting(false);
     }
