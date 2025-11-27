@@ -1,0 +1,23 @@
+{
+    "name": "QuklyStudy",
+    "short_name": "QuklyStudy",
+    "description": "The quickest way to study.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#090E23",
+    "theme_color": "#090E23",
+    "icons": [
+        {
+            "src": "https://i.supaimg.com/b6188391-5b01-42c1-987c-69dd24df4ad1.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "https://i.supaimg.com/b6188391-5b01-42c1-987c-69dd24df4ad1.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ]
+}

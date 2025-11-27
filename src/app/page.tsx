@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -19,10 +18,12 @@ import {
   Rss,
   ClipboardList,
   Users,
-  Youtube
+  Youtube,
+  Download
 } from 'lucide-react';
 import Image from 'next/image';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
 const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
@@ -43,6 +44,58 @@ const footerItems = [
     { name: 'Alerts', icon: Bell, href: '/alerts' },
 ];
 
+function InstallPWA() {
+    const [installPrompt, setInstallPrompt] = useState<any>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setInstallPrompt(e);
+            setIsVisible(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (installPrompt) {
+            installPrompt.prompt();
+            const { outcome } = await installPrompt.userChoice;
+            if (outcome === 'accepted') {
+                console.log('User accepted the install prompt');
+            } else {
+                console.log('User dismissed the install prompt');
+            }
+            setInstallPrompt(null);
+            setIsVisible(false);
+        }
+    };
+
+    if (!isVisible) {
+        return null;
+    }
+
+    return (
+        <div className="relative p-6 rounded-lg overflow-hidden bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-gradient-xy">
+            <div className="text-white text-center">
+                <h2 className="text-2xl font-bold mb-2">Install App for a Better Experience</h2>
+                <p className="mb-4">Get the full app experience by installing it on your home screen.</p>
+                <Button 
+                    onClick={handleInstallClick} 
+                    className="bg-white text-primary hover:bg-gray-100 font-bold py-2 px-4 rounded-full shadow-lg transition-transform hover:scale-105"
+                >
+                    <Download className="mr-2 h-5 w-5" />
+                    Install App
+                </Button>
+            </div>
+        </div>
+    );
+}
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -63,6 +116,7 @@ export default function HomePage() {
 
   return (
     <div className="p-4 space-y-8 pb-20 md:pb-8">
+      <InstallPWA />
       <div className="flex justify-between items-center">
         <div className="text-left">
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to QuklyStudy</h1>

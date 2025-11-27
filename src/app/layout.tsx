@@ -9,9 +9,28 @@ import { FirebaseClientProvider } from '@/firebase';
 import { AuthGate } from '@/components/layout/auth-gate';
 
 
+const APP_NAME = "QuklyStudy";
+const APP_DEFAULT_TITLE = "QuklyStudy";
+const APP_TITLE_TEMPLATE = "%s - QuklyStudy";
+const APP_DESCRIPTION = "The quickest way to study.";
+
 export const metadata: Metadata = {
-  title: 'QuklyStudy',
-  description: 'The quickest way to study.',
+  applicationName: APP_NAME,
+  title: {
+    default: APP_DEFAULT_TITLE,
+    template: APP_TITLE_TEMPLATE,
+  },
+  description: APP_DESCRIPTION,
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: APP_DEFAULT_TITLE,
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  themeColor: '#090E23',
 };
 
 export default function RootLayout({
