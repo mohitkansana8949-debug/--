@@ -8,6 +8,7 @@ import { AppHeader } from '@/components/layout/app-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { AuthGate } from '@/components/layout/auth-gate';
 
+
 export const metadata: Metadata = {
   title: 'QuklyStudy',
   description: 'The quickest way to study.',

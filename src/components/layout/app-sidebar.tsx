@@ -60,6 +60,7 @@ export function AppSidebar() {
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
+    { href: "/youtube", label: "यूट्यूब", icon: Youtube, tooltip: "YouTube" },
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
@@ -69,10 +70,14 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
-  const noSidebarPaths = ['/login', '/signup'];
+  const noSidebarPaths = ['/login', '/signup', '/youtube/'];
   const fullScreenPaths = ['/live-classes/'];
 
-  if (noSidebarPaths.includes(pathname) || (pathname && fullScreenPaths.some(p => pathname.startsWith(p)))) {
+  if (noSidebarPaths.some(p => pathname.startsWith(p))) {
+    return null;
+  }
+
+  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p))) {
     return null;
   }
   
