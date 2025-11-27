@@ -30,6 +30,12 @@ const courseSchema = z.object({
 });
 type CourseFormValues = z.infer<typeof courseSchema>;
 
+// Helper function to remove undefined properties from an object
+const removeUndefined = (obj: any) => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+};
+
+
 export default function CreateCoursePage() {
   const router = useRouter();
   const { firestore, storage } = useFirebase();
@@ -78,8 +84,10 @@ export default function CreateCoursePage() {
           thumbnailUrl,
           createdAt: serverTimestamp() 
       };
+      
+      const cleanedCourseData = removeUndefined(courseData);
 
-      const docRef = await addDoc(collection(firestore, 'courses'), courseData);
+      const docRef = await addDoc(collection(firestore, 'courses'), cleanedCourseData);
 
       toast({
         title: 'सफलता!',

@@ -1,8 +1,6 @@
 
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
@@ -55,7 +53,6 @@ const footerItems = [
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
-  const router = useRouter();
   const firestore = useFirestore();
 
   const promotionsQuery = useMemoFirebase(
@@ -65,12 +62,6 @@ export default function HomePage() {
   
   const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/signup');
-    }
-  }, [user, isUserLoading, router]);
-
   if (isUserLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -79,16 +70,13 @@ export default function HomePage() {
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
   return (
     <div className="p-4 space-y-8 pb-20 md:pb-8">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">
-          नमस्ते {user.displayName || 'स्टूडेंट'}!
-        </h1>
+        <div className="text-left">
+            <h1 className="text-2xl font-semibold tracking-tight">Welcome to QuklyStudy</h1>
+            <p className="text-sm text-muted-foreground">The quickest way to study.</p>
+        </div>
         <Button variant="outline" asChild>
           <Link href="/support">Support</Link>
         </Button>

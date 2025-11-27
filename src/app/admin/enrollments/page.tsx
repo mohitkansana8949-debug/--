@@ -24,7 +24,8 @@ export default function AdminEnrollmentsPage() {
 
     const enrollmentRef = doc(firestore, 'courseEnrollments', enrollmentId);
     try {
-        await updateDoc(enrollmentRef, { status: status });
+        const updateData = { status: status };
+        await updateDoc(enrollmentRef, updateData);
         toast({ title: 'सफलता!', description: `एनरोलमेंट को ${status} के रूप में अपडेट कर दिया गया है।`});
     } catch (error) {
         console.error("Enrollment update error:", error);
@@ -61,6 +62,13 @@ export default function AdminEnrollmentsPage() {
                             </TableCell>
                         </TableRow>
                     ))}
+                     {!enrollmentsLoading && enrollments?.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                कोई एनरोलमेंट नहीं मिला।
+                            </TableCell>
+                        </TableRow>
+                    )}
                 </TableBody>
             </Table>
         </CardContent>

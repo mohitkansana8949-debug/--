@@ -50,7 +50,11 @@ export default function AdminEducatorsPage() {
         await uploadBytes(storageRef, educatorPhoto);
         const imageUrl = await getDownloadURL(storageRef);
 
-        const educatorData = { ...values, imageUrl, createdAt: serverTimestamp() };
+        const educatorData = { 
+            ...values, 
+            imageUrl, 
+            createdAt: serverTimestamp() 
+        };
 
         await setDoc(docRef, educatorData);
         toast({ title: 'सफलता!', description: 'नए एजुकेटर को जोड़ दिया गया है।'});

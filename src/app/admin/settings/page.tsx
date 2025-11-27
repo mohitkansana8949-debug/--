@@ -53,7 +53,10 @@ export default function AppSettingsPage() {
 
         setIsSubmitting(true);
         try {
-            const settingsUpdate: any = { mobileNumber: mobileNumber };
+            const settingsUpdate: any = {};
+            if (mobileNumber) {
+                settingsUpdate.mobileNumber = mobileNumber;
+            }
             
             if (qrCodeFile) {
                 const storageRef = ref(storage, 'app_settings/payment_qr_code.png');
@@ -62,12 +65,18 @@ export default function AppSettingsPage() {
                 settingsUpdate.qrCodeUrl = qrCodeUrl;
             }
 
+            if (Object.keys(settingsUpdate).length === 0) {
+                 toast({ title: 'कोई बदलाव नहीं', description: 'अपडेट करने के लिए कोई नई जानकारी नहीं है।'});
+                 setIsSubmitting(false);
+                 return;
+            }
+
             await setDoc(settingsDocRef, settingsUpdate, { merge: true });
             
-            toast({ title: 'Success!', description: 'Payment settings have been updated.'});
+            toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
             setQrCodeFile(null);
 
-        } catch (error) {
+        } catch (error: any) {
              const contextualError = new FirestorePermissionError({
                 operation: 'update',
                 path: settingsDocRef.path,
@@ -75,7 +84,7 @@ export default function AppSettingsPage() {
             });
             errorEmitter.emit('permission-error', contextualError);
             console.error('Error updating settings:', error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not update settings.'});
+            toast({ variant: 'destructive', title: 'त्रुटि', description: error.message || 'सेटिंग्स अपडेट नहीं हो सकीं।'});
         } finally {
             setIsSubmitting(false);
         }
@@ -132,5 +141,3 @@ function SettingsSkeleton() {
         </div>
     )
 }
-
-    

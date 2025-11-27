@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,10 +35,15 @@ const profileSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
   mobile: z.string().optional(),
   age: z.coerce.number().positive().optional(),
-  // Add other fields like state, district, class later
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+
+// Helper function to remove undefined properties from an object
+const removeUndefined = (obj: any) => {
+  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null && v !== ''));
+};
+
 
 export default function CompleteProfilePage() {
   const router = useRouter();
@@ -54,7 +60,7 @@ export default function CompleteProfilePage() {
     defaultValues: {
       name: user?.displayName || '',
       mobile:  '',
-      age: '' as any,
+      age: undefined,
     }
   });
   
@@ -98,15 +104,20 @@ export default function CompleteProfilePage() {
         photoURL: photoURL,
       });
 
+      // Prepare data for Firestore, ensuring no undefined values
+      const profileData = {
+        name: data.name,
+        mobile: data.mobile,
+        age: data.age,
+        photoURL: photoURL,
+      };
+
+      const cleanedProfileData = removeUndefined(profileData);
+
       // Update Firestore document
       await setDoc(
         doc(firestore, 'users', user.uid),
-        {
-          name: data.name,
-          mobile: data.mobile,
-          age: data.age,
-          photoURL: photoURL,
-        },
+        cleanedProfileData,
         { merge: true } // Merge to avoid overwriting existing fields like email
       );
 
@@ -205,7 +216,7 @@ export default function CompleteProfilePage() {
                   <FormItem>
                     <FormLabel>आयु</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="21" {...field} value={field.value ?? ''} />
+                      <Input type="number" placeholder="21" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
