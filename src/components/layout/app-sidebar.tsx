@@ -39,7 +39,7 @@ export function AppSidebar() {
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
-      router.push("/login");
+      router.push("/signup");
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -60,7 +60,6 @@ export function AppSidebar() {
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
-    { href: "/watch", label: "वीडियो देखें", icon: Youtube, tooltip: "Watch Video" },
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   

@@ -13,6 +13,10 @@ service cloud.firestore {
     function isSecureWrite(data) {
       return data.createdAt == request.time;
     }
+    
+    function isFutureClass(data) {
+      return data.startTime.toMillis() > request.time.toMillis();
+    }
 
     // Publicly readable collections
     match /courses/{courseId} {
@@ -20,14 +24,20 @@ service cloud.firestore {
       allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
     }
 
+    match /youtubeChannels/{channelId} {
+        allow read: if request.auth != null;
+        allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
+    }
+    
+    match /liveClasses/{liveClassId} {
+      allow read: if request.auth != null;
+      allow create: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data) && isFutureClass(request.resource.data);
+      allow write: if isAdmin(request.auth.uid);
+    }
+
     match /educators/{educatorId} {
       allow read: if request.auth != null;
       allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
-    }
-    
-    match /promotions/{promotionId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(request.auth.uid);
     }
     
     match /settings/{settingId} {

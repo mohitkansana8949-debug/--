@@ -22,8 +22,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 // Function to extract YouTube Video ID from URL
 const getYouTubeID = (url: string) => {
-    const arr = url.split(/(vi\/|v=|\/v\/|youtu\.be\/|\/embed\/)/);
-    return (arr[2] !== undefined) ? arr[2].split(/[^0-9a-z_\-]/i)[0] : arr[0];
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
 }
 
 const liveClassSchema = z.object({

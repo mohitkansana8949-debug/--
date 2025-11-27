@@ -8,16 +8,79 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Loader, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+// Helper function to get a color based on user ID
+const getColorForId = (id: string) => {
+  const colors = [
+    'text-red-400', 'text-green-400', 'text-blue-400', 'text-yellow-400', 
+    'text-purple-400', 'text-pink-400', 'text-indigo-400', 'text-teal-400',
+    'text-orange-400', 'text-cyan-400'
+  ];
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[hash % colors.length];
+};
+
+const dummyMessages = [
+  { id: '1', name: 'Rahul', message: 'Hello everyone!' },
+  { id: '2', name: 'Priya', message: 'Hi Rahul! Excited for the class.' },
+  { id: '3', name: 'Amit', message: 'Me too! 🔥' },
+  { id: '4', name: 'Sunita', message: 'Can you hear the teacher clearly?' },
+  { id: '5', name: 'Vikram', message: 'Yes, audio is perfect on my end.' },
+  { id: '6', name: 'Neha', message: 'Great topic today!' },
+  { id: '7', name: 'Anjali', message: 'What is the main formula again?' },
+  { id: '8', name: 'Sandeep', message: 'It was E=mc^2, Anjali.' },
+  { id: '9', name: 'Pooja', message: 'Thanks Sandeep!' },
+  { id: '10', name: 'Raj', message: 'This is really interesting.' },
+];
+
+function DummyChat() {
+  const [messages, setMessages] = useState(dummyMessages.slice(0, 5));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMessages(prev => {
+        const nextMessage = dummyMessages[prev.length % dummyMessages.length];
+        if (prev.length >= 10) {
+          return [...prev.slice(1), nextMessage];
+        }
+        return [...prev, nextMessage];
+      });
+    }, 2000); // Add a new message every 2 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Card className="h-full w-full flex flex-col">
+        <div className="p-4 border-b">
+            <h3 className="font-semibold text-center">Live Chat</h3>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((msg) => (
+                <div key={msg.id} className="flex items-start gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${getColorForId(msg.id).replace('text-', 'bg-')}`}>
+                        {msg.name.charAt(0)}
+                    </div>
+                    <div>
+                        <p className={`font-bold text-sm ${getColorForId(msg.id)}`}>{msg.name}</p>
+                        <p className="text-sm">{msg.message}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </Card>
+  );
+}
+
+
 export default function LiveClassWatchPage() {
   const { liveClassId } = useParams();
   const firestore = useFirestore();
 
-  const [embedHost, setEmbedHost] = useState('');
-
-  useEffect(() => {
-    // This ensures window is defined, as it's only available on the client
-    setEmbedHost(window.location.hostname);
-  }, []);
+  const [isLive, setIsLive] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   const liveClassRef = useMemoFirebase(
     () => (firestore && liveClassId ? doc(firestore, 'liveClasses', liveClassId as string) : null),
@@ -27,9 +90,25 @@ export default function LiveClassWatchPage() {
   
   const youtubeVideoId = liveClass?.youtubeVideoId;
   const videoSrc = youtubeVideoId ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0` : '';
-  const chatSrc = embedHost && youtubeVideoId 
-    ? `https://www.youtube.com/live_chat?v=${youtubeVideoId}&embed_domain=${embedHost}` 
-    : '';
+  
+  useEffect(() => {
+    if (youtubeVideoId) {
+      setIsVideoLoading(true);
+      fetch(`https://www.googleapis.com/youtube/v3/videos?id=${youtubeVideoId}&part=liveStreamingDetails&key=${process.env.YOUTUBE_API_KEY}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.items && data.items.length > 0 && data.items[0].liveStreamingDetails) {
+            setIsLive(true);
+          } else {
+            setIsLive(false);
+          }
+          setIsVideoLoading(false);
+        }).catch(() => {
+            setIsLive(false);
+            setIsVideoLoading(false);
+        });
+    }
+  }, [youtubeVideoId]);
 
   if (isLoading) {
     return (
@@ -70,20 +149,18 @@ export default function LiveClassWatchPage() {
             </div>
         </div>
         <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0">
-        {chatSrc ? (
-            <Card className="h-full w-full">
-                <iframe
-                    src={chatSrc}
-                    className="w-full h-full rounded-lg"
-                    frameBorder="0"
-                ></iframe>
-            </Card>
-        ) : (
+          {(isVideoLoading) ? (
             <div className="flex h-full items-center justify-center bg-muted rounded-lg text-center p-4 text-muted-foreground">
                 <Loader className="animate-spin" />
-                <p className='ml-2'>लाइव चैट लोड हो रही है...</p>
+                <p className='ml-2'>चैट लोड हो रही है...</p>
             </div>
-        )}
+          ) : isLive ? (
+            <DummyChat />
+          ) : (
+             <Card className="h-full w-full flex items-center justify-center bg-muted text-muted-foreground">
+                <p>यह एक रिकॉर्डेड वीडियो है।</p>
+             </Card>
+          )}
         </div>
     </div>
   );
