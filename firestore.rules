@@ -42,10 +42,13 @@ service cloud.firestore {
 
     // User-specific data
     match /users/{userId} {
-      // Admins can list users
-      allow list: if isAdmin(request.auth.uid);
       // Users can read/write their own profile
       allow read, write: if request.auth.uid == userId;
+    }
+
+    // Rule for listing users - ONLY admins can do this
+    match /users/{userId} {
+        allow list: if isAdmin(request.auth.uid);
     }
 
     match /users/{userId}/{document=**} {
