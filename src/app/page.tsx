@@ -12,7 +12,6 @@ import {
   Library,
   Newspaper,
   Loader,
-  Megaphone,
   ShoppingBag,
   Star,
   Home,
@@ -21,13 +20,6 @@ import {
   ClipboardList,
   Users
 } from 'lucide-react';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
 import Image from 'next/image';
 import { collection, query, orderBy } from 'firebase/firestore';
 
@@ -38,7 +30,6 @@ const featureCards = [
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'लाइव क्लासेस', href: '/live-classes', icon: Laptop, color: 'bg-pink-500' },
   { title: 'बुक शाला', href: '/book-shala', icon: Library, color: 'bg-red-500' },
-  { title: 'प्रमोशन', href: '/promotions', icon: Megaphone, color: 'bg-yellow-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
   { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
 ];
@@ -56,14 +47,8 @@ export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
-  const promotionsQuery = useMemoFirebase(
-    () => (firestore ? query(collection(firestore, 'promotions'), orderBy('createdAt', 'desc')) : null),
-    [firestore]
-  );
-  
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
 
-  const { data: promotions, isLoading: promotionsLoading } = useCollection(promotionsQuery);
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
 
 
@@ -86,31 +71,6 @@ export default function HomePage() {
           <Link href="/support">Support</Link>
         </Button>
       </div>
-
-       {promotionsLoading ? <Card className="p-4 flex justify-center items-center h-40"><Loader className="animate-spin" /></Card> : (promotions && promotions.length > 0) ? (
-          <Carousel
-            opts={{ align: 'start', loop: promotions.length > 1 }}
-            className="w-full"
-          >
-            <CarouselContent>
-              {promotions.map((promo) => (
-                <CarouselItem key={promo.id}>
-                  <Card className="overflow-hidden bg-yellow-400 text-black">
-                    <CardContent className="p-4 flex items-center justify-center text-center">
-                       <p className="font-bold text-lg">
-                        {promo.text}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-             {promotions.length > 1 && <>
-              <CarouselPrevious className="ml-12" />
-              <CarouselNext className="mr-12" />
-             </>}
-          </Carousel>
-        ) : null }
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card) => (

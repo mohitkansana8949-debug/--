@@ -30,11 +30,6 @@ service cloud.firestore {
       allow write: if isAdmin(request.auth.uid);
     }
     
-    match /promotions/{promotionId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(request.auth.uid);
-    }
-    
     match /settings/{settingId} {
       allow read: if request.auth != null;
       allow write: if isAdmin(request.auth.uid);
