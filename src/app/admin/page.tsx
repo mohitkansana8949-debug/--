@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,6 +21,7 @@ import {
   Clock,
   Trash2,
   Megaphone,
+  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -52,15 +53,34 @@ type PromotionFormValues = z.infer<typeof promotionSchema>;
 
 export default function AdminDashboard() {
   const { firestore, storage } = useFirebase();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEducatorDialogOpen, setIsEducatorDialogOpen] = useState(false);
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [educatorPhoto, setEducatorPhoto] = useState<File | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
-  const usersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (user && firestore) {
+        const adminRef = doc(firestore, "roles_admin", user.uid);
+        const adminDoc = await getDoc(adminRef);
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setIsAdmin(false);
+      }
+      setIsAdminLoading(false);
+    };
+    if (!isUserLoading) {
+        checkAdminStatus();
+    }
+  }, [user, firestore, isUserLoading]);
+
+  const usersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
   const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
-  const enrollmentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courseEnrollments') : null), [firestore]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'courseEnrollments') : null), [firestore, isAdmin]);
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
   const promotionsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'promotions') : null), [firestore]);
 
@@ -148,7 +168,7 @@ export default function AdminDashboard() {
   }
 
 
-  const loading = usersLoading || coursesLoading || enrollmentsLoading || educatorsLoading || promotionsLoading;
+  const loading = isUserLoading || isAdminLoading || usersLoading || coursesLoading || enrollmentsLoading || educatorsLoading || promotionsLoading;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -158,6 +178,21 @@ export default function AdminDashboard() {
         default: return <Badge>{status}</Badge>;
     }
   }
+
+  if (isUserLoading || isAdminLoading) {
+      return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>
+  }
+
+  if (!isAdmin) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+              <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
+              <h1 className="text-2xl font-bold">पहुंच प्रतिबंधित है</h1>
+              <p className="text-muted-foreground">आपके पास इस पेज को देखने की अनुमति नहीं है।</p>
+          </div>
+      );
+  }
+
 
   return (
     <div className="container mx-auto p-4">
