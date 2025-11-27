@@ -32,7 +32,13 @@ type CourseFormValues = z.infer<typeof courseSchema>;
 
 // Helper function to remove undefined properties from an object
 const removeUndefined = (obj: any) => {
-  return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+  const newObj: any = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
 };
 
 
@@ -87,7 +93,18 @@ export default function CreateCoursePage() {
       
       const cleanedCourseData = removeUndefined(courseData);
 
-      const docRef = await addDoc(collection(firestore, 'courses'), cleanedCourseData);
+      const coursesCollection = collection(firestore, 'courses');
+      
+      addDoc(coursesCollection, cleanedCourseData).catch(error => {
+        const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: coursesCollection.path,
+            requestResourceData: cleanedCourseData,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+        throw error; // re-throw to be caught by outer catch
+      });
+
 
       toast({
         title: 'सफलता!',
@@ -97,19 +114,10 @@ export default function CreateCoursePage() {
 
     } catch (error: any) {
       console.error("Course creation error:", error);
-      
-      const contextualError = new FirestorePermissionError({
-        operation: 'create',
-        path: `courses/some-course-id`, // Use a placeholder path
-        requestResourceData: values,
-      });
-
-      errorEmitter.emit('permission-error', contextualError);
-      
       toast({ 
         variant: 'destructive', 
         title: 'कोर्स बनाने में विफल', 
-        description: error.message || 'एक अज्ञात त्रुटि हुई। कृपया कंसोल देखें।'
+        description: 'An error occurred. See the console for details.'
       });
     } finally {
       setIsSubmitting(false);

@@ -70,21 +70,27 @@ export default function AppSettingsPage() {
                  setIsSubmitting(false);
                  return;
             }
-
-            await setDoc(settingsDocRef, settingsUpdate, { merge: true });
+            
+            await setDoc(settingsDocRef, settingsUpdate, { merge: true }).catch(error => {
+                const contextualError = new FirestorePermissionError({
+                    operation: 'update',
+                    path: settingsDocRef.path,
+                    requestResourceData: settingsUpdate,
+                });
+                errorEmitter.emit('permission-error', contextualError);
+                throw error;
+            });
             
             toast({ title: 'सफलता!', description: 'पेमेंट सेटिंग्स अपडेट हो गई हैं।'});
             setQrCodeFile(null);
 
         } catch (error: any) {
-             const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: settingsDocRef.path,
-                requestResourceData: { mobileNumber },
-            });
-            errorEmitter.emit('permission-error', contextualError);
             console.error('Error updating settings:', error);
-            toast({ variant: 'destructive', title: 'त्रुटि', description: error.message || 'सेटिंग्स अपडेट नहीं हो सकीं।'});
+            toast({ 
+                variant: 'destructive', 
+                title: 'त्रुटि', 
+                description: 'An error occurred. See the console for details.'
+            });
         } finally {
             setIsSubmitting(false);
         }
