@@ -2,7 +2,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun, LogOut, ShoppingCart } from "lucide-react";
+import { Moon, Sun, LogOut, ShoppingCart, ShieldCheck } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,8 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth, useUser } from "@/firebase";
+import { useAdmin } from '@/hooks/useAdmin';
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -44,10 +46,11 @@ const getColorForId = (id: string) => {
 export function AppHeader() {
   const pathname = usePathname();
 
-  const noHeaderPaths = ['/login', '/signup', '/complete-profile', '/admin/create-course'];
+  const noHeaderPaths = ['/login', '/signup', '/complete-profile'];
   const isPaymentPath = pathname.includes('/payment');
+  const isCreateCoursePath = pathname.includes('/admin/create-course');
 
-  if (noHeaderPaths.includes(pathname) || isPaymentPath) {
+  if (noHeaderPaths.includes(pathname) || isPaymentPath || isCreateCoursePath) {
     return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
          <ThemeToggle />
@@ -86,6 +89,7 @@ function ThemeToggle() {
 
 function UserMenu() {
     const { user, isUserLoading } = useUser();
+    const { isAdmin, isAdminLoading } = useAdmin();
     const auth = useAuth();
     const router = useRouter();
     const { toast } = useToast();
@@ -110,7 +114,7 @@ function UserMenu() {
         }
     };
     
-    if (isUserLoading) {
+    if (isUserLoading || isAdminLoading) {
         return <Avatar className='h-8 w-8' />;
     }
 
@@ -145,7 +149,10 @@ function UserMenu() {
                  <DropdownMenuItem asChild>
                     <Link href="/profile">
                         <div className="flex flex-col">
-                            <span className="font-semibold">{user.displayName || 'User'}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="font-semibold">{user.displayName || 'User'}</span>
+                                {isAdmin && <Badge variant="success" className="h-5"><ShieldCheck className="mr-1 h-3 w-3"/>Admin</Badge>}
+                            </div>
                             <span className="text-xs text-muted-foreground">{user.email}</span>
                         </div>
                     </Link>
@@ -164,5 +171,3 @@ function UserMenu() {
         </DropdownMenu>
     );
 }
-
-    

@@ -6,8 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil } from 'lucide-react';
+import { Pencil, ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
+import { useAdmin } from '@/hooks/useAdmin';
+import { Badge } from '@/components/ui/badge';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -32,6 +34,7 @@ const getColorForId = (id: string) => {
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
+  const { isAdmin, isAdminLoading } = useAdmin();
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'QS';
@@ -44,7 +47,7 @@ export default function ProfilePage() {
   
   const avatarColor = useMemo(() => user ? getColorForId(user.uid) : 'bg-muted', [user]);
 
-  if (isUserLoading) {
+  if (isUserLoading || isAdminLoading) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-10 w-48" />
@@ -91,7 +94,10 @@ export default function ProfilePage() {
              )}
           </Avatar>
           <div>
-            <p className="text-2xl font-semibold">{user.displayName || 'नाम प्रदान नहीं किया गया'}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-2xl font-semibold">{user.displayName || 'नाम प्रदान नहीं किया गया'}</p>
+              {isAdmin && <Badge variant="success"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
+            </div>
             <p className="text-muted-foreground">{user.email}</p>
           </div>
         </CardContent>
@@ -99,5 +105,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

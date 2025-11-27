@@ -37,6 +37,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useAdmin } from '@/hooks/useAdmin';
 
 
 const educatorSchema = z.object({
@@ -53,30 +54,13 @@ type PromotionFormValues = z.infer<typeof promotionSchema>;
 
 export default function AdminDashboard() {
   const { firestore, storage } = useFirebase();
-  const { user, isUserLoading } = useUser();
+  const { isUserLoading } = useUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEducatorDialogOpen, setIsEducatorDialogOpen] = useState(false);
   const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [educatorPhoto, setEducatorPhoto] = useState<File | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (user && firestore) {
-        const adminRef = doc(firestore, "roles_admin", user.uid);
-        const adminDoc = await getDoc(adminRef);
-        setIsAdmin(adminDoc.exists());
-      } else {
-        setIsAdmin(false);
-      }
-      setIsAdminLoading(false);
-    };
-    if (!isUserLoading) {
-        checkAdminStatus();
-    }
-  }, [user, firestore, isUserLoading]);
+  const { isAdmin, isAdminLoading } = useAdmin();
 
   const usersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
   const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
@@ -185,7 +169,7 @@ export default function AdminDashboard() {
 
   if (!isAdmin) {
       return (
-          <div className="flex flex-col items-center justify-center h-full text-center p-8">
+          <div className="container mx-auto p-4 flex flex-col items-center justify-center h-full text-center">
               <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
               <h1 className="text-2xl font-bold">पहुंच प्रतिबंधित है</h1>
               <p className="text-muted-foreground">आपके पास इस पेज को देखने की अनुमति नहीं है।</p>

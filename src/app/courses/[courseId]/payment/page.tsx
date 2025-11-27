@@ -2,7 +2,7 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { doc, setDoc, serverTimestamp, collection, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,21 +57,14 @@ export default function PaymentPage() {
             courseId: course.id,
             enrollmentDate: serverTimestamp(),
             paymentMethod: paymentMethod,
-            paymentTransactionId: paymentMobileNumber, // Using mobile number as transaction ID for now
-            status: 'pending', // pending, approved, rejected
+            paymentTransactionId: paymentMobileNumber, 
+            status: 'approved', // Status is now 'approved' immediately.
         };
 
         try {
             await setDoc(enrollmentRef, enrollmentData);
 
-            toast({ title: 'सफलता!', description: 'आपका एनरोलमेंट अनुरोध सबमिट हो गया है। 1 मिनट में पुष्टि हो जाएगी।'});
-
-            // Auto-approve after 1 minute
-            setTimeout(async () => {
-                if (firestore) {
-                    await updateDoc(enrollmentRef, { status: 'approved' });
-                }
-            }, 60000); // 1 minute
+            toast({ title: 'सफलता!', description: 'आपका एनरोलमेंट सफल हो गया है! आप कोर्स शुरू कर सकते हैं।'});
 
             router.push('/my-library');
         } catch (error) {
@@ -103,7 +96,11 @@ export default function PaymentPage() {
                     <CardDescription>कोर्स '{course.name}' में एनरोल करने के लिए।</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {!course.isFree && <div className="flex justify-center"><Button>अभी खरीदें - ₹{course.price}</Button></div>}
+                    <div className="flex justify-center">
+                        <Button size="lg" disabled>
+                            अभी खरीदें - ₹{course.price}
+                        </Button>
+                    </div>
                     
                     <div className="space-y-2">
                         <p className="font-semibold">पेमेंट मेथड चुनें:</p>
@@ -155,7 +152,7 @@ export default function PaymentPage() {
                             <div className="rounded-lg border bg-amber-50 p-4 text-amber-900 dark:bg-amber-950 dark:text-amber-100 text-center animate-in fade-in-50">
                                 <h4 className="font-bold">महत्वपूर्ण निर्देश</h4>
                                 <p className="text-sm">कृपया ₹{course.price} का पेमेंट करें। पेमेंट करने के बाद, जिस नंबर से आपने पेमेंट किया है, वह नीचे दर्ज करें और सबमिट करें।</p>
-                                <p className="text-xs mt-2">सही पेमेंट होने पर आपका एनरोलमेंट 1 मिनट में अप्रूव हो जाएगा।</p>
+                                <p className="text-xs mt-2">सही पेमेंट होने पर आपका एनरोलमेंट तुरंत अप्रूव हो जाएगा।</p>
                             </div>
 
                              <div>
