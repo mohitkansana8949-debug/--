@@ -1,12 +1,11 @@
 
 'use client';
 import { useParams } from 'next/navigation';
-import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
+import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Loader, AlertTriangle } from 'lucide-react';
-import { format } from 'date-fns';
 import { useEffect, useState } from 'react';
 
 export default function LiveClassWatchPage() {
@@ -27,7 +26,7 @@ export default function LiveClassWatchPage() {
   const { data: liveClass, isLoading } = useDoc(liveClassRef);
   
   const youtubeVideoId = liveClass?.youtubeVideoId;
-  const videoSrc = `https://www.youtube.com/embed/${youtubeVideoId}`;
+  const videoSrc = youtubeVideoId ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0` : '';
   const chatSrc = embedHost && youtubeVideoId 
     ? `https://www.youtube.com/live_chat?v=${youtubeVideoId}&embed_domain=${embedHost}` 
     : '';
@@ -55,14 +54,18 @@ export default function LiveClassWatchPage() {
         <div className="flex-grow flex flex-col">
             <div className="w-full flex-grow">
                 <AspectRatio ratio={16 / 9} className="bg-muted rounded-lg overflow-hidden h-full">
-                    <iframe
-                        src={videoSrc}
-                        title="YouTube video player"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        className="w-full h-full"
-                    ></iframe>
+                    {videoSrc ? (
+                        <iframe
+                            src={videoSrc}
+                            title="YouTube video player"
+                            frameBorder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            className="w-full h-full"
+                        ></iframe>
+                    ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">वीडियो लोड हो रहा है...</div>
+                    )}
                 </AspectRatio>
             </div>
         </div>
@@ -76,8 +79,9 @@ export default function LiveClassWatchPage() {
                 ></iframe>
             </Card>
         ) : (
-            <div className="flex h-full items-center justify-center bg-muted rounded-lg">
+            <div className="flex h-full items-center justify-center bg-muted rounded-lg text-center p-4 text-muted-foreground">
                 <Loader className="animate-spin" />
+                <p className='ml-2'>लाइव चैट लोड हो रही है...</p>
             </div>
         )}
         </div>

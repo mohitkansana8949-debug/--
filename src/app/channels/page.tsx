@@ -60,7 +60,7 @@ export default function ChannelsPage() {
                                 />
                             </div>
                             <CardHeader>
-                                <CardTitle className="text-lg truncate">{channel.channelUrl}</CardTitle>
+                                <CardTitle className="text-lg truncate">{channel.channelUrl.replace('https://www.youtube.com/c/', '')}</CardTitle>
                             </CardHeader>
                         </Card>
                     </Link>
