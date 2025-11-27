@@ -36,6 +36,10 @@ export function AppSidebar() {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user && firestore) {
+        if (user.email === 'Qukly@study.com') {
+            setIsAdmin(true);
+            return;
+        }
         try {
           const adminRef = doc(firestore, "roles_admin", user.uid);
           const adminDoc = await getDoc(adminRef);
@@ -108,6 +112,11 @@ export function AppSidebar() {
           </Sidebar>
       )
   }
+  
+  if (!user) {
+    return null; // Don't show sidebar if user is not logged in
+  }
+
 
   return (
     <Sidebar>
@@ -134,8 +143,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          {isAdmin && (
-            adminNavItems.map((item) => (
+          {adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
@@ -149,7 +157,7 @@ export function AppSidebar() {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-          )))}
+          ))}
         </SidebarMenu>
       </SidebarContent>
        <SidebarFooter>
@@ -198,3 +206,5 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
+
+    

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc, getDoc, addDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, serverTimestamp, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -21,10 +21,9 @@ import {
   Clock,
   Trash2,
   Megaphone,
-  ShieldAlert,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useForm } from 'react-hook-form';
@@ -37,8 +36,8 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useAdmin } from '@/hooks/useAdmin';
 
+const ADMIN_CODE = "Qukly";
 
 const educatorSchema = z.object({
     name: z.string().min(1, 'नाम आवश्यक है'),
@@ -51,6 +50,11 @@ const promotionSchema = z.object({
 });
 type PromotionFormValues = z.infer<typeof promotionSchema>;
 
+const codeSchema = z.object({
+    code: z.string().min(1, 'कोड आवश्यक है'),
+});
+type CodeFormValues = z.infer<typeof codeSchema>;
+
 
 export default function AdminDashboard() {
   const { firestore, storage } = useFirebase();
@@ -58,15 +62,22 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEducatorDialogOpen, setIsEducatorDialogOpen] = useState(false);
-  const [isPromoDialogOpen, setIsPromoDialogOpen] = useState(false);
   const [educatorPhoto, setEducatorPhoto] = useState<File | null>(null);
-  const { isAdmin, isAdminLoading } = useAdmin();
+  
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
 
-  const usersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
+  useEffect(() => {
+    // Check session storage to see if user has already been verified
+    if (sessionStorage.getItem('admin-verified') === 'true') {
+        setIsAdminVerified(true);
+    }
+  }, []);
+  
+  const usersQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'users') : null), [firestore, isAdminVerified]);
   const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
-  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'courseEnrollments') : null), [firestore, isAdmin]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'courseEnrollments') : null), [firestore, isAdminVerified]);
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
-  const promotionsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'promotions') : null), [firestore]);
+  const promotionsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'promotions') : null), [firestore, isAdminVerified]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
@@ -76,6 +87,7 @@ export default function AdminDashboard() {
 
   const educatorForm = useForm<EducatorFormValues>({ resolver: zodResolver(educatorSchema), defaultValues: { name: '', experience: '' } });
   const promotionForm = useForm<PromotionFormValues>({ resolver: zodResolver(promotionSchema), defaultValues: { text: '' } });
+  const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
 
   const onEducatorSubmit = async (values: EducatorFormValues) => {
       if (!firestore || !storage) return;
@@ -116,7 +128,6 @@ export default function AdminDashboard() {
           await addDoc(collection(firestore, 'promotions'), promoData);
           toast({ title: 'सफलता!', description: 'नया प्रमोशन जोड़ दिया गया है।'});
           promotionForm.reset();
-          setIsPromoDialogOpen(false);
       } catch (error: any) {
           console.error("Promotion creation error:", error);
           const contextualError = new FirestorePermissionError({ operation: 'create', path: 'promotions', requestResourceData: values });
@@ -151,8 +162,18 @@ export default function AdminDashboard() {
     }
   }
 
+  const handleCodeSubmit = (values: CodeFormValues) => {
+      if (values.code === ADMIN_CODE) {
+          toast({ title: 'सफलता!', description: 'एडमिन एक्सेस प्रदान किया गया।'});
+          sessionStorage.setItem('admin-verified', 'true');
+          setIsAdminVerified(true);
+      } else {
+          toast({ variant: 'destructive', title: 'गलत कोड', description: 'प्रदान किया गया एडमिन कोड गलत है।'});
+      }
+  }
 
-  const loading = isUserLoading || isAdminLoading || usersLoading || coursesLoading || enrollmentsLoading || educatorsLoading || promotionsLoading;
+
+  const loading = isUserLoading || usersLoading || coursesLoading || enrollmentsLoading || educatorsLoading || promotionsLoading;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -163,18 +184,35 @@ export default function AdminDashboard() {
     }
   }
 
-  if (isUserLoading || isAdminLoading) {
+  if (isUserLoading) {
       return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>
   }
 
-  if (!isAdmin) {
+  if (!isAdminVerified) {
       return (
-          <div className="container mx-auto p-4 flex flex-col items-center justify-center h-full text-center">
-              <ShieldAlert className="h-16 w-16 text-destructive mb-4" />
-              <h1 className="text-2xl font-bold">पहुंच प्रतिबंधित है</h1>
-              <p className="text-muted-foreground">आपके पास इस पेज को देखने की अनुमति नहीं है।</p>
-          </div>
-      );
+          <Dialog open={true} onOpenChange={() => {}}>
+              <DialogContent>
+                  <DialogHeader>
+                      <DialogTitle>एडमिन एक्सेस</DialogTitle>
+                      <DialogDescription>
+                          एडमिन डैशबोर्ड तक पहुंचने के लिए कृपया एडमिन कोड दर्ज करें।
+                      </DialogDescription>
+                  </DialogHeader>
+                   <Form {...codeForm}>
+                        <form onSubmit={codeForm.handleSubmit(handleCodeSubmit)} className="space-y-4">
+                            <FormField control={codeForm.control} name="code" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>एडमिन कोड</FormLabel>
+                                    <FormControl><Input type="password" placeholder="••••••" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                            <Button type="submit" className="w-full">एक्सेस करें</Button>
+                        </form>
+                    </Form>
+              </DialogContent>
+          </Dialog>
+      )
   }
 
 
@@ -184,13 +222,12 @@ export default function AdminDashboard() {
       <p className="text-muted-foreground mb-8">यूज़र, कोर्स, एनरोलमेंट और सेटिंग्स मैनेज करें।</p>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-6">
+        <TabsList className="grid w-full grid-cols-1 sm:grid-cols-5">
           <TabsTrigger value="overview">अवलोकन</TabsTrigger>
           <TabsTrigger value="courses">कोर्सेस</TabsTrigger>
           <TabsTrigger value="enrollments">एनरोलमेंट्स</TabsTrigger>
           <TabsTrigger value="users">यूज़र्स</TabsTrigger>
           <TabsTrigger value="educators">एजुकेटर्स</TabsTrigger>
-          <TabsTrigger value="promotions">प्रमोशन</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -276,55 +313,12 @@ export default function AdminDashboard() {
                         </DialogContent>
                     </Dialog>
                 </CardHeader>
-                 <CardContent>{educatorsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center"><Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/><CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent></Card>))}</div>}</CardContent>
-            </Card>
-        </TabsContent>
-        
-        <TabsContent value="promotions">
-             <Card className="mt-6">
-                <CardHeader className="flex flex-row justify-between items-center">
-                    <CardTitle>प्रमोशन</CardTitle>
-                     <Dialog open={isPromoDialogOpen} onOpenChange={setIsPromoDialogOpen}>
-                        <DialogTrigger asChild><Button><Megaphone className="mr-2 h-4 w-4" />नया प्रमोशन जोड़ें</Button></DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader><DialogTitle>नया प्रमोशन जोड़ें</DialogTitle></DialogHeader>
-                            <Form {...promotionForm}>
-                            <form onSubmit={promotionForm.handleSubmit(onPromotionSubmit)} className="space-y-4">
-                                <FormField control={promotionForm.control} name="text" render={({ field }) => (<FormItem><FormLabel>प्रमोशन टेक्स्ट</FormLabel><FormControl><Input placeholder="जैसे, दिवाली पर 50% की छूट!" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                                <Button type="submit" disabled={isSubmitting} className="w-full">{isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> जोड़ा जा रहा है...</> : 'प्रमोशन जोड़ें'}</Button>
-                            </form>
-                            </Form>
-                        </DialogContent>
-                    </Dialog>
-                </CardHeader>
-                 <CardContent>
-                     <Table>
-                        <TableHeader><TableRow><TableHead>टेक्स्ट</TableHead><TableHead className="text-right">एक्शन</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                            {promotionsLoading && <TableRow><TableCell colSpan={2} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
-                            {promotions?.map(promo => (
-                                <TableRow key={promo.id}>
-                                    <TableCell>{promo.text}</TableCell>
-                                    <TableCell className="text-right">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>क्या आप वाकई निश्चित हैं?</AlertDialogTitle><AlertDialogDescription>यह क्रिया पूर्ववत नहीं की जा सकती। यह प्रमोशन हमेशा के लिए हटा दिया जाएगा।</AlertDialogDescription></AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>रद्द करें</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => deletePromotion(promo.id)}>हटाएं</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
+                 <CardContent>{educatorsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center">{educator.imageUrl && <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/>}<CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent></Card>))}</div>}</CardContent>
             </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    

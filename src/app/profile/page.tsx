@@ -7,9 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Pencil, ShieldCheck } from 'lucide-react';
-import { useMemo } from 'react';
-import { useAdmin } from '@/hooks/useAdmin';
+import { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -34,7 +36,36 @@ const getColorForId = (id: string) => {
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
-  const { isAdmin, isAdminLoading } = useAdmin();
+  const firestore = useFirestore();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+        if (user && firestore) {
+            if (user.email === 'Qukly@study.com') {
+                setIsAdmin(true);
+                setIsAdminLoading(false);
+                return;
+            }
+            try {
+                const adminRef = doc(firestore, "roles_admin", user.uid);
+                const adminDoc = await getDoc(adminRef);
+                setIsAdmin(adminDoc.exists());
+            } catch (error) {
+                console.error("Error checking admin status:", error);
+                setIsAdmin(false);
+            } finally {
+                setIsAdminLoading(false);
+            }
+        } else if (!isUserLoading) {
+            setIsAdmin(false);
+            setIsAdminLoading(false);
+        }
+    };
+
+    checkAdminStatus();
+}, [user, firestore, isUserLoading]);
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'QS';

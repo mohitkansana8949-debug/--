@@ -15,12 +15,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth, useUser } from "@/firebase";
-import { useAdmin } from '@/hooks/useAdmin';
 import { useRouter, usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 
 // Helper function to get a color based on user ID
@@ -89,10 +90,41 @@ function ThemeToggle() {
 
 function UserMenu() {
     const { user, isUserLoading } = useUser();
-    const { isAdmin, isAdminLoading } = useAdmin();
+    const firestore = useFirestore();
     const auth = useAuth();
     const router = useRouter();
     const { toast } = useToast();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdminLoading, setIsAdminLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAdminStatus = async () => {
+            if (user && firestore) {
+                 if (user.email === 'Qukly@study.com') {
+                    setIsAdmin(true);
+                    setIsAdminLoading(false);
+                    return;
+                }
+                try {
+                    const adminRef = doc(firestore, "roles_admin", user.uid);
+                    const adminDoc = await getDoc(adminRef);
+                    setIsAdmin(adminDoc.exists());
+                } catch (error) {
+                    console.error("Error checking admin status:", error);
+                    setIsAdmin(false);
+                } finally {
+                    setIsAdminLoading(false);
+                }
+            } else {
+                setIsAdmin(false);
+                setIsAdminLoading(false);
+            }
+        };
+
+        if (!isUserLoading) {
+            checkAdminStatus();
+        }
+    }, [user, firestore, isUserLoading]);
     
     const avatarColor = useMemo(() => user ? getColorForId(user.uid) : 'bg-muted', [user]);
 
@@ -171,3 +203,5 @@ function UserMenu() {
         </DropdownMenu>
     );
 }
+
+    
