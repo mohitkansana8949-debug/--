@@ -28,7 +28,7 @@ const LiveChatOutputSchema = z.object({
       publishedAt: z.string(),
     })
   ),
-  nextPageToken: z.string(),
+  nextPageToken: z.string().optional(),
   pollingIntervalMillis: z.number(),
 });
 
@@ -62,9 +62,13 @@ const getLiveChatMessagesFlow = ai.defineFlow(
       const data = await response.json();
 
       if (!response.ok) {
-        // Check if chat is not enabled
-        if (data.error?.errors?.[0]?.reason === 'chatDisabled') {
-             throw new Error('Chat is disabled for this live stream.');
+        const errorReason = data.error?.errors?.[0]?.reason;
+        // Gracefully handle cases where the chat has ended or the token is invalid
+        if (errorReason === 'chatDisabled' || errorReason === 'liveChatEnded' || errorReason === 'pageTokenNotValid' ) {
+            return {
+                messages: [],
+                pollingIntervalMillis: 120000, // Stop polling frequently
+            };
         }
         throw new Error(data.error?.message || 'Failed to fetch live chat messages.');
       }
