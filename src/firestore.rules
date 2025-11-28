@@ -4,85 +4,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Function to check if a user is an admin
-    function isAdmin(uid) {
-      return exists(/databases/$(database)/documents/roles_admin/$(uid)) || get(/databases/$(database)/documents/users/$(uid)).data.email == 'Qukly@study.com';
-    }
-
-    // Allow create if the request time matches the server timestamp
-    function isSecureWrite(data) {
-      return data.createdAt == request.time;
-    }
-    
-    function isFutureClass(data) {
-      return data.startTime.toMillis() > request.time.toMillis();
-    }
-
-    // Publicly readable collections
-    match /courses/{courseId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
-    }
-
-    match /youtubeChannels/{channelId} {
-        allow read: if request.auth != null;
-        allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
-    }
-    
     match /liveClasses/{liveClassId} {
-      allow list, read: if request.auth != null;
-      allow create: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data) && isFutureClass(request.resource.data);
-      allow write: if isAdmin(request.auth.uid);
+      allow get, list, read, write: if request.auth != null;
     }
 
-    match /educators/{educatorId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data);
-    }
-    
-    match /settings/{settingId} {
-      allow read: if request.auth != null;
-      allow write: if isAdmin(request.auth.uid);
-    }
-
-    // User-specific data
-    match /users/{userId} {
-      // Admins can list users
-      allow list: if isAdmin(request.auth.uid);
-      // Users can read/write their own profile
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    match /users/{userId}/{document=**} {
-      // Users can manage their own subcollections
-      allow read, write: if request.auth.uid == userId;
-    }
-
-    // Rules for course enrollments
-    match /courseEnrollments/{enrollmentId} {
-        // User can create their own enrollment document
-        allow create: if request.auth.uid == request.resource.data.userId && isSecureWrite(request.resource.data);
-        
-        // User can read their own enrollments
-        allow read: if request.auth.uid == resource.data.userId;
-
-        // Admin can read/update/delete any enrollment
-        allow read, update, delete: if isAdmin(request.auth.uid);
-    }
-    
-    match /courseEnrollments/{enrollment} {
-        // Admins can list all enrollments
-        allow list: if isAdmin(request.auth.uid);
-    }
-
-    // Chat rules
-    match /chats/{chatId}/messages/{messageId} {
-      // Any logged-in user can read messages
-      allow read: if request.auth != null;
-      // Users can only create messages for themselves, and only if the write is secure
-      allow create: if request.auth.uid == request.resource.data.userId && isSecureWrite(request.resource.data);
-      // Users cannot update or delete messages
-      allow update, delete: if false;
+    match /{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
