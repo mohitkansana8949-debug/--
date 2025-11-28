@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, Copy, Check, Loader, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { uploadFile } from '@/ai/flows/b2-upload-flow';
+import { AxiosProgressEvent } from 'axios';
 
 interface UploadedFile {
     name: string;
@@ -33,10 +35,7 @@ export default function UploadPage() {
         }
     };
 
-    const handleUpload = () => {
-        // This is a placeholder for a real upload mechanism.
-        // In a real app, you would use your storage service's SDK with an API key.
-        // For this demo, we simulate the upload process.
+    const handleUpload = async () => {
         if (!file) {
              toast({
                 variant: 'destructive',
@@ -49,33 +48,36 @@ export default function UploadPage() {
         setIsUploading(true);
         setUploadProgress(0);
 
-        // Simulate upload progress
-        const interval = setInterval(() => {
-            setUploadProgress(prev => {
-                if (prev === null) return 0;
-                if (prev >= 100) {
-                    clearInterval(interval);
-                    return 100;
+        try {
+            const result = await uploadFile(file, (progressEvent: AxiosProgressEvent) => {
+                if (progressEvent.total) {
+                    const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                    setUploadProgress(percentCompleted);
                 }
-                return prev + 10;
             });
-        }, 200);
-
-        setTimeout(() => {
-            clearInterval(interval);
-            setUploadProgress(100);
-             // In a real app, this URL would come from your storage service.
-             const fakeUrl = `https://your-storage-service.com/uploads/${Date.now()}_${fileName.trim()}`;
-             toast({
-                title: 'Upload Successful! (Demo)',
+            
+            toast({
+                title: 'Upload Successful!',
                 description: `File URL is ready.`,
             });
-            setUploadedFiles(prev => [{ name: fileName, url: fakeUrl }, ...prev]);
+            
+            const uploadedFileUrl = `https://f005.backblazeb2.com/file/quickly-study/${result.fileName}`;
+
+            setUploadedFiles(prev => [{ name: fileName, url: uploadedFileUrl }, ...prev]);
+
+        } catch(e: any) {
+            console.error(e);
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: e.message || 'An unknown error occurred during upload.'
+            })
+        } finally {
             setIsUploading(false);
             setFile(null);
             setFileName('');
             setUploadProgress(null);
-        }, 2500);
+        }
     };
     
     const handleCopy = (url: string) => {
@@ -94,7 +96,7 @@ export default function UploadPage() {
                 Back to Dashboard
               </Link>
             </Button>
-            <h1 className="text-xl font-semibold">Upload New Content (Demo)</h1>
+            <h1 className="text-xl font-semibold">Upload New Content</h1>
          </header>
          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -105,7 +107,7 @@ export default function UploadPage() {
                            Upload Video or PDF
                         </CardTitle>
                         <CardDescription>
-                            Upload files to your storage. Once uploaded, you can copy the URL to use in your courses, e-books, or PYQs. This is a demo and does not perform a real upload.
+                            Upload files to your storage. Once uploaded, you can copy the URL to use in your courses, e-books, or PYQs.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -160,7 +162,7 @@ export default function UploadPage() {
                 {uploadedFiles.length > 0 && (
                      <Card>
                         <CardHeader>
-                            <CardTitle>Uploaded Files (Demo)</CardTitle>
+                            <CardTitle>Uploaded Files</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ul className="space-y-3">
