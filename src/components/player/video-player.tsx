@@ -23,7 +23,8 @@ import { getYouTubeID } from '@/lib/youtube';
 import JioVideoPlayer from './jio-video-player';
 
 type VideoPlayerProps = {
-    videoUrl: string | null;
+    videoUrl?: string | null;
+    videoId?: string | null;
     title?: string;
 };
 
@@ -32,12 +33,14 @@ const isJioCloudUrl = (url: string | null): boolean => {
     return url.includes('jioaicloud.com');
 }
 
-export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
+export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, title }: VideoPlayerProps) {
   const router = useRouter();
 
+  const videoId = videoIdProp || getYouTubeID(urlProp || '');
+  const videoUrl = urlProp || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : null);
+
   const isJioVideo = isJioCloudUrl(videoUrl);
-  const isYoutubeVideo = !!(videoUrl && getYouTubeID(videoUrl) && !isJioVideo);
-  const videoId = isYoutubeVideo ? getYouTubeID(videoUrl) : null;
+  const isYoutubeVideo = !!videoId && !isJioVideo;
   const isExternalVideo = !!videoUrl && !isYoutubeVideo && !isJioVideo;
 
   const [player, setPlayer] = useState<any>(null);
@@ -291,8 +294,8 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
      )}
      
      {(!isYoutubeVideo) && (
-         <header className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0 pointer-events-none")}>
-           <div className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
+         <header className={cn("absolute top-0 left-0 right-0 z-20 transition-opacity duration-300", showControls ? "opacity-100" : "opacity-0 pointer-events-none")}>
+           <div className="p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
              <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <ArrowLeft />
              </Button>

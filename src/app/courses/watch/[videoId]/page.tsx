@@ -11,15 +11,14 @@ function WatchVideoContent() {
   const searchParams = useSearchParams();
   const isLive = searchParams.get('live') === 'true';
   const chatId = searchParams.get('chatId');
-  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-black">
-      <main className="flex-1 flex flex-col overflow-auto">
-        <VideoPlayer videoUrl={videoUrl} />
+    <div className="flex flex-col h-screen bg-black">
+      <main className="flex-1 flex flex-col overflow-auto relative">
+        <VideoPlayer videoId={videoId as string} />
       </main>
       {isLive && chatId && (
-        <aside className="w-full lg:w-96 lg:h-screen flex flex-col border-l bg-background">
+        <aside className="h-[50vh] flex flex-col border-t bg-background">
           <RealtimeChat chatId={chatId} />
         </aside>
       )}

@@ -14,12 +14,12 @@ function WatchExternalVideoContent() {
   const chatId = searchParams.get('chatId');
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-black">
+    <div className="flex flex-col h-screen bg-black">
       <main className="flex-1 flex flex-col overflow-auto">
         <VideoPlayer videoUrl={videoUrl} title={title || undefined} />
       </main>
       {isLive && chatId && (
-        <aside className="w-full lg:w-96 lg:h-screen flex flex-col border-l bg-background">
+         <aside className="h-[50vh] flex flex-col border-t bg-background">
           <RealtimeChat chatId={chatId} />
         </aside>
       )}
