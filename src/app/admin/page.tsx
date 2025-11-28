@@ -24,7 +24,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
-const ADMIN_CODE = "Qukly";
+const ADMIN_CODE = "Quickly";
 
 const codeSchema = z.object({
     code: z.string().min(1, 'कोड आवश्यक है'),

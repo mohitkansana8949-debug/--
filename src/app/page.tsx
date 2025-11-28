@@ -134,7 +134,7 @@ export default function HomePage() {
       <InstallPWA />
       <div className="flex justify-between items-center">
         <div className="text-left">
-            <h1 className="text-2xl font-semibold tracking-tight">Welcome to QuklyStudy</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">Welcome to Quickly Study</h1>
             <p className="text-sm text-muted-foreground">The quickest way to study.</p>
         </div>
         <Button variant="outline" asChild>

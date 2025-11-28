@@ -9,9 +9,9 @@ import { FirebaseClientProvider } from '@/firebase';
 import { AuthGate } from '@/components/layout/auth-gate';
 
 
-const APP_NAME = "QuklyStudy";
-const APP_DEFAULT_TITLE = "QuklyStudy";
-const APP_TITLE_TEMPLATE = "%s - QuklyStudy";
+const APP_NAME = "Quickly Study";
+const APP_DEFAULT_TITLE = "Quickly Study";
+const APP_TITLE_TEMPLATE = "%s - Quickly Study";
 const APP_DESCRIPTION = "The quickest way to study.";
 
 export const metadata: Metadata = {

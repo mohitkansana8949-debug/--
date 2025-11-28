@@ -71,13 +71,13 @@ export function AppSidebar() {
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
   const noSidebarPaths = ['/login', '/signup', '/youtube/'];
-  const fullScreenPaths = ['/live-classes/'];
+  const fullScreenPaths = ['/live-classes/', '/courses/'];
 
   if (noSidebarPaths.some(p => pathname.startsWith(p))) {
     return null;
   }
 
-  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p))) {
+  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p) && pathname.endsWith('/watch'))) {
     return null;
   }
   
@@ -87,7 +87,7 @@ export function AppSidebar() {
             <SidebarHeader>
                 <Link href="/" className="flex items-center gap-2" prefetch={false}>
                     <GraduationCap className="h-8 w-8 text-primary" />
-                    <span className="text-xl font-bold whitespace-nowrap">QuklyStudy</span>
+                    <span className="text-xl font-bold whitespace-nowrap">Quickly Study</span>
                 </Link>
             </SidebarHeader>
           </Sidebar>
@@ -104,7 +104,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link href="/" className="flex items-center gap-2" prefetch={false}>
           <GraduationCap className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold whitespace-nowrap">QuklyStudy</span>
+          <span className="text-xl font-bold whitespace-nowrap">Quickly Study</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
