@@ -30,7 +30,6 @@ const featureCards = [
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
-  { title: 'Channels', href: '/channels', icon: Youtube, color: 'bg-red-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
   { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
 ];
