@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, FormEvent, useEffect } from 'react';
@@ -117,25 +116,25 @@ export default function YouTubePage() {
             {!finalLoading && channels.length > 0 && (
                 <div className="mb-8">
                     <h2 className="text-2xl font-bold mb-4">Channels</h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-8 gap-4">
                         {channels.map((channel) => (
-                             <Card key={channel.id} className="flex flex-col items-center text-center p-3">
+                             <Card key={channel.id} className="flex flex-col items-center text-center p-2 aspect-square justify-around">
                                  <Link href={`/youtube/channel/${channel.id}`} className="flex flex-col items-center gap-2 w-full">
-                                    <Avatar className="h-16 w-16">
+                                    <Avatar className="h-12 w-12">
                                         <AvatarImage src={channel.thumbnailUrl} alt={channel.title} />
                                         <AvatarFallback>{channel.title.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <p className="font-semibold text-sm line-clamp-2">{channel.title}</p>
+                                    <p className="font-semibold text-xs line-clamp-2">{channel.title}</p>
                                  </Link>
                                   {myChannelIds.has(channel.id) ? (
-                                    <Button variant="secondary" disabled className="w-full mt-2 text-xs h-8">
-                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                    <Button variant="secondary" disabled className="w-full mt-2 text-xs h-7">
+                                        <CheckCircle className="mr-1 h-3 w-3" />
                                         Added
                                     </Button>
                                 ) : (
-                                    <Button onClick={() => handleAddChannel(channel)} className="w-full mt-2 text-xs h-8">
-                                        <UserPlus className="mr-2 h-4 w-4" />
-                                        Add Channel
+                                    <Button onClick={() => handleAddChannel(channel)} className="w-full mt-2 text-xs h-7">
+                                        <UserPlus className="mr-1 h-3 w-3" />
+                                        Add
                                     </Button>
                                 )}
                             </Card>

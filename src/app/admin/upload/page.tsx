@@ -1,8 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useStorage } from '@/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +15,6 @@ interface UploadedFile {
 }
 
 export default function UploadPage() {
-    const storage = useStorage();
     const { toast } = useToast();
 
     const [file, setFile] = useState<File | null>(null);
@@ -36,11 +33,14 @@ export default function UploadPage() {
     };
 
     const handleUpload = () => {
-        if (!file || !fileName.trim() || !storage) {
-            toast({
+        // This is a placeholder for a real upload mechanism.
+        // In a real app, you would use a service to get a signed URL,
+        // then upload the file to that URL.
+        if (!file) {
+             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Please select a file and provide a name.',
+                description: 'Please select a file to upload.',
             });
             return;
         }
@@ -48,44 +48,37 @@ export default function UploadPage() {
         setIsUploading(true);
         setUploadProgress(0);
 
-        const storageRef = ref(storage, `uploads/${Date.now()}_${fileName.trim()}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        // Simulate upload progress
+        const interval = setInterval(() => {
+            setUploadProgress(prev => {
+                if (prev === null) return 0;
+                if (prev >= 100) {
+                    clearInterval(interval);
+                    return 100;
+                }
+                return prev + 10;
+            });
+        }, 200);
 
-        uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setUploadProgress(progress);
-            },
-            (error) => {
-                console.error("Upload error:", error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Upload Failed',
-                    description: error.message,
-                });
-                setIsUploading(false);
-                setUploadProgress(null);
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    toast({
-                        title: 'Upload Successful!',
-                        description: `${fileName} has been uploaded.`,
-                    });
-                    setUploadedFiles(prev => [{ name: fileName, url: downloadURL }, ...prev]);
-                    setIsUploading(false);
-                    setUploadProgress(null);
-                    setFile(null);
-                    setFileName('');
-                });
-            }
-        );
+        setTimeout(() => {
+            clearInterval(interval);
+            setUploadProgress(100);
+             const fakeUrl = `https://your-storage-service.com/uploads/${Date.now()}_${fileName.trim()}`;
+             toast({
+                title: 'Upload Successful! (Demo)',
+                description: `File URL is ready.`,
+            });
+            setUploadedFiles(prev => [{ name: fileName, url: fakeUrl }, ...prev]);
+            setIsUploading(false);
+            setFile(null);
+            setFileName('');
+        }, 2500);
     };
     
     const handleCopy = (url: string) => {
         navigator.clipboard.writeText(url);
         setCopiedUrl(url);
+        toast({ title: 'URL Copied!' });
         setTimeout(() => setCopiedUrl(null), 2000);
     }
 
@@ -98,7 +91,7 @@ export default function UploadPage() {
                 Back to Dashboard
               </Link>
             </Button>
-            <h1 className="text-xl font-semibold">Upload New Content</h1>
+            <h1 className="text-xl font-semibold">Upload New Content (Demo)</h1>
          </header>
          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
             <div className="max-w-4xl mx-auto space-y-8">
@@ -109,7 +102,7 @@ export default function UploadPage() {
                            Upload Video or PDF
                         </CardTitle>
                         <CardDescription>
-                            Upload files directly to Firebase Storage. Once uploaded, you can copy the URL to use in your courses, e-books, or PYQs.
+                            Upload files to your storage. Once uploaded, you can copy the URL to use in your courses, e-books, or PYQs. This is a demo and does not perform a real upload.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -164,7 +157,7 @@ export default function UploadPage() {
                 {uploadedFiles.length > 0 && (
                      <Card>
                         <CardHeader>
-                            <CardTitle>Uploaded Files</CardTitle>
+                            <CardTitle>Uploaded Files (Demo)</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ul className="space-y-3">

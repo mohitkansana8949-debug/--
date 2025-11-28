@@ -32,6 +32,7 @@ const featureCards = [
   { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
   { title: 'डेमो कोर्स', href: '#', icon: Video, color: 'bg-red-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
+  { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
@@ -136,7 +137,7 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card) => (
           <Link href={card.href} key={card.title}>
             <Card
