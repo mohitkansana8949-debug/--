@@ -126,6 +126,8 @@ export default function EditCourseContentPage() {
       });
   };
 
+  const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
+
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8">
        <div className="mb-6">
@@ -220,7 +222,7 @@ export default function EditCourseContentPage() {
                     <div>
                         <h3 className="text-xl font-bold my-4">मौजूदा कंटेंट</h3>
                         <div className="space-y-2">
-                            {course?.content?.length > 0 ? course.content.map((item: any, index: number) => (
+                            {courseContent.length > 0 ? courseContent.map((item: any, index: number) => (
                                 <Card key={item.id || index}>
                                     <CardContent className="p-4 flex justify-between items-center">
                                         <p>{item.title} <span className="text-xs text-muted-foreground ml-2">({item.type})</span></p>

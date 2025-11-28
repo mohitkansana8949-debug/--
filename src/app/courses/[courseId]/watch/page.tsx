@@ -54,7 +54,7 @@ export default function WatchCoursePage() {
 
   useEffect(() => {
     // Set the first video (if any) as the default active content
-    if (course && course.content && course.content.length > 0) {
+    if (course && course.content && Array.isArray(course.content) && course.content.length > 0) {
        const firstVideo = course.content.find((c: any) => c.type === 'youtube' || c.type === 'video');
        setActiveContent(firstVideo || course.content[0]);
     }
@@ -79,10 +79,11 @@ export default function WatchCoursePage() {
           </div>
       )
   }
-
-  const videos = course.content?.filter((c: any) => c.type === 'youtube' || c.type === 'video') || [];
-  const notes = course.content?.filter((c: any) => c.type === 'pdf') || [];
-  const tests = course.content?.filter((c: any) => c.type === 'test') || [];
+  
+  const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
+  const videos = courseContent.filter((c: any) => c.type === 'youtube' || c.type === 'video') || [];
+  const notes = courseContent.filter((c: any) => c.type === 'pdf') || [];
+  const tests = courseContent.filter((c: any) => c.type === 'test') || [];
   
   const renderActiveContent = () => {
     if (!activeContent) return <div className="flex items-center justify-center h-full bg-muted rounded-lg"><p>Select content to start</p></div>;
