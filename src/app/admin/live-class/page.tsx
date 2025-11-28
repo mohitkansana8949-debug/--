@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { Loader, Youtube, Trash2 } from 'lucide-react';
+import { Loader, Youtube } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -44,7 +44,7 @@ export default function ManageLiveClassPage() {
       youtubeUrl: '',
       teacherName: '',
       startDate: '',
-      startTime: '12:00',
+      startTime: '',
     }
   });
 
