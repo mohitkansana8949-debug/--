@@ -48,7 +48,7 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
   const { user } = useUser();
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   const messagesQuery = useMemoFirebase(
     () => (firestore && chatId ? 
@@ -65,11 +65,8 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    if (scrollAreaRef.current) {
-        const scrollable = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
-        if (scrollable) {
-            scrollable.scrollTop = scrollable.scrollHeight;
-        }
+    if (scrollViewportRef.current) {
+        scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -114,8 +111,8 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
             <h3 className="font-semibold text-center">चैट</h3>
         </div>
         
-        <ScrollArea className="flex-1" ref={scrollAreaRef}>
-            <div className="p-4 space-y-4">
+        <ScrollArea className="flex-1">
+            <div className="p-4 space-y-4" ref={scrollViewportRef}>
             {isLoading && <div className="flex justify-center p-4"><Loader className="animate-spin" /></div>}
             {messages?.map((msg) => (
                 <div key={msg.id} className="flex items-start gap-3">
@@ -133,7 +130,7 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
             </div>
         </ScrollArea>
         
-        <div className="p-4 border-t">
+        <div className="p-4 border-t mt-auto">
             <form onSubmit={handleSendMessage} className="flex gap-2">
                 <Input
                     value={newMessage}
@@ -149,3 +146,4 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
     </Card>
   );
 }
+

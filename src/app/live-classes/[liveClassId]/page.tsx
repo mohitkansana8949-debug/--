@@ -82,40 +82,12 @@ export default function LiveClassWatchPage() {
   const { liveClassId } = useParams();
   const firestore = useFirestore();
 
-  const [isLive, setIsLive] = useState(false);
-  const [isVideoLoading, setIsVideoLoading] = useState(true);
-
   const liveClassRef = useMemoFirebase(
     () => (firestore && liveClassId ? doc(firestore, 'liveClasses', liveClassId as string) : null),
     [firestore, liveClassId]
   );
   const { data: liveClass, isLoading } = useDoc(liveClassRef);
   
-  const youtubeVideoId = liveClass?.youtubeVideoId;
-  
-  useEffect(() => {
-    if (youtubeVideoId && process.env.YOUTUBE_API_KEY) {
-      setIsVideoLoading(true);
-      fetch(`https://www.googleapis.com/youtube/v3/videos?id=${youtubeVideoId}&part=liveStreamingDetails&key=${process.env.YOUTUBE_API_KEY}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.items && data.items.length > 0 && data.items[0].liveStreamingDetails) {
-            setIsLive(true);
-          } else {
-            setIsLive(false);
-          }
-          setIsVideoLoading(false);
-        }).catch(() => {
-            setIsLive(false);
-            setIsVideoLoading(false);
-        });
-    } else if (youtubeVideoId) {
-        // Fallback if no API key, assume it's live for dummy chat
-        setIsLive(true);
-        setIsVideoLoading(false);
-    }
-  }, [youtubeVideoId]);
-
   if (isLoading) {
     return (
       <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
@@ -140,19 +112,9 @@ export default function LiveClassWatchPage() {
             <VideoPlayer videoId={liveClass.youtubeVideoId} title={liveClass.teacherName} />
         </div>
         <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0 bg-background p-2">
-          {(isVideoLoading) ? (
-            <div className="flex h-full items-center justify-center bg-muted rounded-lg text-center p-4 text-muted-foreground">
-                <Loader className="animate-spin" />
-                <p className='ml-2'>चैट लोड हो रही है...</p>
-            </div>
-          ) : isLive ? (
             <DummyChat />
-          ) : (
-             <Card className="h-full w-full flex items-center justify-center bg-muted text-muted-foreground">
-                <p>यह एक रिकॉर्डेड वीडियो है।</p>
-             </Card>
-          )}
         </div>
     </div>
   );
 }
+
