@@ -61,7 +61,7 @@ export default function UploadPage() {
                 description: `File URL is ready.`,
             });
             
-            const uploadedFileUrl = `https://f005.backblazeb2.com/file/quickly-study/${result.fileName}`;
+            const uploadedFileUrl = `https://f005.backblazeb2.com/file/quickly-study/${encodeURIComponent(result.fileName)}`;
 
             setUploadedFiles(prev => [{ name: fileName, url: uploadedFileUrl }, ...prev]);
 
@@ -133,18 +133,20 @@ export default function UploadPage() {
                             {file && <p className="mt-2 text-sm text-muted-foreground">Selected: {file.name}</p>}
                         </div>
 
-                        <div>
-                            <label htmlFor="file-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Display Name
-                            </label>
-                            <Input
-                                id="file-name"
-                                value={fileName}
-                                onChange={(e) => setFileName(e.target.value)}
-                                placeholder="Enter a name for the file"
-                                className="mt-1"
-                            />
-                        </div>
+                        {file && (
+                           <div>
+                                <label htmlFor="file-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Display Name
+                                </label>
+                                <Input
+                                    id="file-name"
+                                    value={fileName}
+                                    onChange={(e) => setFileName(e.target.value)}
+                                    placeholder="Enter a name for the file"
+                                    className="mt-1"
+                                />
+                            </div>
+                        )}
 
                         {uploadProgress !== null && (
                             <div className="space-y-2">
