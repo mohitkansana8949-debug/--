@@ -31,7 +31,6 @@ const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
   { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
   { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
-  { title: 'डेमो कोर्स', href: '/demo', icon: Video, color: 'bg-red-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },

@@ -20,7 +20,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { getYouTubeID } from '@/lib/youtube';
-import JioVideoPlayer from './jio-video-player';
 
 type VideoPlayerProps = {
     videoUrl?: string | null;
@@ -39,9 +38,8 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   const videoId = videoIdProp || getYouTubeID(urlProp || '');
   const videoUrl = urlProp || (videoId ? `https://www.youtube.com/watch?v=${videoId}` : null);
 
-  const isJioVideo = isJioCloudUrl(videoUrl);
-  const isYoutubeVideo = !!videoId && !isJioVideo;
-  const isExternalVideo = !!videoUrl && !isYoutubeVideo && !isJioVideo;
+  const isYoutubeVideo = !!videoId;
+  const isExternalVideo = !!videoUrl && !isYoutubeVideo;
 
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -228,8 +226,6 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
             onStateChange={onPlayerStateChange}
             className="w-full h-full"
             />
-        ) : isJioVideo ? (
-            <JioVideoPlayer videoUrl={videoUrl} />
         ) : isExternalVideo ? (
              <iframe
                 ref={iframeRef}
