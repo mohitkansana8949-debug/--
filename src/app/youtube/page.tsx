@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,20 +13,39 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
+const DEFAULT_CHANNEL_ID = 'UCY_25Yg1zIX1bVayr4Mh4FA'; // Quickly Study Channel ID
+
 export default function YouTubePage() {
   const [query, setQuery] = useState('');
   const [channels, setChannels] = useState<YouTubeChannel[]>([]);
   const [videos, setVideos] = useState<YouTubeVideo[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true for default fetch
+  const [isSearching, setIsSearching] = useState(false);
   const [myChannels, setMyChannels] = useLocalStorage<YouTubeChannel[]>('my-youtube-channels', []);
   
   const myChannelIds = new Set(myChannels.map(c => c.id));
+  
+  // Fetch default videos on initial load
+  useEffect(() => {
+    const fetchDefaultVideos = async () => {
+      setIsLoading(true);
+      try {
+        const videoResults = await searchVideos({ query: '', channelId: DEFAULT_CHANNEL_ID });
+        setVideos(videoResults);
+      } catch (error) {
+        console.error('Error fetching default videos:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDefaultVideos();
+  }, []);
 
   const handleSearch = async (e?: FormEvent) => {
     e?.preventDefault();
     if (!query) return;
 
-    setIsLoading(true);
+    setIsSearching(true);
     setChannels([]);
     setVideos([]);
     try {
@@ -39,7 +58,7 @@ export default function YouTubePage() {
     } catch (error) {
       console.error('Error searching YouTube:', error);
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
@@ -50,6 +69,8 @@ export default function YouTubePage() {
   const handleRemoveChannel = (channelId: string) => {
       setMyChannels(prev => prev.filter(c => c.id !== channelId));
   }
+  
+  const finalLoading = isLoading || isSearching;
 
   return (
     <div className="container mx-auto p-4">
@@ -65,7 +86,7 @@ export default function YouTubePage() {
 
       <Tabs defaultValue="search">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="search">Search</TabsTrigger>
+          <TabsTrigger value="search">Search & Watch</TabsTrigger>
           <TabsTrigger value="my-channels">My Channels ({myChannels.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="search" className="mt-6">
@@ -77,8 +98,8 @@ export default function YouTubePage() {
                 placeholder="Search for 'Quickly Study', 'Sainik School'..."
                 className="flex-grow"
                 />
-                <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
+                <Button type="submit" disabled={isSearching}>
+                {isSearching ? (
                     <Loader className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                     <Search className="mr-2 h-4 w-4" />
@@ -87,13 +108,13 @@ export default function YouTubePage() {
                 </Button>
             </form>
 
-            {isLoading && (
+            {finalLoading && (
                 <div className="flex justify-center mt-8">
                 <Loader className="h-12 w-12 animate-spin text-primary" />
                 </div>
             )}
             
-            {!isLoading && channels.length > 0 && (
+            {!finalLoading && channels.length > 0 && (
                 <div className="mb-8">
                     <h2 className="text-2xl font-bold mb-4">Channels</h2>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -123,7 +144,7 @@ export default function YouTubePage() {
                 </div>
             )}
             
-            {!isLoading && videos.length > 0 && (
+            {!finalLoading && videos.length > 0 && (
                  <div>
                     <h2 className="text-2xl font-bold mb-4">Videos</h2>
                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -151,7 +172,7 @@ export default function YouTubePage() {
                 </div>
             )}
 
-            {!isLoading && channels.length === 0 && videos.length === 0 && (
+            {!finalLoading && channels.length === 0 && videos.length === 0 && (
                  <div className="text-center text-muted-foreground py-16">
                     <p>No results found. Try a different search.</p>
                 </div>
@@ -188,4 +209,3 @@ export default function YouTubePage() {
     </div>
   );
 }
-
