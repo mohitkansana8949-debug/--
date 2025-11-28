@@ -17,6 +17,7 @@ const VideoDetailsOutputSchema = z.object({
   thumbnailUrl: z.string(),
   scheduledStartTime: z.string(),
   liveChatId: z.string().optional(),
+  status: z.enum(['upcoming', 'live', 'none', 'completed']),
 });
 
 export type VideoDetailsOutput = z.infer<typeof VideoDetailsOutputSchema>;
@@ -60,11 +61,20 @@ const getYouTubeVideoDetailsFlow = ai.defineFlow(
          throw new Error('इस वीडियो के लिए कोई जानकारी नहीं मिली।');
       }
 
-      // For a scheduled live stream, scheduledStartTime is available.
-      // For a completed live stream or regular video, use publishTime.
       const scheduledStartTime = liveStreamingDetails?.scheduledStartTime || snippet.publishedAt;
       if (!scheduledStartTime) {
           throw new Error('वीडियो की प्रकाशन या शेड्यूल समय नहीं मिल सका।');
+      }
+      
+      let status: 'upcoming' | 'live' | 'none' | 'completed' = 'none';
+      if (snippet.liveBroadcastContent === 'live') {
+          status = 'live';
+      } else if (snippet.liveBroadcastContent === 'upcoming') {
+          status = 'upcoming';
+      } else if (liveStreamingDetails && liveStreamingDetails.actualEndTime) {
+          status = 'completed';
+      } else if (liveStreamingDetails) {
+          status = 'upcoming';
       }
 
       return {
@@ -74,6 +84,7 @@ const getYouTubeVideoDetailsFlow = ai.defineFlow(
         thumbnailUrl: snippet.thumbnails.high.url,
         scheduledStartTime: scheduledStartTime,
         liveChatId: liveStreamingDetails?.activeLiveChatId,
+        status: status,
       };
     } catch (error) {
       console.error('Error in YouTube video details flow:', error);

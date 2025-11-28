@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -12,12 +12,12 @@ import Image from 'next/image';
 export default function RecordedClassesPage() {
     const firestore = useFirestore();
 
-    // Query for recorded (past) live classes
+    // Query for recorded (completed) live classes
     const recordedClassesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'liveClasses'),
-            where('startTime', '<', Timestamp.now()),
+            where('status', '==', 'completed'),
             orderBy('startTime', 'desc')
         );
     }, [firestore]);

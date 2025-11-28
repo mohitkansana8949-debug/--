@@ -1,7 +1,7 @@
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore';
+import { collection, query, orderBy, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -12,12 +12,12 @@ import Image from 'next/image';
 export default function LiveClassesPage() {
     const firestore = useFirestore();
 
-    // Query for upcoming live classes (startTime is in the future)
+    // Query for upcoming and live classes
     const upcomingClassesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'liveClasses'),
-            where('startTime', '>=', Timestamp.now()),
+            where('status', 'in', ['upcoming', 'live']),
             orderBy('startTime', 'asc')
         );
     }, [firestore]);
@@ -30,10 +30,10 @@ export default function LiveClassesPage() {
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold flex items-center">
                         <Youtube className="mr-3 h-8 w-8 text-red-500" />
-                        आने वाली लाइव क्लासेस
+                        लाइव और आने वाली क्लासेस
                     </h1>
                     <p className="text-muted-foreground">
-                        हमारी आने वाली सभी लाइव क्लासेस की लिस्ट।
+                        हमारी सभी लाइव और आने वाली क्लासेस की लिस्ट।
                     </p>
                 </div>
 
@@ -81,7 +81,7 @@ function ClassCard({ liveClass }: { liveClass: any }) {
             <CardFooter>
                 <Button asChild className="w-full">
                     <Link href={`/live-classes/${liveClass.id}`}>
-                        क्लास ज्वाइन करें
+                        {liveClass.status === 'live' ? 'अभी ज्वाइन करें' : 'क्लास देखें'}
                     </Link>
                 </Button>
             </CardFooter>

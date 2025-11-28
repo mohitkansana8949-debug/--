@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,12 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { Loader } from 'lucide-react';
+import { useFirebase, useCollection } from '@/firebase';
+import { addDoc, collection, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { Loader, Trash2, Edit } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { getYouTubeVideoDetails } from '@/ai/flows/youtube-video-details-flow';
 import Image from 'next/image';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
 const liveClassSchema = z.object({
   videoUrl: z.string().url('कृपया एक मान्य यूट्यूब URL दर्ज करें।'),
@@ -34,6 +35,12 @@ export default function ScheduleLiveClassPage() {
         videoUrl: '',
     }
   });
+
+  const liveClassesQuery = useMemo(
+      () => (firestore ? collection(firestore, 'liveClasses') : null),
+      [firestore]
+  );
+  const { data: liveClasses, isLoading: liveClassesLoading } = useCollection(liveClassesQuery);
 
   const handleFetchDetails = async () => {
     const videoUrl = form.getValues('videoUrl');
@@ -71,6 +78,7 @@ export default function ScheduleLiveClassPage() {
         liveChatId: videoDetails.liveChatId,
         thumbnailUrl: videoDetails.thumbnailUrl,
         title: videoDetails.title,
+        status: videoDetails.status, // upcoming, live, or completed
         createdAt: serverTimestamp()
     };
 
@@ -95,6 +103,23 @@ export default function ScheduleLiveClassPage() {
     }).finally(() => {
         setIsSubmitting(false);
     });
+  };
+
+  const handleDelete = async (classId: string) => {
+    if (!firestore) return;
+    const docRef = doc(firestore, 'liveClasses', classId);
+    
+    deleteDoc(docRef)
+      .then(() => {
+        toast({ title: 'सफलता', description: 'लाइव क्लास हटा दी गई है।' });
+      })
+      .catch((error) => {
+        const contextualError = new FirestorePermissionError({
+          operation: 'delete',
+          path: docRef.path,
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      });
   };
 
   return (
@@ -145,6 +170,7 @@ export default function ScheduleLiveClassPage() {
                             <h3 className="font-semibold">{videoDetails.title}</h3>
                             <p className="text-sm text-muted-foreground">{videoDetails.channelTitle}</p>
                             <p className="text-sm text-muted-foreground">{new Date(videoDetails.scheduledStartTime).toLocaleString()}</p>
+                            <p className="text-sm text-muted-foreground">Status: {videoDetails.status}</p>
                         </div>
                      </div>
                      <Button onClick={onSubmit} disabled={isSubmitting} className="w-full">
@@ -153,7 +179,52 @@ export default function ScheduleLiveClassPage() {
                 </CardContent>
              </Card>
            )}
+        </CardContent>
+      </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>शेड्यूल की गई लाइव क्लासेस</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {liveClassesLoading ? (
+            <div className="flex justify-center p-8"><Loader className="animate-spin" /></div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>टाइटल</TableHead>
+                  <TableHead>शेड्यूल समय</TableHead>
+                  <TableHead>स्टेटस</TableHead>
+                  <TableHead className="text-right">एक्शन</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {liveClasses?.map((liveClass) => (
+                  <TableRow key={liveClass.id}>
+                    <TableCell className="font-medium">{liveClass.title}</TableCell>
+                    <TableCell>{liveClass.startTime ? format(liveClass.startTime.toDate(), 'PPpp') : 'N/A'}</TableCell>
+                    <TableCell>{liveClass.status}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                       <Button variant="ghost" size="icon" disabled>
+                            <Edit className="h-4 w-4" />
+                       </Button>
+                       <Button variant="ghost" size="icon" onClick={() => handleDelete(liveClass.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                       </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!liveClassesLoading && liveClasses?.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">
+                            कोई लाइव क्लास शेड्यूल नहीं है।
+                        </TableCell>
+                    </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
