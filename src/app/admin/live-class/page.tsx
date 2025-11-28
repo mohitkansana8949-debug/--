@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -21,8 +22,6 @@ import { getLiveChatId, getYouTubeID } from '@/lib/youtube';
 const liveClassSchema = z.object({
   youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),
   teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
-  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "कृपया YYYY-MM-DD फॉर्मेट में तारीख दर्ज करें।"),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "कृपया HH:mm फॉर्मेट में सही समय दर्ज करें।"),
 });
 type LiveClassFormValues = z.infer<typeof liveClassSchema>;
 
@@ -42,8 +41,6 @@ export default function ManageLiveClassPage() {
     defaultValues: {
       youtubeUrl: '',
       teacherName: '',
-      startDate: '',
-      startTime: '',
     }
   });
 
@@ -67,27 +64,23 @@ export default function ManageLiveClassPage() {
     try {
         const liveChatId = await getLiveChatId(videoId, apiKey);
 
-        const combinedDateTime = new Date(`${values.startDate}T${values.startTime}:00`);
-        if (isNaN(combinedDateTime.getTime())) {
-            toast({ variant: 'destructive', title: 'गलत तारीख/समय', description: 'कृपया सही तारीख और समय फॉर्मेट का उपयोग करें।'});
-            setIsSubmitting(false);
-            return;
-        }
-
-
+        // Schedule the class for 24 hours from now automatically
+        const startTime = new Date();
+        startTime.setHours(startTime.getHours() + 24);
+        
         const liveClassesCollection = collection(firestore, 'liveClasses');
         const liveClassData = {
           youtubeVideoId: videoId,
           liveChatId: liveChatId,
           teacherName: values.teacherName,
-          startTime: Timestamp.fromDate(combinedDateTime),
+          startTime: Timestamp.fromDate(startTime),
           createdAt: serverTimestamp(),
         };
 
         await addDoc(liveClassesCollection, liveClassData);
         toast({
           title: 'सफलता!',
-          description: 'नई लाइव क्लास जोड़ दी गई है।',
+          description: 'नई लाइव क्लास 24 घंटे बाद के लिए शेड्यूल हो गई है।',
         });
         form.reset();
 
@@ -110,7 +103,7 @@ export default function ManageLiveClassPage() {
       <Card>
         <CardHeader>
           <CardTitle>नई लाइव क्लास जोड़ें</CardTitle>
-          <CardDescription>यहां से यूट्यूब लाइव क्लास की जानकारी जोड़ें।</CardDescription>
+          <CardDescription>यहां से यूट्यूब लाइव क्लास की जानकारी जोड़ें। क्लास अपने-आप 24 घंटे बाद के लिए शेड्यूल हो जाएगी।</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -118,33 +111,6 @@ export default function ManageLiveClassPage() {
               <FormField control={form.control} name="youtubeUrl" render={({ field }) => ( <FormItem> <FormLabel>यूट्यूब वीडियो URL</FormLabel> <FormControl> <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               <FormField control={form.control} name="teacherName" render={({ field }) => ( <FormItem> <FormLabel>टीचर का नाम</FormLabel> <FormControl> <Input placeholder="जैसे, मोहित सर" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>लाइव क्लास की तारीख</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="YYYY-MM-DD" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="startTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>लाइव क्लास का समय</FormLabel>
-                    <FormControl>
-                      <Input type="text" placeholder="HH:mm" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</> : 'लाइव क्लास सेव करें'}
               </Button>
