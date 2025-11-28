@@ -39,7 +39,7 @@ export function AppSidebar() {
         title: "Logged Out",
         description: "You have been successfully logged out.",
       });
-      router.push("/signup");
+      router.push("/login");
     } catch (error) {
       console.error("Logout error:", error);
       toast({
@@ -71,7 +71,7 @@ export function AppSidebar() {
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
 
   const noSidebarPaths = ['/login', '/signup', '/youtube/'];
-  const fullScreenPaths = ['/live-classes/', '/courses/'];
+  const fullScreenPaths = ['/courses/'];
 
   if (noSidebarPaths.some(p => pathname.startsWith(p))) {
     return null;

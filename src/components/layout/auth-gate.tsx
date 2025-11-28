@@ -22,8 +22,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     if (!user && !isPublicPath) {
       // If user is not logged in and not on a public page,
-      // redirect to signup.
-      router.push('/signup');
+      // redirect to login.
+      router.push('/login');
     } else if (user && isPublicPath) {
       // If user is logged in and on a public page (login/signup),
       // redirect to the home page.

@@ -50,14 +50,14 @@ export function AppHeader() {
 
   // Paths that should not have the full header
   const noHeaderPaths = ['/login', '/signup', '/complete-profile', '/youtube/'];
-  const fullScreenPaths = ['/live-classes/'];
+  const fullScreenPaths = ['/courses/'];
 
   // Don't render header at all on certain paths
   if (noHeaderPaths.some(p => pathname.startsWith(p))) {
     return null;
   }
 
-  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p))) {
+  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p) && pathname.endsWith('/watch'))) {
     return null;
   }
   
@@ -144,7 +144,7 @@ function UserMenu() {
                 title: "Logged Out",
                 description: "You have been successfully logged out.",
             });
-            router.push('/signup');
+            router.push('/login');
         } catch (error) {
             console.error("Logout error:", error);
             toast({
@@ -194,7 +194,7 @@ function UserMenu() {
                                 <span className="font-semibold">{user.displayName || 'User'}</span>
                                 {isAdmin && <Badge variant="success" className="h-5"><ShieldCheck className="mr-1 h-3 w-3"/>Admin</Badge>}
                             </div>
-                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                            <span className="text-xs text-muted-foreground">{user.email || user.phoneNumber}</span>
                         </div>
                     </Link>
                 </DropdownMenuItem>

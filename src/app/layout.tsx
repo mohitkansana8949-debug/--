@@ -67,6 +67,7 @@ export default function RootLayout({
             </AuthGate>
           </FirebaseClientProvider>
           <Toaster />
+          <div id="recaptcha-container"></div>
         </ThemeProvider>
       </body>
     </html>
