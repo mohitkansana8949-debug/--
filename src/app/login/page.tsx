@@ -52,6 +52,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
@@ -59,7 +60,7 @@ export default function LoginPage() {
         title: 'लॉगिन सफल',
         description: 'आप सफलतापूर्वक लॉगिन हो गए हैं।',
       });
-      router.push('/');
+      // The AuthGate will handle redirection
     } catch (error) {
       console.error(error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';

@@ -2,9 +2,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, Loader, ShieldCheck } from "lucide-react";
+import { BookOpen, Loader, ShieldCheck, AlertCircle } from "lucide-react";
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection, query, where, getDocs, doc, getDoc, DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -82,6 +82,17 @@ export default function MyLibraryPage() {
                 </p>
             </div>
             
+             <Card className="mb-6 bg-yellow-50 border border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800">
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <AlertCircle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    <CardTitle className="text-yellow-800 dark:text-yellow-200 text-lg">महत्वपूर्ण सूचना</CardTitle>
+                </CardHeader>
+                <CardContent className="text-yellow-700 dark:text-yellow-300">
+                    <p>यदि आपने किसी कोर्स के लिए पेमेंट नहीं किया है और वह आपकी लाइब्रेरी में दिख रहा है, तो कृपया ध्यान दें कि यह जल्द ही हटाया जा सकता है। सही तरीके से एक्सेस जारी रखने के लिए कृपया कोर्स का पेमेंट पूरा करें।</p>
+                </CardContent>
+            </Card>
+
+
             {finalLoading && (
                 <div className="flex flex-col items-center justify-center text-center p-12">
                     <Loader className="h-12 w-12 animate-spin mb-4" />

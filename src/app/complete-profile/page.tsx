@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
@@ -48,29 +48,9 @@ export default function CompleteProfilePage() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [userData, setUserData] = useState<any>(null);
-
-   useEffect(() => {
-    if (user && firestore) {
-      const userRef = doc(firestore, 'users', user.uid);
-      const unsub = onSnapshot(userRef, (doc) => {
-        if (doc.exists()) {
-          setUserData(doc.data());
-        }
-      });
-      return () => unsub();
-    }
-  }, [user, firestore]);
-
+  
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    values: {
-      name: user?.displayName || userData?.name || '',
-      mobile: userData?.mobile || '',
-      category: userData?.category || '',
-      state: userData?.state || '',
-      class: userData?.class || '',
-    },
     defaultValues: {
       name: '',
       mobile: '',
@@ -80,6 +60,26 @@ export default function CompleteProfilePage() {
     }
   });
 
+  useEffect(() => {
+    if (user && firestore) {
+      const userRef = doc(firestore, 'users', user.uid);
+      const unsub = onSnapshot(userRef, (doc) => {
+        if (doc.exists()) {
+          const data = doc.data();
+          form.reset({
+             name: user.displayName || data.name || '',
+             mobile: data.mobile || '',
+             category: data.category || '',
+             state: data.state || '',
+             class: data.class || '',
+          });
+        } else {
+            form.reset({ name: user.displayName || '' });
+        }
+      });
+      return () => unsub();
+    }
+  }, [user, firestore, form]);
   
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user || !auth || !firestore) {
@@ -95,57 +95,60 @@ export default function CompleteProfilePage() {
 
     const profileData: any = {
         name: data.name,
-        email: user.email, // Keep email updated
+        email: user.email, 
         mobile: data.mobile || null,
         category: data.category || null,
         state: data.state || null,
         class: data.class || null,
+        profileComplete: true, // Flag to indicate profile is complete
     };
 
     try {
-      await updateProfile(user, { displayName: data.name });
+      if (user.displayName !== data.name) {
+        await updateProfile(user, { displayName: data.name });
+      }
 
       const userRef = doc(firestore, 'users', user.uid);
       
-      setDoc(userRef, profileData, { merge: true })
-        .then(() => {
-            toast({
-                title: 'प्रोफ़ाइल अपडेट हो गई',
-                description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
-              });
-            router.push('/profile');
-        })
-        .catch((dbError) => {
-            const contextualError = new FirestorePermissionError({
-                operation: 'update',
-                path: userRef.path,
-                requestResourceData: profileData,
-            });
-            errorEmitter.emit('permission-error', contextualError);
-            setIsLoading(false);
-        });
+      await setDoc(userRef, profileData, { merge: true });
+
+      toast({
+        title: 'प्रोफ़ाइल अपडेट हो गई',
+        description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
+      });
+      
+      // The AuthGate will handle redirection
+      // Manually trigger a check in AuthGate or reload
+      router.push('/');
+      // A full reload might be needed if state management is complex
+      // window.location.href = '/';
+
     } catch (error) {
       console.error("Profile update error:", error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {
         description = error.message;
+      } else {
+         const contextualError = new FirestorePermissionError({
+            operation: 'update',
+            path: `users/${user.uid}`,
+            requestResourceData: profileData,
+         });
+         errorEmitter.emit('permission-error', contextualError);
+         description = 'अनुमति त्रुटि। प्रोफ़ाइल को सहेजने में विफल।';
       }
       toast({
         variant: 'destructive',
         title: 'प्रोफ़ाइल अपडेट विफल',
         description,
       });
+    } finally {
       setIsLoading(false);
     }
   };
   
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
       return <div className="flex justify-center items-center h-screen"><Loader className="animate-spin" /></div>
-  }
-
-  if (!user) {
-      router.push('/login');
-      return null;
   }
 
   return (
@@ -166,7 +169,7 @@ export default function CompleteProfilePage() {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>पूरा नाम</FormLabel>
+                    <FormLabel>Full Name</FormLabel>
                     <FormControl>
                       <Input placeholder="जैसे, मोहित कुमार" {...field} />
                     </FormControl>
@@ -179,7 +182,7 @@ export default function CompleteProfilePage() {
                 name="mobile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>मोबाइल नंबर</FormLabel>
+                    <FormLabel>Mobile Number</FormLabel>
                     <FormControl>
                       <Input type="tel" placeholder="9876543210" {...field} />
                     </FormControl>
@@ -193,8 +196,8 @@ export default function CompleteProfilePage() {
                 name="category"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>श्रेणी</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Category</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder="अपनी श्रेणी चुनें" />
@@ -217,8 +220,8 @@ export default function CompleteProfilePage() {
                 name="state"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>राज्य</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>State</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder="अपना राज्य चुनें" />
@@ -238,8 +241,8 @@ export default function CompleteProfilePage() {
                 name="class"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>कक्षा / परीक्षा</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Class / Exam</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
                                 <SelectTrigger>
                                     <SelectValue placeholder="अपनी कक्षा या परीक्षा चुनें" />

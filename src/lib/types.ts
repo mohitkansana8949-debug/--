@@ -22,6 +22,16 @@ export interface User {
   email: string;
   name: string;
   signUpDate: string; // ISO string for date
+  profileComplete?: boolean;
+}
+
+export type CourseContent = {
+    id: string;
+    type: 'youtube' | 'video' | 'pdf' | 'test';
+    title: string;
+    url?: string;
+    thumbnail?: string;
+    data?: any; // For JSON content like tests
 }
 
 export interface Course {
@@ -31,7 +41,7 @@ export interface Course {
   price: number;
   thumbnailUrl: string;
   isFree: boolean;
-  content: string; // This could be markdown, or a more complex structure
+  content: CourseContent[];
 }
 
 export interface CourseEnrollment {
@@ -44,5 +54,3 @@ export interface CourseEnrollment {
   adminApproval: boolean;
   status: 'pending' | 'approved' | 'rejected';
 }
-
-    

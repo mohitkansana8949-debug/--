@@ -54,6 +54,7 @@ export default function SignupPage() {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
+    if (!auth) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -62,7 +63,6 @@ export default function SignupPage() {
         data.password
       );
 
-      // Update the user's profile with the name
       await updateProfile(userCredential.user, {
         displayName: data.name,
       });
@@ -71,7 +71,7 @@ export default function SignupPage() {
         title: 'अकाउंट बन गया',
         description: "आपका सफलतापूर्वक साइन अप हो गया है!",
       });
-      router.push('/complete-profile');
+      // AuthGate will redirect to /complete-profile
     } catch (error) {
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {

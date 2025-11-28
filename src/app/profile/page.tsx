@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 
-
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
   const colors = [
@@ -27,7 +26,6 @@ const getColorForId = (id: string) => {
   return colors[hash % colors.length];
 };
 
-
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -36,41 +34,39 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<any>(null);
 
   useEffect(() => {
+    if (!user || !firestore) {
+      if (!isUserLoading) setIsAdminLoading(false);
+      return;
+    }
+    
     const checkAdminStatus = async () => {
-        if (user && firestore) {
-            if (user.email === 'Qukly@study.com') {
-                setIsAdmin(true);
-                setIsAdminLoading(false);
-                return;
-            }
-            try {
-                const adminRef = doc(firestore, "roles_admin", user.uid);
-                const adminDoc = await getDoc(adminRef);
-                setIsAdmin(adminDoc.exists());
-            } catch (error) {
-                console.error("Error checking admin status:", error);
-                setIsAdmin(false);
-            } finally {
-                setIsAdminLoading(false);
-            }
-        } else if (!isUserLoading) {
+        if (user.email === 'Qukly@study.com') {
+            setIsAdmin(true);
+            setIsAdminLoading(false);
+            return;
+        }
+        try {
+            const adminRef = doc(firestore, "roles_admin", user.uid);
+            const adminDoc = await getDoc(adminRef);
+            setIsAdmin(adminDoc.exists());
+        } catch (error) {
+            console.error("Error checking admin status:", error);
             setIsAdmin(false);
+        } finally {
             setIsAdminLoading(false);
         }
     };
 
-    if (user && firestore) {
-      const userRef = doc(firestore, 'users', user.uid);
-      const unsub = onSnapshot(userRef, (doc) => {
-        if (doc.exists()) {
-          setUserData(doc.data());
-        }
-      });
-      checkAdminStatus();
-      return () => unsub();
-    } else {
-        checkAdminStatus();
-    }
+    const userRef = doc(firestore, 'users', user.uid);
+    const unsub = onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        setUserData(doc.data());
+      }
+    });
+    
+    checkAdminStatus();
+
+    return () => unsub();
 }, [user, firestore, isUserLoading]);
 
   const getInitials = (name: string | null | undefined) => {
@@ -104,7 +100,7 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return <p>कृपया अपनी प्रोफ़ाइल देखने के लिए लॉगिन करें।</p>;
+    return <p>Please login to view your profile.</p>;
   }
 
   const ProfileInfoItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: string | undefined | null }) => (
@@ -122,34 +118,36 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
        <div>
-        <h1 className="text-3xl font-bold">मेरी प्रोफ़ाइल</h1>
-        <p className="text-muted-foreground">अपनी प्रोफ़ाइल जानकारी देखें और प्रबंधित करें।</p>
+        <h1 className="text-3xl font-bold">My Profile</h1>
+        <p className="text-muted-foreground">View and manage your profile information.</p>
        </div>
       <Card>
-        <CardHeader className="flex flex-row justify-between items-start">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-2xl">
-              {user.displayName || 'नाम प्रदान नहीं किया गया'}
-              {isAdmin && <Badge variant="success"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
-            </CardTitle>
-            <CardDescription>{user.email}</CardDescription>
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">
+          <div className="flex items-center gap-4">
+             <Avatar className="h-20 w-20 text-3xl">
+               <AvatarFallback className={`text-white font-bold ${avatarColor}`}>{getInitials(user.displayName)}</AvatarFallback>
+            </Avatar>
+            <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                {user.displayName || 'Unnamed User'}
+                {isAdmin && <Badge variant="success"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
+                </CardTitle>
+                <CardDescription>{user.email}</CardDescription>
+            </div>
           </div>
-          <Button asChild variant="outline">
+          <Button asChild variant="outline" className="w-full sm:w-auto">
             <Link href="/complete-profile">
                 <Pencil className="mr-2 h-4 w-4" />
-                प्रोफ़ाइल संपादित करें
+                Edit Profile
             </Link>
           </Button>
         </CardHeader>
-        <CardContent className="flex flex-col md:flex-row items-start gap-6">
-          <Avatar className="h-32 w-32 text-5xl">
-             <AvatarFallback className={`text-white font-bold ${avatarColor}`}>{getInitials(user.displayName)}</AvatarFallback>
-          </Avatar>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 w-full">
-            <ProfileInfoItem icon={<Phone size={18} />} label="मोबाइल नंबर" value={userData?.mobile} />
-            <ProfileInfoItem icon={<UserIcon size={18} />} label="श्रेणी" value={userData?.category} />
-            <ProfileInfoItem icon={<MapPin size={18} />} label="राज्य" value={userData?.state} />
-            <ProfileInfoItem icon={<BookCopy size={18} />} label="कक्षा / परीक्षा" value={userData?.class} />
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 w-full mt-4">
+            <ProfileInfoItem icon={<Phone size={18} />} label="Mobile" value={userData?.mobile} />
+            <ProfileInfoItem icon={<UserIcon size={18} />} label="Category" value={userData?.category} />
+            <ProfileInfoItem icon={<MapPin size={18} />} label="State" value={userData?.state} />
+            <ProfileInfoItem icon={<BookCopy size={18} />} label="Class / Exam" value={userData?.class} />
           </div>
         </CardContent>
       </Card>

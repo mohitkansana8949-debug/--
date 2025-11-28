@@ -25,22 +25,9 @@ const courseSchema = z.object({
   description: z.string().min(1, 'विवरण आवश्यक है'),
   price: z.coerce.number().min(0, 'कीमत 0 या उससे ज़्यादा होनी चाहिए'),
   isFree: z.boolean().default(false),
-  content: z.string().min(1, 'कंटेंट आवश्यक है'),
   thumbnailUrl: z.string().url('कृपया एक मान्य URL दर्ज करें।').min(1, 'थंबनेल URL आवश्यक है'),
 });
 type CourseFormValues = z.infer<typeof courseSchema>;
-
-// Helper function to remove undefined properties from an object
-const removeUndefined = (obj: any) => {
-  const newObj: any = {};
-  for (const key in obj) {
-    if (obj[key] !== undefined) {
-      newObj[key] = obj[key];
-    }
-  }
-  return newObj;
-};
-
 
 export default function CreateCoursePage() {
   const router = useRouter();
@@ -55,7 +42,6 @@ export default function CreateCoursePage() {
       description: '',
       price: 0,
       isFree: false,
-      content: '',
       thumbnailUrl: '',
     },
   });
@@ -64,43 +50,35 @@ export default function CreateCoursePage() {
 
   const onSubmit = async (values: CourseFormValues) => {
     if (!firestore) return;
-
     setIsSubmitting(true);
 
     try {
       const courseData = { 
-          ...values, 
+          ...values,
+          content: [], // Initialize with empty content
           createdAt: serverTimestamp() 
       };
       
-      const cleanedCourseData = removeUndefined(courseData);
       const coursesCollection = collection(firestore, 'courses');
       
-      addDoc(coursesCollection, cleanedCourseData)
-        .then(() => {
-            toast({
-                title: 'सफलता!',
-                description: 'नया कोर्स बना दिया गया है।',
-            });
-            router.push('/admin/courses');
-        })
-        .catch((error) => {
-            console.error("Error adding document: ", error);
-            const contextualError = new FirestorePermissionError({
-                operation: 'create',
-                path: 'courses',
-                requestResourceData: cleanedCourseData,
-            });
-            errorEmitter.emit('permission-error', contextualError);
-        });
+      const docRef = await addDoc(coursesCollection, courseData);
+      
+      toast({
+          title: 'सफलता!',
+          description: 'नया कोर्स बना दिया गया है। अब आप कंटेंट जोड़ सकते हैं।',
+      });
+      router.push(`/admin/content/${docRef.id}`);
 
     } catch (error: any) {
-        // This outer catch is for any synchronous errors during setup
         console.error("Course creation error:", error);
+        const contextualError = new FirestorePermissionError({
+            operation: 'create',
+            path: 'courses',
+            requestResourceData: values,
+        });
+        errorEmitter.emit('permission-error', contextualError);
         toast({ variant: 'destructive', title: 'त्रुटि', description: 'कोर्स बनाने में एक अप्रत्याशित त्रुटि हुई।' });
-    } finally {
-      // Note: We don't set isSubmitting to false here because the page will redirect on success.
-      // If there's a permission error, it will be caught by the global error handler.
+        setIsSubmitting(false);
     }
   };
 
@@ -117,7 +95,7 @@ export default function CreateCoursePage() {
       <Card className="max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle>नया कोर्स बनाएं</CardTitle>
-          <CardDescription>कोर्स की जानकारी दर्ज करें और उसे पब्लिश करें।</CardDescription>
+          <CardDescription>कोर्स की जानकारी दर्ज करें। कंटेंट अगले स्टेप में जोड़ा जाएगा।</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...courseForm}>
@@ -132,14 +110,14 @@ export default function CreateCoursePage() {
                                 <Input placeholder="https://example.com/image.jpg" {...field} />
                             </FormControl>
                             <FormMessage />
+                             {thumbnailUrl && (
+                                <div className="mt-4 w-full aspect-video relative">
+                                    <Image src={thumbnailUrl} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
+                                </div>
+                            )}
                         </FormItem>
                     )}
                 />
-                {thumbnailUrl && (
-                    <div className="mt-4 w-full aspect-video relative">
-                        <Image src={thumbnailUrl} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
-                    </div>
-                )}
 
               <FormField control={courseForm.control} name="name" render={({ field }) => (
                 <FormItem>
@@ -152,13 +130,6 @@ export default function CreateCoursePage() {
                 <FormItem>
                   <FormLabel>विवरण</FormLabel>
                   <FormControl><Textarea placeholder="कोर्स का संक्षिप्त सारांश" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={courseForm.control} name="content" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>कंटेंट</FormLabel>
-                  <FormControl><Textarea placeholder="कोर्स कंटेंट (जैसे, वीडियो लिंक, टेक्स्ट, HTML)" {...field} rows={10} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -191,7 +162,7 @@ export default function CreateCoursePage() {
                 </FormItem>
               )} />
               <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? (<><Loader className="mr-2 h-4 w-4 animate-spin" /> बनाया जा रहा है...</>) : ('कोर्स बनाएं')}
+                {isSubmitting ? (<><Loader className="mr-2 h-4 w-4 animate-spin" /> बनाया जा रहा है...</>) : ('सहेजें और कंटेंट जोड़ें')}
               </Button>
             </form>
           </Form>
