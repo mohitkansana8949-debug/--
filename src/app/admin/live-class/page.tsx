@@ -113,32 +113,34 @@ export default function ManageLiveClassPage() {
               <FormField control={form.control} name="youtubeUrl" render={({ field }) => ( <FormItem> <FormLabel>यूट्यूब वीडियो URL</FormLabel> <FormControl> <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               <FormField control={form.control} name="teacherName" render={({ field }) => ( <FormItem> <FormLabel>टीचर का नाम</FormLabel> <FormControl> <Input placeholder="जैसे, मोहित सर" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               
-               <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>लाइव क्लास की तारीख</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField 
-                    control={form.control} 
-                    name="startTime" 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="startDate"
                     render={({ field }) => (
-                        <FormItem> 
-                            <FormLabel>लाइव क्लास का समय (24-घंटे)</FormLabel> 
-                            <FormControl> 
-                                <Input type="time" {...field} /> 
-                            </FormControl> 
-                            <FormMessage /> 
-                        </FormItem>
+                      <FormItem>
+                        <FormLabel>लाइव क्लास की तारीख</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
+                  <FormField 
+                      control={form.control} 
+                      name="startTime" 
+                      render={({ field }) => (
+                          <FormItem> 
+                              <FormLabel>लाइव क्लास का समय (24-घंटे)</FormLabel> 
+                              <FormControl> 
+                                  <Input type="time" {...field} /> 
+                              </FormControl> 
+                              <FormMessage /> 
+                          </FormItem>
+                      )}
+                  />
+              </div>
 
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</> : 'लाइव क्लास सेव करें'}
