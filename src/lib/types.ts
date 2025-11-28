@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 
 export type Flashcard = {
@@ -32,6 +31,7 @@ export type CourseContent = {
     url?: string;
     thumbnail?: string;
     data?: any; // For JSON content like tests
+    isLive?: boolean; // To control live status
 }
 
 export interface Course {

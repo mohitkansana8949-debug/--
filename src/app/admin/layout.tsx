@@ -1,4 +1,3 @@
-
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -13,6 +12,7 @@ import {
   Settings,
   FileText,
   Youtube,
+  Radio,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -20,6 +20,7 @@ const adminNavItems = [
   { href: '/admin/courses', label: 'कोर्सेस', icon: BookOpen },
   { href: '/admin/create-course', label: 'नया कोर्स', icon: FileText },
   { href: '/admin/content', label: 'कंटेंट', icon: FileText },
+  { href: '/admin/live-content', label: 'Manage Live', icon: Radio },
   { href: '/admin/youtube', label: 'यूट्यूब चैनल', icon: Youtube },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },

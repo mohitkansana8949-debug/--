@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { doc, collection, query, where } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { Loader, Video, FileText, ClipboardCheck, MessageSquare, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,40 +11,9 @@ import Image from 'next/image';
 import RealtimeChat from '@/components/realtime-chat';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { getYouTubeID } from '@/lib/youtube';
+import VideoPlayer from '@/components/player/video-player';
 
-function GeneralVideoPlayer({ url }: { url: string }) {
-    // A very basic player for non-YouTube videos.
-    // Assumes a direct link to a video file (mp4, webm, etc.)
-    return (
-        <div className="w-full aspect-video bg-black flex items-center justify-center">
-            <video
-                controls
-                src={url}
-                className="w-full h-full"
-            >
-                Your browser does not support the video tag.
-            </video>
-        </div>
-    );
-}
-
-function YouTubeVideoPlayer({ url }: { url: string }) {
-    const videoId = new URL(url).searchParams.get('v');
-    if (!videoId) return <p>Invalid YouTube URL</p>;
-    const embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    return (
-        <div className="w-full aspect-video">
-            <iframe
-                src={embedUrl}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                className="w-full h-full"
-            ></iframe>
-        </div>
-    );
-}
 
 function TestPlayer({ data }: { data: any[] }) {
     // Basic test renderer.
@@ -121,9 +89,8 @@ export default function WatchCoursePage() {
 
     switch(activeContent.type) {
         case 'youtube':
-            return <YouTubeVideoPlayer url={activeContent.url} />;
         case 'video':
-            return <GeneralVideoPlayer url={activeContent.url} />;
+            return <VideoPlayer videoUrl={activeContent.url} title={activeContent.title} />;
         case 'pdf':
              return (
                  <div className="h-[calc(100vh-200px)] w-full">
@@ -136,6 +103,8 @@ export default function WatchCoursePage() {
             return <p>Unsupported content type.</p>;
     }
   }
+
+  const isChatVisible = activeContent && (activeContent.type === 'youtube' || activeContent.type === 'video') && activeContent.isLive;
 
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-background">
@@ -187,7 +156,14 @@ export default function WatchCoursePage() {
                         ))}
                     </TabsContent>
                     <TabsContent value="doubts" className="m-0 h-full">
-                        <RealtimeChat chatId={courseId as string} />
+                       {isChatVisible ? (
+                           <RealtimeChat chatId={courseId as string} />
+                        ) : (
+                            <div className="p-4 text-center text-muted-foreground">
+                                <MessageSquare className="mx-auto h-8 w-8 mb-2" />
+                                <p>This is a recorded class. Chat is not available.</p>
+                            </div>
+                        )}
                     </TabsContent>
                 </div>
             </Tabs>

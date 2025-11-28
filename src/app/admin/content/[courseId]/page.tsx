@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -57,7 +56,7 @@ export default function EditCourseContentPage() {
         return;
     };
 
-    let contentData: any = { type, title, id: Date.now().toString() };
+    let contentData: any = { type, title, id: Date.now().toString(), isLive: false };
     
     switch (type) {
         case 'youtube':
@@ -67,6 +66,7 @@ export default function EditCourseContentPage() {
             }
             contentData.url = youtubeUrl;
             contentData.thumbnail = youtubeThumbnail;
+            contentData.isLive = true; // Default to live
             break;
         case 'video':
             if (!videoUrl.trim()) {
@@ -74,6 +74,7 @@ export default function EditCourseContentPage() {
                 return;
             }
             contentData.url = videoUrl;
+            contentData.isLive = true; // Default to live
             break;
         case 'pdf':
             if (!pdfUrl.trim()) {
