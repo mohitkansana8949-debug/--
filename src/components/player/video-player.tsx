@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -246,7 +245,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
         )}
       </div>
 
-     {isYoutubeVideo && (
+     {(isYoutubeVideo) && (
       <div className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0")}>
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
@@ -290,18 +289,17 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
         </div>
       </div>
      )}
-
-      {(isExternalVideo || isJioVideo) && (
+     
+     {(!isYoutubeVideo) && (
          <header className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0 pointer-events-none")}>
            <div className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
              <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <ArrowLeft />
              </Button>
-             <div className='flex-grow' />
-             <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10"><Fullscreen /></Button>
            </div>
         </header>
       )}
+
     </div>
   );
 }

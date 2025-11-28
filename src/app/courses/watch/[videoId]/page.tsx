@@ -1,10 +1,8 @@
-
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
 import VideoPlayer from '@/components/player/video-player';
 import RealtimeChat from '@/components/realtime-chat';
-import YouTubeChatReplay from '@/components/youtube-chat-replay';
 import { Loader } from 'lucide-react';
 import { Suspense } from 'react';
 
@@ -13,19 +11,16 @@ function WatchVideoContent() {
   const searchParams = useSearchParams();
   const isLive = searchParams.get('live') === 'true';
   const chatId = searchParams.get('chatId');
+  const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
   return (
     <div className="flex flex-col lg:flex-row h-screen bg-black">
       <main className="flex-1 flex flex-col overflow-auto">
-        <VideoPlayer videoUrl={`https://www.youtube.com/watch?v=${videoId}`} />
+        <VideoPlayer videoUrl={videoUrl} />
       </main>
-      {chatId && (
+      {isLive && chatId && (
         <aside className="w-full lg:w-96 lg:h-screen flex flex-col border-l bg-background">
-          {isLive ? (
-            <RealtimeChat chatId={chatId} />
-          ) : (
-            <YouTubeChatReplay liveChatId={chatId} />
-          )}
+          <RealtimeChat chatId={chatId} />
         </aside>
       )}
     </div>
@@ -39,5 +34,3 @@ export default function WatchCourseVideoPage() {
         </Suspense>
     )
 }
-
-    

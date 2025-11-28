@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { getYouTubeID } from '@/lib/youtube';
+import { Switch } from '@/components/ui/switch';
 
 type ContentType = 'youtube' | 'video' | 'pdf' | 'test';
 
@@ -33,6 +33,7 @@ export default function EditCourseContentPage() {
   const [pdfUrl, setPdfUrl] = useState('');
   const [testJson, setTestJson] = useState('');
   const [title, setTitle] = useState('');
+  const [isLive, setIsLive] = useState(false);
 
   const courseRef = useMemoFirebase(
     () => (firestore && courseId ? doc(firestore, 'courses', courseId as string) : null),
@@ -67,7 +68,7 @@ export default function EditCourseContentPage() {
             }
             contentData.url = youtubeUrl;
             contentData.thumbnail = youtubeThumbnail;
-            contentData.isLive = true; // Default to live
+            contentData.isLive = isLive;
             break;
         case 'video':
             if (!videoUrl.trim()) {
@@ -75,6 +76,7 @@ export default function EditCourseContentPage() {
                 return;
             }
             contentData.url = videoUrl;
+            contentData.isLive = isLive;
             break;
         case 'pdf':
             if (!pdfUrl.trim()) {
@@ -111,6 +113,7 @@ export default function EditCourseContentPage() {
         setVideoUrl('');
         setPdfUrl('');
         setTestJson('');
+        setIsLive(false);
       })
       .catch((error) => {
         console.error("Content update error:", error);
@@ -168,6 +171,10 @@ export default function EditCourseContentPage() {
                                 <Label htmlFor="youtube-url">YouTube Video URL</Label>
                                 <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
                             </div>
+                            <div className="flex items-center space-x-2">
+                                <Switch id="yt-live-switch" checked={isLive} onCheckedChange={setIsLive} />
+                                <Label htmlFor="yt-live-switch">Set as Live</Label>
+                            </div>
                             {youtubeThumbnail && <Image src={youtubeThumbnail} alt="YouTube Thumbnail" width={240} height={135} className="rounded-md border" />}
                             <Button onClick={() => handleAddContent('youtube')} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add YouTube Video'}
@@ -177,6 +184,10 @@ export default function EditCourseContentPage() {
                              <div className="space-y-2">
                                 <Label htmlFor="video-url">Other Video URL (JioCloud, etc)</Label>
                                 <Input id="video-url" placeholder="https://..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+                            </div>
+                             <div className="flex items-center space-x-2">
+                                <Switch id="video-live-switch" checked={isLive} onCheckedChange={setIsLive} />
+                                <Label htmlFor="video-live-switch">Set as Live</Label>
                             </div>
                             <Button onClick={() => handleAddContent('video')} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add Video'}
@@ -203,7 +214,7 @@ export default function EditCourseContentPage() {
                     </div>
                 </Tabs>
             </CardContent>
-        </Card>>
+        </Card>
 
         {/* Right column for existing content */}
         <Card>

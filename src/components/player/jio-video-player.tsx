@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from "@/lib/utils";
@@ -15,7 +14,7 @@ const getJioEmbedUrl = (url: string): string | null => {
         const videoId = urlObj.searchParams.get('u');
         if (videoId) {
             // Construct the embeddable URL format for JioCloud.
-            return `https://www.jioaicloud.com/embed/?u=${videoId}`;
+            return `https://www.jioaicloud.com/embed/?u=${videoId}&autoplay=1`;
         }
     } catch (e) {
         console.error("Invalid JioCloud URL", e);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -66,7 +65,11 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
   // Auto-scroll to bottom
   useEffect(() => {
     if (scrollViewportRef.current) {
-        scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+        setTimeout(() => {
+            if (scrollViewportRef.current) {
+                scrollViewportRef.current.scrollTop = scrollViewportRef.current.scrollHeight;
+            }
+        }, 100);
     }
   }, [messages]);
 
@@ -106,13 +109,13 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
   }
 
   return (
-    <Card className="h-full w-full flex flex-col bg-card/50">
+    <div className="h-full w-full flex flex-col bg-card/50">
         <div className="p-4 border-b">
             <h3 className="font-semibold text-center">चैट</h3>
         </div>
         
-        <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4" ref={scrollViewportRef}>
+        <ScrollArea className="flex-1" viewportRef={scrollViewportRef}>
+            <div className="p-4 space-y-4">
             {isLoading && <div className="flex justify-center p-4"><Loader className="animate-spin" /></div>}
             {messages?.map((msg) => (
                 <div key={msg.id} className="flex items-start gap-3">
@@ -143,7 +146,6 @@ export default function RealtimeChat({ chatId }: RealtimeChatProps) {
                 </Button>
             </form>
         </div>
-    </Card>
+    </div>
   );
 }
-

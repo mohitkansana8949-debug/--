@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
@@ -19,7 +18,7 @@ function WatchExternalVideoContent() {
       <main className="flex-1 flex flex-col overflow-auto">
         <VideoPlayer videoUrl={videoUrl} title={title || undefined} />
       </main>
-      {chatId && isLive && (
+      {isLive && chatId && (
         <aside className="w-full lg:w-96 lg:h-screen flex flex-col border-l bg-background">
           <RealtimeChat chatId={chatId} />
         </aside>
@@ -36,5 +35,3 @@ export default function WatchExternalVideoPage() {
         </Suspense>
     )
 }
-
-    
