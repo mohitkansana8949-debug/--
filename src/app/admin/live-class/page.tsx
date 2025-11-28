@@ -14,11 +14,8 @@ import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Loader, Youtube, Calendar as CalendarIcon, Trash2, Clock } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
 const getYouTubeID = (url: string): string | null => {
   if (!url) return null;
@@ -77,10 +74,8 @@ const getLiveChatId = async (videoId: string, apiKey: string) => {
 const liveClassSchema = z.object({
   youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),
   teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
-  startTime: z.date({
-    required_error: "लाइव क्लास का समय आवश्यक है।",
-  }),
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "कृपया HH:mm फॉर्मेट में सही समय दर्ज करें।"),
+  startDate: z.string().min(1, "लाइव क्लास की तारीख आवश्यक है।"),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "कृपया HH:mm फॉर्मेट में सही समय दर्ज करें।"),
 });
 type LiveClassFormValues = z.infer<typeof liveClassSchema>;
 
@@ -100,7 +95,8 @@ export default function ManageLiveClassPage() {
     defaultValues: {
       youtubeUrl: '',
       teacherName: '',
-      time: '12:00',
+      startDate: '',
+      startTime: '12:00',
     }
   });
 
@@ -124,9 +120,7 @@ export default function ManageLiveClassPage() {
     try {
         const liveChatId = await getLiveChatId(videoId, apiKey);
 
-        const [hours, minutes] = values.time.split(':').map(Number);
-        const combinedDateTime = new Date(values.startTime);
-        combinedDateTime.setHours(hours, minutes, 0, 0);
+        const combinedDateTime = new Date(`${values.startDate}T${values.startTime}:00`);
 
         const liveClassesCollection = collection(firestore, 'liveClasses');
         const liveClassData = {
@@ -140,7 +134,7 @@ export default function ManageLiveClassPage() {
         await addDoc(liveClassesCollection, liveClassData);
         toast({
           title: 'सफलता!',
-          description: 'नई लाइव क्लास जोड़ दी गई है।',
+          description: 'नई लाइव क्लास जोड़ दी गई है।',
         });
         form.reset();
 
@@ -174,38 +168,30 @@ export default function ManageLiveClassPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="startTime"
+                  name="startDate"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
+                    <FormItem>
                       <FormLabel>लाइव क्लास की तारीख</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>एक तारीख चुनें</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                      <FormControl>
+                        <Input type="date" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField control={form.control} name="time" render={({ field }) => (<FormItem> <FormLabel>लाइव क्लास का समय (24-घंटे)</FormLabel> <FormControl> <Input type="time" {...field} /> </FormControl> <FormMessage /> </FormItem>)}/>
+                 <FormField 
+                    control={form.control} 
+                    name="startTime" 
+                    render={({ field }) => (
+                        <FormItem> 
+                            <FormLabel>लाइव क्लास का समय (24-घंटे)</FormLabel> 
+                            <FormControl> 
+                                <Input type="time" {...field} /> 
+                            </FormControl> 
+                            <FormMessage /> 
+                        </FormItem>
+                    )}
+                />
               </div>
 
               <Button type="submit" disabled={isSubmitting} className="w-full">
@@ -254,4 +240,4 @@ export default function ManageLiveClassPage() {
       </Card>
     </div>
   );
- 
+}
