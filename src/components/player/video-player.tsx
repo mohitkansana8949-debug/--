@@ -23,10 +23,9 @@ import { useRouter } from 'next/navigation';
 
 type VideoPlayerProps = {
     videoId: string | null;
-    title: string;
 };
 
-export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
+export default function VideoPlayer({ videoId }: VideoPlayerProps) {
   const router = useRouter();
 
   const [player, setPlayer] = useState<any>(null);
@@ -51,14 +50,13 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   const startProgressUpdates = () => {
       stopProgressUpdates();
       progressUpdateRef.current = setInterval(() => {
-        if (player && typeof player.getCurrentTime === 'function') {
+        if (player && typeof player.getCurrentTime === 'function' && player.getPlayerState() === 1) {
             setCurrentTime(player.getCurrentTime());
         }
       }, 500);
   }
 
   useEffect(() => {
-    // Cleanup interval on unmount
     return () => stopProgressUpdates();
   }, [player]);
 
@@ -68,12 +66,17 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
       clearTimeout(controlsTimeoutRef.current);
     }
     setShowControls(true);
-    controlsTimeoutRef.current = setTimeout(() => {
-        if(isPlaying) {
+    if (isPlaying) {
+        controlsTimeoutRef.current = setTimeout(() => {
             setShowControls(false);
-        }
-    }, 4000);
+        }, 4000);
+    }
   };
+  
+  useEffect(() => {
+    resetControlsTimeout();
+  }, [isPlaying]);
+
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target);
@@ -82,44 +85,40 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   };
 
   const onPlayerStateChange = (event: any) => {
-    // State 1 is playing
-    if (event.data === 1) { 
+    if (event.data === YouTube.PlayerState.PLAYING) { 
       setIsPlaying(true);
       setDuration(player.getDuration());
       startProgressUpdates();
-      resetControlsTimeout();
-    } else { // Paused, ended, etc.
+    } else { 
       setIsPlaying(false);
       stopProgressUpdates();
-      // Keep controls visible when paused
-      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-      setShowControls(true);
     }
   };
 
-  const handlePlayPause = () => {
-    // If the click was on the player itself and not a button, toggle play/pause
-    if (isPlaying) {
-      player.pauseVideo();
-    } else {
-      player.playVideo();
+  const handlePlayPauseToggle = () => {
+    if (player) {
+      if (isPlaying) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
     }
   };
 
   const handleSeek = (value: number[]) => {
     const newTime = value[0];
-    setCurrentTime(newTime); // Optimistically update UI
+    setCurrentTime(newTime);
     player.seekTo(newTime, true);
     resetControlsTimeout();
   };
 
   const handleForward = () => {
-    player.seekTo(currentTime + 10, true);
+    player.seekTo(player.getCurrentTime() + 10, true);
     resetControlsTimeout();
   };
 
   const handleBackward = () => {
-    player.seekTo(currentTime - 10, true);
+    player.seekTo(player.getCurrentTime() - 10, true);
     resetControlsTimeout();
   };
 
@@ -158,7 +157,6 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
     const date = new Date(0);
     date.setSeconds(time);
     const timeString = date.toISOString().substr(11, 8);
-    // Hide hours if video is less than an hour
     return duration >= 3600 ? timeString : timeString.substr(3);
   };
   
@@ -181,12 +179,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
       className="w-full h-full bg-black text-white flex items-center justify-center relative overflow-hidden group/player"
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => { if(isPlaying) setShowControls(false) }}
-      onClick={(e) => {
-          // Only toggle play/pause if the click is directly on the container, not on the controls inside
-          if (e.target === playerContainerRef.current) {
-             handlePlayPause();
-          }
-      }}
+      onClick={handlePlayPauseToggle}
     >
       <div className="w-full h-full absolute" id="youtube-player-container">
         <YouTube
@@ -195,48 +188,42 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
             height: '100%',
             width: '100%',
             playerVars: {
-              autoplay: 1, // Autoplay enabled
+              autoplay: 1,
               controls: 0,
               rel: 0,
               showinfo: 0,
               modestbranding: 1,
               fs: 0,
               iv_load_policy: 3,
-              hl: 'hi', // Set language to Hindi
+              hl: 'hi',
             },
           }}
           onReady={onPlayerReady}
           onStateChange={onPlayerStateChange}
-          className="w-full h-full pointer-events-none"
+          className="w-full h-full"
         />
       </div>
 
-      {/* Custom Controls Overlay */}
       <div 
         className={cn(
-            "absolute inset-0 transition-opacity duration-300 z-10",
+            "absolute inset-0 transition-opacity duration-300 z-10 pointer-events-none",
             showControls ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Black Gradient Overlays */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent"></div>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent"></div>
         
-        {/* Top Controls Header */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center gap-4">
+        <header className="absolute top-0 left-0 right-0 p-4 flex items-center gap-4 pointer-events-auto">
            <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <ArrowLeft />
            </Button>
-        </div>
+        </header>
 
-        {/* Middle Controls */}
-        <div className="absolute inset-0 flex items-center justify-center gap-16"
-            onClick={(e) => e.stopPropagation()} // Prevent middle controls from toggling play/pause
-        >
+        <div className="absolute inset-0 flex items-center justify-center gap-16 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="icon" className="h-16 w-16 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleBackward}>
             <RotateCcw className="h-8 w-8" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-24 w-24 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handlePlayPause}>
+          <Button variant="ghost" size="icon" className="h-24 w-24 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handlePlayPauseToggle}>
             {isPlaying ? <Pause className="h-16 w-16" /> : <Play className="h-16 w-16" />}
           </Button>
           <Button variant="ghost" size="icon" className="h-16 w-16 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleForward}>
@@ -244,10 +231,9 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
           </Button>
         </div>
 
-        {/* Bottom Controls */}
         <div 
-            className="absolute bottom-0 left-0 right-0 p-4 space-y-4"
-            onClick={(e) => e.stopPropagation()} // Prevent bottom controls from toggling play/pause
+            className="absolute bottom-0 left-0 right-0 p-4 space-y-4 pointer-events-auto"
+            onClick={(e) => e.stopPropagation()}
         >
             <div className="flex items-center gap-4">
                 <span className="text-xs font-mono select-none">{formatTime(currentTime)}</span>
@@ -296,5 +282,3 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
     </div>
   );
 }
-
-    

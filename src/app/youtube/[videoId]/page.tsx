@@ -9,7 +9,7 @@ export default function YouTubePlayerPage() {
 
   return (
     <div className="fixed inset-0 bg-black">
-      <VideoPlayer videoId={videoId as string} title="यूट्यूब वीडियो" />
+      <VideoPlayer videoId={videoId as string} />
     </div>
   );
 }

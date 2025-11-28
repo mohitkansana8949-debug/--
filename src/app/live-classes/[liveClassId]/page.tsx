@@ -54,7 +54,7 @@ export default function LiveClassWatchPage() {
   if (!live) {
     return (
         <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
-            <VideoPlayer videoId={liveClass.youtubeVideoId} title={liveClass.teacherName} />
+            <VideoPlayer videoId={liveClass.youtubeVideoId} />
         </div>
     )
   }
@@ -62,7 +62,7 @@ export default function LiveClassWatchPage() {
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row h-screen w-screen p-0 gap-0">
         <div className="flex-grow flex flex-col relative">
-            <VideoPlayer videoId={liveClass.youtubeVideoId} title={liveClass.teacherName} />
+            <VideoPlayer videoId={liveClass.youtubeVideoId} />
         </div>
         <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0 bg-background p-2">
             {showLiveChat ? <RealtimeYouTubeChat liveChatId={liveClass.liveChatId} /> : <DummyChat />}

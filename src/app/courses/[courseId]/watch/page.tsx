@@ -67,7 +67,7 @@ export default function WatchCoursePage() {
 
   return (
     <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
-      <VideoPlayer videoId={videoId} title={title} />
+      <VideoPlayer videoId={videoId} />
     </div>
   );
 }
