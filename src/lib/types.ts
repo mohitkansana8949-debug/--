@@ -21,8 +21,12 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  signUpDate: string; // ISO string for date
+  signUpDate: Timestamp;
   profileComplete?: boolean;
+  mobile?: string;
+  category?: string;
+  state?: string;
+  class?: string;
 }
 
 export type CourseContent = {
@@ -50,6 +54,7 @@ export interface Enrollment {
   userId: string;
   itemId: string; // Can be courseId, ebookId, testId, etc.
   itemType: 'course' | 'ebook' | 'pyq' | 'test';
+  itemName: string; // Denormalized for easier display
   enrollmentDate: Timestamp;
   paymentMethod: string;
   paymentTransactionId: string;
@@ -70,4 +75,24 @@ export interface TestSeries {
   price: number;
   isFree: boolean;
   questions: TestQuestion[];
+}
+
+export interface Ebook {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  isFree: boolean;
+  pdfUrl: string;
+  thumbnailUrl?: string;
+}
+
+export interface PYQ {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    isFree: boolean;
+    pdfUrl: string;
+    thumbnailUrl?: string;
 }

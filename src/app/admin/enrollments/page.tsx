@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, updateDoc, getDocs, query, where } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, CheckCircle, XCircle, Clock } from 'lucide-react';
@@ -40,40 +40,46 @@ export default function AdminEnrollmentsPage() {
     }
     setIsEnriching(true);
     
-    const userIds = [...new Set(enrollments.map(e => e.userId))];
-    const courseIds = [...new Set(enrollments.filter(e => e.itemType === 'course').map(e => e.itemId))];
-    const ebookIds = [...new Set(enrollments.filter(e => e.itemType === 'ebook').map(e => e.itemId))];
-    const pyqIds = [...new Set(enrollments.filter(e => e.itemType === 'pyq').map(e => e.itemId))];
-    const testIds = [...new Set(enrollments.filter(e => e.itemType === 'test').map(e => e.itemId))];
-    
-    const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap] = await Promise.all([
-      userIds.length ? getDocs(query(collection(firestore, 'users'), where('__name__', 'in', userIds))) : Promise.resolve({ docs: [] }),
-      courseIds.length ? getDocs(query(collection(firestore, 'courses'), where('__name__', 'in', courseIds))) : Promise.resolve({ docs: [] }),
-      ebookIds.length ? getDocs(query(collection(firestore, 'ebooks'), where('__name__', 'in', ebookIds))) : Promise.resolve({ docs: [] }),
-      pyqIds.length ? getDocs(query(collection(firestore, 'pyqs'), where('__name__', 'in', pyqIds))) : Promise.resolve({ docs: [] }),
-      testIds.length ? getDocs(query(collection(firestore, 'tests'), where('__name__', 'in', testIds))) : Promise.resolve({ docs: [] }),
-    ]);
+    try {
+      const userIds = [...new Set(enrollments.map(e => e.userId).filter(Boolean))];
+      const courseIds = [...new Set(enrollments.filter(e => e.itemType === 'course').map(e => e.itemId))];
+      const ebookIds = [...new Set(enrollments.filter(e => e.itemType === 'ebook').map(e => e.itemId))];
+      const pyqIds = [...new Set(enrollments.filter(e => e.itemType === 'pyq').map(e => e.itemId))];
+      const testIds = [...new Set(enrollments.filter(e => e.itemType === 'test').map(e => e.itemId))];
+      
+      const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap] = await Promise.all([
+        userIds.length > 0 ? getDocs(query(collection(firestore, 'users'), where('__name__', 'in', userIds))) : Promise.resolve({ docs: [] }),
+        courseIds.length > 0 ? getDocs(query(collection(firestore, 'courses'), where('__name__', 'in', courseIds))) : Promise.resolve({ docs: [] }),
+        ebookIds.length > 0 ? getDocs(query(collection(firestore, 'ebooks'), where('__name__', 'in', ebookIds))) : Promise.resolve({ docs: [] }),
+        pyqIds.length > 0 ? getDocs(query(collection(firestore, 'pyqs'), where('__name__', 'in', pyqIds))) : Promise.resolve({ docs: [] }),
+        testIds.length > 0 ? getDocs(query(collection(firestore, 'tests'), where('__name__', 'in', testIds))) : Promise.resolve({ docs: [] }),
+      ]);
 
-    const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data().name || 'Unknown User']));
-    const itemsMap = new Map([
-        ...coursesSnap.docs.map(d => [d.id, d.data().name || 'Unknown Course']),
-        ...ebooksSnap.docs.map(d => [d.id, d.data().name || 'Unknown E-book']),
-        ...pyqsSnap.docs.map(d => [d.id, d.data().name || 'Unknown PYQ']),
-        ...testsSnap.docs.map(d => [d.id, d.data().name || 'Unknown Test']),
-    ]);
+      const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data().name || 'Unknown User']));
+      const itemsMap = new Map([
+          ...coursesSnap.docs.map(d => [d.id, d.data().name || 'Unknown Course']),
+          ...ebooksSnap.docs.map(d => [d.id, d.data().name || 'Unknown E-book']),
+          ...pyqsSnap.docs.map(d => [d.id, d.data().name || 'Unknown PYQ']),
+          ...testsSnap.docs.map(d => [d.id, d.data().name || 'Unknown Test']),
+      ]);
 
-    const enriched = enrollments.map(e => ({
-      id: e.id,
-      userName: usersMap.get(e.userId) || e.userId,
-      itemName: itemsMap.get(e.itemId) || e.itemId,
-      itemType: e.itemType || 'N/A',
-      status: e.status,
-      paymentTransactionId: e.paymentTransactionId,
-    }));
+      const enriched = enrollments.map(e => ({
+        id: e.id,
+        userName: usersMap.get(e.userId) || e.userId,
+        itemName: itemsMap.get(e.itemId) || e.itemId,
+        itemType: e.itemType || 'N/A',
+        status: e.status,
+        paymentTransactionId: e.paymentTransactionId,
+      }));
 
-    setEnrichedEnrollments(enriched);
-    setIsEnriching(false);
-  }, [enrollments, firestore, enrollmentsLoading]);
+      setEnrichedEnrollments(enriched);
+    } catch (e) {
+        console.error("Error enriching enrollment data:", e);
+        toast({variant: 'destructive', title: 'Error', description: 'Could not load full enrollment details.'})
+    } finally {
+        setIsEnriching(false);
+    }
+  }, [enrollments, firestore, enrollmentsLoading, toast]);
 
   useEffect(() => {
     enrichData();

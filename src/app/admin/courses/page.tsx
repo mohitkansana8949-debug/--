@@ -3,11 +3,13 @@
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 export default function AdminCoursesPage() {
     const { firestore } = useFirebase();
@@ -15,20 +17,48 @@ export default function AdminCoursesPage() {
     const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
     return (
         <Card>
-            <CardHeader><CardTitle>सभी कोर्सेस</CardTitle></CardHeader>
+            <CardHeader>
+                <CardTitle>Manage Courses</CardTitle>
+                <CardDescription>View and manage all courses.</CardDescription>
+            </CardHeader>
             <CardContent>
                 {coursesLoading ? (
                     <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {courses?.map(course => (
-                            <Card key={course.id}>
-                                {course.thumbnailUrl && <Image src={course.thumbnailUrl} alt={course.name} width={400} height={200} className="rounded-t-lg object-cover w-full h-32"/>}
-                                <CardHeader><CardTitle className="text-lg line-clamp-1">{course.name}</CardTitle></CardHeader>
-                                <CardContent><Button asChild className="w-full"><Link href={`/courses/${course.id}`}>देखें</Link></Button></CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Course Name</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead>Content Items</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {courses?.map(course => (
+                                <TableRow key={course.id}>
+                                    <TableCell className='font-medium'>{course.name}</TableCell>
+                                    <TableCell>{course.isFree ? 'Free' : `₹${course.price}`}</TableCell>
+                                    <TableCell>{course.content?.length || 0}</TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button asChild size="sm">
+                                            <Link href={`/admin/content/${course.id}`}>Manage Content</Link>
+                                        </Button>
+                                        <Button asChild size="sm" variant="outline">
+                                            <Link href={`/courses/${course.id}`} target="_blank">View</Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                             {!coursesLoading && courses?.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                        No courses found.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 )}
             </CardContent>
         </Card>

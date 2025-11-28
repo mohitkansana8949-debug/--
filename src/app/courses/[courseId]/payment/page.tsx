@@ -14,6 +14,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { Enrollment } from '@/lib/types';
+
 
 export default function PaymentPage() {
     const { courseId } = useParams();
@@ -51,12 +53,14 @@ export default function PaymentPage() {
         }
 
         setIsSubmitting(true);
-        const enrollmentRef = doc(collection(firestore, 'courseEnrollments'));
-        const enrollmentData = {
+        const enrollmentRef = doc(collection(firestore, 'enrollments'));
+        const enrollmentData: Omit<Enrollment, 'id'> = {
             userId: user.uid,
-            courseId: course.id,
+            itemId: course.id,
+            itemType: 'course',
+            itemName: course.name, // Denormalized name
             enrollmentDate: serverTimestamp(),
-            paymentMethod: paymentMethod,
+            paymentMethod: paymentMethod || 'unknown',
             paymentTransactionId: paymentMobileNumber, 
             status: 'approved', // Status is now 'approved' immediately.
         };

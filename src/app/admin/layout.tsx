@@ -15,30 +15,31 @@ import {
   Radio,
   Book,
   FileQuestion,
-  Upload,
-  Video,
-  Youtube,
-  Newspaper
+  Newspaper,
+  PlusCircle,
+  Palette,
 } from 'lucide-react';
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
-  { href: '/admin/courses', label: 'कोर्सेस', icon: BookOpen },
-  { href: '/admin/create-course', label: 'नया कोर्स', icon: FileText },
-  { href: '/admin/content', label: 'कंटेंट', icon: FileText },
-  { href: '/admin/live-content', label: 'Manage Live', icon: Radio },
-  { href: '/admin/ebooks', label: 'E-books', icon: Book },
-  { href: '/admin/create-ebook', label: 'Add E-book', icon: Book },
-  { href: '/admin/pyqs', label: 'PYQs', icon: FileQuestion },
-  { href: '/admin/create-pyq', label: 'Add PYQ', icon: FileQuestion },
-  { href: '/admin/test-series', label: 'Test Series', icon: Newspaper },
-  { href: '/admin/create-test', label: 'Add Test', icon: Newspaper },
+  { href: '/admin/courses', label: 'Manage Courses', icon: BookOpen },
+  { href: '/admin/content', label: 'Manage Content', icon: Palette },
+  { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },
+  { href: '/admin/pyqs', label: 'Manage PYQs', icon: FileQuestion },
+  { href: '/admin/test-series', label: 'Manage Tests', icon: Newspaper },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
-  { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
+  { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
 ];
+
+const creationNavItems = [
+    { href: '/admin/create-course', label: 'नया कोर्स', icon: PlusCircle },
+    { href: '/admin/create-ebook', label: 'Add E-book', icon: PlusCircle },
+    { href: '/admin/create-pyq', label: 'Add PYQ', icon: PlusCircle },
+    { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
+]
 
 export default function AdminLayout({
   children,
@@ -62,11 +63,26 @@ export default function AdminLayout({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <aside className="md:col-span-1">
           <nav className="flex flex-col gap-2">
+            <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => (
               <Button
                 key={item.href}
                 asChild
-                variant={pathname === item.href ? 'default' : 'ghost'}
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                className="justify-start"
+              >
+                <Link href={item.href}>
+                  <item.icon className="mr-2 h-4 w-4" />
+                  {item.label}
+                </Link>
+              </Button>
+            ))}
+            <h3 className="px-4 text-lg font-semibold tracking-tight mt-6 mb-2">Creation</h3>
+             {creationNavItems.map((item) => (
+              <Button
+                key={item.href}
+                asChild
+                variant={pathname === item.href ? 'default' : 'outline'}
                 className="justify-start"
               >
                 <Link href={item.href}>

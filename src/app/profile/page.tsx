@@ -6,11 +6,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Info } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
+import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Info, Trophy, BarChartHorizontal } from 'lucide-react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore } from '@/firebase';
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, getDoc, onSnapshot, collection, query } from 'firebase/firestore';
+import { Progress } from '@/components/ui/progress';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -32,6 +33,44 @@ export default function ProfilePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
+
+  // Queries for all content types
+  const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
+  const ebooksQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'ebooks') : null), [firestore]);
+  const pyqsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'pyqs') : null), [firestore]);
+  const testsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'tests') : null), [firestore]);
+
+  const { data: allCourses } = useCollection(coursesQuery);
+  const { data: allEbooks } = useCollection(ebooksQuery);
+  const { data: allPyqs } = useCollection(pyqsQuery);
+  const { data: allTests } = useCollection(testsQuery);
+
+  const enrollmentsQuery = useMemoFirebase(
+    () => user ? query(collection(firestore, 'enrollments')) : null,
+    [user, firestore]
+  );
+  const { data: enrollments } = useCollection(enrollmentsQuery);
+
+  const calculateProgress = useCallback(() => {
+    const totalItems = (allCourses?.length || 0) + (allEbooks?.length || 0) + (allPyqs?.length || 0) + (allTests?.length || 0);
+    const enrolledItems = new Set(enrollments?.filter(e => e.userId === user?.uid && e.status === 'approved').map(e => e.itemId));
+    
+    if (totalItems === 0) {
+      setProgress(0);
+      return;
+    }
+    
+    const progressPercentage = (enrolledItems.size / totalItems) * 100;
+    setProgress(Math.min(100, progressPercentage));
+
+  }, [allCourses, allEbooks, allPyqs, allTests, enrollments, user]);
+
+  useEffect(() => {
+    if (allCourses && allEbooks && allPyqs && allTests && enrollments && user) {
+        calculateProgress();
+    }
+  }, [allCourses, allEbooks, allPyqs, allTests, enrollments, user, calculateProgress]);
 
   useEffect(() => {
     if (!user || !firestore) {
@@ -151,8 +190,28 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+      
+      <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center"><BarChartHorizontal className="mr-2 h-5 w-5"/>My Progress</CardTitle>
+            <CardDescription>Track your learning journey through all our content.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center mb-1">
+                    <span className="text-muted-foreground">Completion</span>
+                    <span className="font-bold text-primary">{Math.round(progress)}%</span>
+                </div>
+                <Progress value={progress} />
+                 <div className="text-center text-sm text-muted-foreground p-4 mt-2 rounded-lg border bg-card">
+                    <Trophy className="mx-auto h-8 w-8 text-yellow-500 mb-2"/>
+                    <p className="font-semibold">Complete 100% and get a ₹20 reward!</p>
+                    <p>Finish all courses, e-books, and tests to claim your prize.</p>
+                </div>
+            </div>
+          </CardContent>
+      </Card>
+
     </div>
   );
 }
-
-    

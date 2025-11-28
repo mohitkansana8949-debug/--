@@ -3,7 +3,7 @@
 import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -16,7 +16,10 @@ export default function AdminTestSeriesPage() {
 
     return (
         <Card>
-            <CardHeader><CardTitle>All Test Series</CardTitle></CardHeader>
+            <CardHeader>
+                <CardTitle>Manage Test Series</CardTitle>
+                <CardDescription>View and manage all test series.</CardDescription>
+            </CardHeader>
             <CardContent>
                 {testsLoading ? (
                     <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>
@@ -26,6 +29,8 @@ export default function AdminTestSeriesPage() {
                             <TableRow>
                                 <TableHead>Test Name</TableHead>
                                 <TableHead>Price</TableHead>
+                                <TableHead>Duration</TableHead>
+                                <TableHead>Questions</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -34,16 +39,18 @@ export default function AdminTestSeriesPage() {
                                 <TableRow key={test.id}>
                                     <TableCell className='font-medium'>{test.name}</TableCell>
                                     <TableCell>{test.isFree ? 'Free' : `₹${test.price}`}</TableCell>
+                                    <TableCell>{test.duration} mins</TableCell>
+                                    <TableCell>{test.questions?.length || 0}</TableCell>
                                     <TableCell>
-                                        <Button asChild>
-                                            <Link href={`/test-series/${test.id}`}>View Test</Link>
+                                        <Button asChild size="sm" variant="outline">
+                                            <Link href={`/test-series/${test.id}`} target="_blank">View Test</Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {!testsLoading && tests?.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground">
                                         No tests found.
                                     </TableCell>
                                 </TableRow>

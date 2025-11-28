@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
@@ -92,24 +92,31 @@ export default function CompleteProfilePage() {
     }
 
     setIsLoading(true);
-
-    const profileData: any = {
-        name: data.name,
-        email: user.email, 
-        mobile: data.mobile || null,
-        category: data.category || null,
-        state: data.state || null,
-        class: data.class || null,
-        profileComplete: true, // Flag to indicate profile is complete
-    };
+    
+    const userRef = doc(firestore, 'users', user.uid);
 
     try {
+      
+      const profileData: any = {
+          name: data.name,
+          email: user.email, 
+          mobile: data.mobile || null,
+          category: data.category || null,
+          state: data.state || null,
+          class: data.class || null,
+          profileComplete: true, // Flag to indicate profile is complete
+      };
+
+      // Check if this is a new user document
+      const userDoc = await onSnapshot(userRef, () => {}).then(() => getDoc(userRef));
+      if (!userDoc.exists()) {
+          profileData.signUpDate = serverTimestamp();
+      }
+
       if (user.displayName !== data.name) {
         await updateProfile(user, { displayName: data.name });
       }
 
-      const userRef = doc(firestore, 'users', user.uid);
-      
       await setDoc(userRef, profileData, { merge: true });
 
       toast({
@@ -117,11 +124,7 @@ export default function CompleteProfilePage() {
         description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
       });
       
-      // The AuthGate will handle redirection
-      // Manually trigger a check in AuthGate or reload
-      router.push('/');
-      // A full reload might be needed if state management is complex
-      // window.location.href = '/';
+      router.replace('/');
 
     } catch (error) {
       console.error("Profile update error:", error);
@@ -132,7 +135,7 @@ export default function CompleteProfilePage() {
          const contextualError = new FirestorePermissionError({
             operation: 'update',
             path: `users/${user.uid}`,
-            requestResourceData: profileData,
+            requestResourceData: data,
          });
          errorEmitter.emit('permission-error', contextualError);
          description = 'अनुमति त्रुटि। प्रोफ़ाइल को सहेजने में विफल।';
