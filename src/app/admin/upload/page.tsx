@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -34,8 +35,8 @@ export default function UploadPage() {
 
     const handleUpload = () => {
         // This is a placeholder for a real upload mechanism.
-        // In a real app, you would use a service to get a signed URL,
-        // then upload the file to that URL.
+        // In a real app, you would use your storage service's SDK with an API key.
+        // For this demo, we simulate the upload process.
         if (!file) {
              toast({
                 variant: 'destructive',
@@ -63,6 +64,7 @@ export default function UploadPage() {
         setTimeout(() => {
             clearInterval(interval);
             setUploadProgress(100);
+             // In a real app, this URL would come from your storage service.
              const fakeUrl = `https://your-storage-service.com/uploads/${Date.now()}_${fileName.trim()}`;
              toast({
                 title: 'Upload Successful! (Demo)',
@@ -72,6 +74,7 @@ export default function UploadPage() {
             setIsUploading(false);
             setFile(null);
             setFileName('');
+            setUploadProgress(null);
         }, 2500);
     };
     
