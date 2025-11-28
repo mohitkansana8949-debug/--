@@ -8,6 +8,8 @@ import { Loader } from 'lucide-react';
 import VideoPlayer from '@/components/player/video-player';
 import RealtimeChat from '@/components/realtime-chat';
 import { useEffect, useState } from 'react';
+import { Card } from '@/components/ui/card';
+
 
 // Helper function to extract YouTube Video ID from any URL format
 const getYouTubeID = (url: string): string | null => {
@@ -118,7 +120,7 @@ function DummyChat() {
         const nextMessageIndex = prev.length % dummyMessages.length;
         const nextMessage = dummyMessages[nextMessageIndex];
         // Create a new unique object for the key prop
-        const newMesage = {...nextMessage, uniqueId: `${Date.now()}-${nextMessage.id}`};
+        const newMesage = {...nextMessage};
         if (prev.length >= 10) {
           return [...prev.slice(1), newMesage];
         }
@@ -135,8 +137,8 @@ function DummyChat() {
             <h3 className="font-semibold text-center">लाइव चैट</h3>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg: any) => (
-                <div key={msg.uniqueId} className="flex items-start gap-2">
+            {messages.map((msg: any, index: number) => (
+                <div key={`${msg.id}-${index}`} className="flex items-start gap-2">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${getColorForId(msg.id).replace('text-', 'bg-')}`}>
                         {msg.name.charAt(0)}
                     </div>
@@ -150,4 +152,3 @@ function DummyChat() {
     </Card>
   );
 }
-
