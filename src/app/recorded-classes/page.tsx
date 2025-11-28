@@ -78,7 +78,7 @@ function ClassCard({ liveClass }: { liveClass: any }) {
             </CardContent>
             <CardFooter>
                 <Button asChild className="w-full">
-                    <Link href={`/live-classes/${liveClass.id}`}>
+                    <Link href={`/courses/watch/${liveClass.youtubeVideoId}`}>
                         वीडियो देखें
                     </Link>
                 </Button>

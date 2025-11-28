@@ -15,15 +15,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Timestamp } from 'firebase/firestore';
 
 
-const isLive = (startTime: Timestamp) => {
+const isPast = (startTime: Timestamp) => {
     if (!startTime?.toDate) return false;
-    // Class is considered live if it started in the past and is not older than, e.g., 4 hours.
-    // This prevents very old classes from showing chat.
-    const now = new Date();
-    const startDate = startTime.toDate();
-    const fourHours = 4 * 60 * 60 * 1000;
-    return startDate <= now && (now.getTime() - startDate.getTime()) < fourHours;
-}
+    return startTime.toDate() < new Date();
+};
 
 export default function LiveClassWatchPage() {
   const { liveClassId } = useParams();
@@ -53,11 +48,11 @@ export default function LiveClassWatchPage() {
     );
   }
 
-  const isClassLive = isLive(liveClass.startTime);
-  const showLiveChat = isClassLive && liveClass.liveChatId;
+  const isClassPast = isPast(liveClass.startTime);
+  const showLiveChat = !isClassPast && liveClass.liveChatId;
   
-  // If it's a recorded class (i.e., not live), show full screen player
-  if (!isClassLive) {
+  // If it's a recorded (past) class, show full screen player
+  if (isClassPast) {
     return (
         <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
             <VideoPlayer title={liveClass.teacherName} videoId={liveClass.youtubeVideoId} />
@@ -65,14 +60,14 @@ export default function LiveClassWatchPage() {
     )
   }
 
-  // If it is live, show the player with chat
+  // If it is an upcoming or current live class, show the player with chat
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row h-screen w-screen p-0 gap-0">
         <div className="flex-grow flex flex-col relative">
             <VideoPlayer title={liveClass.teacherName} videoId={liveClass.youtubeVideoId} />
         </div>
         <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0 bg-background p-2">
-            {showLiveChat ? <RealtimeYouTubeChat liveChatId={liveClass.liveChatId} /> : <div className="flex h-full items-center justify-center text-muted-foreground">चैट उपलब्ध नहीं है</div>}
+            {showLiveChat ? <RealtimeYouTubeChat liveChatId={liveClass.liveChatId} /> : <div className="flex h-full items-center justify-center text-muted-foreground">लाइव शुरू होने पर चैट यहां दिखेगी।</div>}
         </div>
     </div>
   );
@@ -134,8 +129,8 @@ function RealtimeYouTubeChat({ liveChatId }: { liveChatId: string }) {
             
             <ScrollArea className="flex-1">
                 <div className="p-4 space-y-4" ref={scrollViewportRef}>
-                    {messages.map((msg) => (
-                        <div key={msg.id} className="flex items-start gap-3">
+                    {messages.map((msg, index) => (
+                        <div key={`${msg.id}-${index}`} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={msg.authorPhotoUrl} alt={msg.authorName} />
                                 <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>

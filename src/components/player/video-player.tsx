@@ -23,9 +23,10 @@ import { useRouter } from 'next/navigation';
 
 type VideoPlayerProps = {
     videoId: string | null;
+    title?: string;
 };
 
-export default function VideoPlayer({ videoId }: VideoPlayerProps) {
+export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   const router = useRouter();
 
   const [player, setPlayer] = useState<any>(null);
@@ -93,9 +94,17 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       setIsPlaying(false);
       stopProgressUpdates();
     }
+     // Keep controls visible when paused or ended
+    if (event.data === YouTube.PlayerState.PAUSED || event.data === YouTube.PlayerState.ENDED) {
+        setShowControls(true);
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+        }
+    }
   };
 
-  const handlePlayPauseToggle = () => {
+  const handlePlayPauseToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (player) {
       if (isPlaying) {
         player.pauseVideo();
@@ -104,6 +113,17 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       }
     }
   };
+  
+  const handleContainerClick = () => {
+    if (player) {
+      if (isPlaying) {
+        player.pauseVideo();
+      } else {
+        player.playVideo();
+      }
+    }
+  }
+
 
   const handleSeek = (value: number[]) => {
     const newTime = value[0];
@@ -112,17 +132,20 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
     resetControlsTimeout();
   };
 
-  const handleForward = () => {
+  const handleForward = (e: React.MouseEvent) => {
+    e.stopPropagation();
     player.seekTo(player.getCurrentTime() + 10, true);
     resetControlsTimeout();
   };
 
-  const handleBackward = () => {
+  const handleBackward = (e: React.MouseEvent) => {
+    e.stopPropagation();
     player.seekTo(player.getCurrentTime() - 10, true);
     resetControlsTimeout();
   };
 
-  const handleMuteToggle = () => {
+  const handleMuteToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isMuted) {
       player.unMute();
     } else {
@@ -138,7 +161,8 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
     resetControlsTimeout();
   };
   
-  const handleFullScreen = () => {
+  const handleFullScreen = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const iframe = player.getIframe();
     if (iframe.requestFullscreen) {
       iframe.requestFullscreen();
@@ -151,13 +175,22 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
     }
     resetControlsTimeout();
   }
+  
+  const handleBackClick = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      router.back();
+  }
 
-  const formatTime = (time: number) => {
-    if(isNaN(time) || time === 0) return '00:00';
-    const date = new Date(0);
-    date.setSeconds(time);
-    const timeString = date.toISOString().substr(11, 8);
-    return duration >= 3600 ? timeString : timeString.substr(3);
+  const formatTime = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds) || timeInSeconds < 0) return '00:00';
+    
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(seconds).padStart(2, '0');
+    
+    return `${formattedMinutes}:${formattedSeconds}`;
   };
   
   if (!videoId) {
@@ -179,7 +212,7 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
       className="w-full h-full bg-black text-white flex items-center justify-center relative overflow-hidden group/player"
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => { if(isPlaying) setShowControls(false) }}
-      onClick={handlePlayPauseToggle}
+      onClick={handleContainerClick}
     >
       <div className="w-full h-full absolute" id="youtube-player-container">
         <YouTube
@@ -206,20 +239,23 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
 
       <div 
         className={cn(
-            "absolute inset-0 transition-opacity duration-300 z-10 pointer-events-none",
+            "absolute inset-0 transition-opacity duration-300 z-10",
             showControls ? "opacity-100" : "opacity-0"
         )}
       >
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent"></div>
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent"></div>
+        {/* Gradients to make controls more visible */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
         
-        <header className="absolute top-0 left-0 right-0 p-4 flex items-center gap-4 pointer-events-auto">
-           <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
+        {/* Header Controls */}
+        <header className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4">
+           <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <ArrowLeft />
            </Button>
         </header>
 
-        <div className="absolute inset-0 flex items-center justify-center gap-16 pointer-events-auto" onClick={(e) => e.stopPropagation()}>
+        {/* Center Controls */}
+        <div className="absolute inset-0 flex items-center justify-center gap-16" onClick={(e) => e.stopPropagation()}>
           <Button variant="ghost" size="icon" className="h-16 w-16 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleBackward}>
             <RotateCcw className="h-8 w-8" />
           </Button>
@@ -231,11 +267,12 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
           </Button>
         </div>
 
+        {/* Bottom Controls */}
         <div 
-            className="absolute bottom-0 left-0 right-0 p-4 space-y-4 pointer-events-auto"
+            className="absolute bottom-0 left-0 right-0 p-2 space-y-2"
             onClick={(e) => e.stopPropagation()}
         >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 px-2">
                 <span className="text-xs font-mono select-none">{formatTime(currentTime)}</span>
                 <Slider
                     min={0}
@@ -264,7 +301,7 @@ export default function VideoPlayer({ videoId }: VideoPlayerProps) {
                                     key={rate} 
                                     variant="ghost" 
                                     onClick={() => handlePlaybackRateChange(rate)}
-                                    className={cn("justify-start rounded-none hover:bg-white/10", playbackRate === rate && "bg-red-600/50 hover:bg-red-600/60")}
+                                    className={cn("justify-start rounded-none hover:bg-white/10 focus-visible:ring-0", playbackRate === rate && "bg-red-600/50 hover:bg-red-600/60")}
                                 >
                                     {rate === 1 ? "Normal" : `${rate}x`}
                                 </Button>
