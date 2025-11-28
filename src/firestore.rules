@@ -74,5 +74,15 @@ service cloud.firestore {
         // Admins can list all enrollments
         allow list: if isAdmin(request.auth.uid);
     }
+
+    // Chat rules
+    match /chats/{chatId}/messages/{messageId} {
+      // Any logged-in user can read messages
+      allow read: if request.auth != null;
+      // Users can only create messages for themselves, and only if the write is secure
+      allow create: if request.auth.uid == request.resource.data.userId && isSecureWrite(request.resource.data);
+      // Users cannot update or delete messages
+      allow update, delete: if false;
+    }
   }
 }

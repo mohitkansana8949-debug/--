@@ -188,6 +188,36 @@
         "paymentTransactionId",
         "adminApproval"
       ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a single message in a chat.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "userName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "text",
+        "userId",
+        "userName",
+        "createdAt"
+      ]
     }
   },
   "auth": {
@@ -298,6 +328,26 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chats/{chatId}/messages/{messageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores messages for a specific chat room (e.g., a course). Logged-in users can read and write.",
+          "params": [
+            {
+              "name": "chatId",
+              "description": "The identifier for the chat room, typically a course ID."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the chat message."
             }
           ]
         }

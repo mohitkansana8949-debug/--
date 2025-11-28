@@ -20,12 +20,32 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-// Function to extract YouTube Video ID from URL
+// Function to extract YouTube Video ID from any URL format
 const getYouTubeID = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
+    let ID = '';
+    const urlObj = new URL(url);
+    const urlParams = new URLSearchParams(urlObj.search);
+    const videoId = urlParams.get('v');
+
+    if (url.includes('youtu.be')) {
+        ID = url.substring(url.lastIndexOf('/') + 1);
+    } else if (url.includes('/live/')) {
+        const parts = url.split('/live/');
+        if (parts[1]) {
+            ID = parts[1].split('?')[0];
+        }
+    } else if (videoId) {
+        ID = videoId;
+    }
+    
+    // For Shorts or other formats, extract the core ID
+    if (ID.includes('?')) {
+        ID = ID.split('?')[0];
+    }
+    
+    return ID || null;
 }
+
 
 const liveClassSchema = z.object({
   youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),

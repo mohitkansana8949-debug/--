@@ -71,6 +71,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   const onPlayerReady = (event: any) => {
     setPlayer(event.target);
     setDuration(event.target.getDuration());
+    event.target.playVideo(); // Auto-play the video when ready
   };
 
   const onPlayerStateChange = (event: any) => {
@@ -148,7 +149,9 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   const formatTime = (time: number) => {
     const date = new Date(0);
     date.setSeconds(time);
-    return date.toISOString().substr(14, 5);
+    const timeString = date.toISOString().substr(11, 8);
+    // Show hours only if the video is longer than an hour
+    return duration >= 3600 ? timeString : timeString.substr(3);
   };
   
   if (!videoId) {
@@ -199,10 +202,15 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
           "absolute inset-0 transition-opacity duration-300 z-10",
           showControls ? "opacity-100" : "opacity-0"
         )}
-        onClick={resetControlsTimeout}
+        onClick={(e) => {
+            // Prevent clicks on the overlay from affecting the video itself, except for play/pause
+            if (e.target === e.currentTarget) {
+                handlePlayPause();
+            }
+        }}
       >
         {/* Black Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/80"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/80 pointer-events-none"></div>
         
         {/* Top Controls */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between">
@@ -214,14 +222,14 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
         </div>
 
         {/* Middle Controls */}
-        <div className="absolute inset-0 flex items-center justify-center gap-16">
-          <Button variant="ghost" size="icon" className="h-16 w-16" onClick={handleBackward}>
+        <div className="absolute inset-0 flex items-center justify-center gap-16 pointer-events-none">
+          <Button variant="ghost" size="icon" className="h-16 w-16 pointer-events-auto" onClick={handleBackward}>
             <RotateCcw className="h-8 w-8" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-24 w-24" onClick={handlePlayPause}>
+          <Button variant="ghost" size="icon" className="h-24 w-24 pointer-events-auto" onClick={handlePlayPause}>
             {isPlaying ? <Pause className="h-16 w-16" /> : <Play className="h-16 w-16" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-16 w-16" onClick={handleForward}>
+          <Button variant="ghost" size="icon" className="h-16 w-16 pointer-events-auto" onClick={handleForward}>
             <RotateCw className="h-8 w-8" />
           </Button>
         </div>
