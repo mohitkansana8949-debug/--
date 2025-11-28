@@ -55,11 +55,17 @@ const nextConfig: NextConfig = {
         hostname: 'i.ytimg.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'yt3.ggpht.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
   env: {
-    YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
+    YOUTUBE_API_KEY: process.env.NEXT_PUBLIC_YOUTUBE_API_KEY,
   },
 };
 

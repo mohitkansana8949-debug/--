@@ -19,7 +19,8 @@ import {
   ClipboardList,
   Users,
   Youtube,
-  Download
+  Download,
+  Video
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection } from 'firebase/firestore';
@@ -29,8 +30,9 @@ const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
-  { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'लाइव क्लासेस', href: '/live-classes', icon: Laptop, color: 'bg-pink-500' },
+  { title: 'रिकॉर्डेड क्लास', href: '/live-classes', icon: Video, color: 'bg-teal-500'},
+  { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'Channels', href: '/channels', icon: Youtube, color: 'bg-red-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
   { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
