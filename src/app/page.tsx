@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,8 @@ import {
   Users,
   Download,
   Book as EbookIcon,
-  FileQuestion
+  FileQuestion,
+  Video
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection } from 'firebase/firestore';
@@ -30,11 +30,11 @@ const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
   { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
   { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
+  { title: 'डेमो कोर्स', href: '#', icon: Video, color: 'bg-red-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
-  { title: 'फीचर्स', href: '/features', icon: Star, color: 'bg-cyan-500' },
 ];
 
 const footerItems = [
