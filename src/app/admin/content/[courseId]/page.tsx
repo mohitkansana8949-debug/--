@@ -129,120 +129,112 @@ export default function EditCourseContentPage() {
   const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
 
   return (
-    <div className="flex flex-col h-screen">
-       <div className="p-4 border-b">
+    <div className="flex flex-col h-screen bg-background">
+       <header className="p-4 border-b flex items-center gap-4">
         <Button asChild variant="outline">
           <Link href="/admin/content">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            कंटेंट लिस्ट पर वापस जाएं
+            Back
           </Link>
         </Button>
-      </div>
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-      <Card className="w-full mx-auto">
-        <CardHeader>
-          {courseLoading ? (
-            <>
-              <Skeleton className="h-8 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-            </>
+         {courseLoading ? (
+            <Skeleton className="h-8 w-1/2" />
           ) : (
-            <>
-              <CardTitle>कंटेंट मैनेज करें: {course?.name}</CardTitle>
-              <CardDescription>इस कोर्स में नया कंटेंट जोड़ें या मौजूदा को देखें।</CardDescription>
-            </>
-          )}
-        </CardHeader>
-        <CardContent>
-            {courseLoading ? (
-                <div className="space-y-4">
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-10 w-32" />
-                </div>
-            ) : (
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center"><PlusCircle className="mr-2 h-5 w-5"/>नया कंटेंट जोड़ें</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <Tabs defaultValue="youtube" className="w-full">
-                                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                                    <TabsTrigger value="youtube"><Youtube className="mr-1 h-4 w-4" />YouTube</TabsTrigger>
-                                    <TabsTrigger value="video"><Video className="mr-1 h-4 w-4" />Video</TabsTrigger>
-                                    <TabsTrigger value="pdf"><FileText className="mr-1 h-4 w-4" />PDF</TabsTrigger>
-                                    <TabsTrigger value="test"><FileJson className="mr-1 h-4 w-4" />Test</TabsTrigger>
-                                </TabsList>
-                                <div className="space-y-4 pt-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="content-title">कंटेंट का शीर्षक</Label>
-                                        <Input id="content-title" placeholder="जैसे, अध्याय 1: परिचय" value={title} onChange={(e) => setTitle(e.target.value)} />
-                                    </div>
-                                    <TabsContent value="youtube" className="space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="youtube-url">यूट्यूब वीडियो URL</Label>
-                                            <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
-                                        </div>
-                                        {youtubeThumbnail && <Image src={youtubeThumbnail} alt="YouTube Thumbnail" width={240} height={135} className="rounded-md border" />}
-                                        <Button onClick={() => handleAddContent('youtube')} disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader className="animate-spin" /> : 'YouTube वीडियो जोड़ें'}
-                                        </Button>
-                                    </TabsContent>
-                                    <TabsContent value="video" className="space-y-4">
-                                         <div className="space-y-2">
-                                            <Label htmlFor="video-url">अन्य वीडियो URL (JioCloud, आदि)</Label>
-                                            <Input id="video-url" placeholder="https://..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
-                                        </div>
-                                        <Button onClick={() => handleAddContent('video')} disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader className="animate-spin" /> : 'वीडियो जोड़ें'}
-                                        </Button>
-                                    </TabsContent>
-                                    <TabsContent value="pdf" className="space-y-4">
-                                         <div className="space-y-2">
-                                            <Label htmlFor="pdf-url">PDF/नोट्स URL</Label>
-                                            <Input id="pdf-url" placeholder="https://..." value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} />
-                                        </div>
-                                        <Button onClick={() => handleAddContent('pdf')} disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader className="animate-spin" /> : 'PDF/नोट्स जोड़ें'}
-                                        </Button>
-                                    </TabsContent>
-                                     <TabsContent value="test" className="space-y-4">
-                                         <div className="space-y-2">
-                                            <Label htmlFor="test-json">टेस्ट सीरीज JSON</Label>
-                                            <Textarea id="test-json" placeholder='[{"question": "...", "options": [...]}]' value={testJson} onChange={(e) => setTestJson(e.target.value)} rows={10} />
-                                        </div>
-                                        <Button onClick={() => handleAddContent('test')} disabled={isSubmitting}>
-                                            {isSubmitting ? <Loader className="animate-spin" /> : 'टेस्ट सीरीज जोड़ें'}
-                                        </Button>
-                                    </TabsContent>
-                                </div>
-                            </Tabs>
-                        </CardContent>
-                    </Card>
-
-                    <div>
-                        <h3 className="text-xl font-bold my-4">मौजूदा कंटेंट</h3>
+            <h1 className="text-xl font-semibold">Manage Content: {course?.name}</h1>
+        )}
+      </header>
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left column for adding content */}
+        <Card>
+            <CardHeader>
+                <CardTitle className="text-lg flex items-center"><PlusCircle className="mr-2 h-5 w-5"/>Add New Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Tabs defaultValue="youtube" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                        <TabsTrigger value="youtube"><Youtube className="mr-1 h-4 w-4" />YT</TabsTrigger>
+                        <TabsTrigger value="video"><Video className="mr-1 h-4 w-4" />Video</TabsTrigger>
+                        <TabsTrigger value="pdf"><FileText className="mr-1 h-4 w-4" />PDF</TabsTrigger>
+                        <TabsTrigger value="test"><FileJson className="mr-1 h-4 w-4" />Test</TabsTrigger>
+                    </TabsList>
+                    <div className="space-y-4 pt-6">
                         <div className="space-y-2">
-                            {courseContent.length > 0 ? courseContent.map((item: any, index: number) => (
-                                <Card key={item.id || index}>
-                                    <CardContent className="p-4 flex justify-between items-center">
-                                        <p>{item.title} <span className="text-xs text-muted-foreground ml-2">({item.type})</span></p>
-                                        {/* TODO: Add edit/delete functionality */}
-                                    </CardContent>
-                                </Card>
-                            )) : (
-                                <p className="text-muted-foreground text-center p-4">अभी कोई कंटेंट नहीं जोड़ा गया है।</p>
-                            )}
+                            <Label htmlFor="content-title">Content Title</Label>
+                            <Input id="content-title" placeholder="e.g., Chapter 1: Introduction" value={title} onChange={(e) => setTitle(e.target.value)} />
                         </div>
+                        <TabsContent value="youtube" className="space-y-4 m-0">
+                            <div className="space-y-2">
+                                <Label htmlFor="youtube-url">YouTube Video URL</Label>
+                                <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
+                            </div>
+                            {youtubeThumbnail && <Image src={youtubeThumbnail} alt="YouTube Thumbnail" width={240} height={135} className="rounded-md border" />}
+                            <Button onClick={() => handleAddContent('youtube')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add YouTube Video'}
+                            </Button>
+                        </TabsContent>
+                        <TabsContent value="video" className="space-y-4 m-0">
+                             <div className="space-y-2">
+                                <Label htmlFor="video-url">Other Video URL (JioCloud, etc)</Label>
+                                <Input id="video-url" placeholder="https://..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} />
+                            </div>
+                            <Button onClick={() => handleAddContent('video')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add Video'}
+                            </Button>
+                        </TabsContent>
+                        <TabsContent value="pdf" className="space-y-4 m-0">
+                             <div className="space-y-2">
+                                <Label htmlFor="pdf-url">PDF/Notes URL</Label>
+                                <Input id="pdf-url" placeholder="https://..." value={pdfUrl} onChange={(e) => setPdfUrl(e.target.value)} />
+                            </div>
+                            <Button onClick={() => handleAddContent('pdf')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add PDF/Notes'}
+                            </Button>
+                        </TabsContent>
+                         <TabsContent value="test" className="space-y-4 m-0">
+                             <div className="space-y-2">
+                                <Label htmlFor="test-json">Test Series JSON</Label>
+                                <Textarea id="test-json" placeholder='[{"question": "...", "options": [...]}]' value={testJson} onChange={(e) => setTestJson(e.target.value)} rows={10} />
+                            </div>
+                            <Button onClick={() => handleAddContent('test')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add Test Series'}
+                            </Button>
+                        </TabsContent>
                     </div>
+                </Tabs>
+            </CardContent>
+        </Card>>
 
+        {/* Right column for existing content */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Existing Content</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    {courseLoading ? (
+                        <div className="space-y-2">
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                            <Skeleton className="h-12 w-full" />
+                        </div>
+                    ) : courseContent.length > 0 ? (
+                      courseContent.map((item: any, index: number) => (
+                        <Card key={item.id || index}>
+                            <CardContent className="p-3 flex justify-between items-center">
+                                <p className="font-medium">{item.title} <span className="text-xs text-muted-foreground ml-2">({item.type})</span></p>
+                                {/* TODO: Add edit/delete functionality */}
+                            </CardContent>
+                        </Card>
+                      ))
+                    ) : (
+                        <p className="text-muted-foreground text-center p-4">No content has been added yet.</p>
+                    )}
                 </div>
-            )}
-        </CardContent>
-      </Card>
+            </CardContent>
+        </Card>
+      </div>
       </div>
     </div>
   );
 }
-
-    

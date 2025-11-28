@@ -83,91 +83,94 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-       <div className="mb-6">
+    <div className="flex flex-col h-screen bg-background">
+       <header className="p-4 border-b flex items-center gap-4">
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            एडमिन डैशबोर्ड पर वापस जाएं
+            Back to Dashboard
           </Link>
         </Button>
-      </div>
-      <Card className="max-w-4xl mx-auto">
-        <CardHeader>
-          <CardTitle>नया कोर्स बनाएं</CardTitle>
-          <CardDescription>कोर्स की जानकारी दर्ज करें। कंटेंट अगले स्टेप में जोड़ा जाएगा।</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...courseForm}>
-            <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                    control={courseForm.control}
-                    name="thumbnailUrl"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>थंबनेल इमेज URL</FormLabel>
-                            <FormControl>
-                                <Input placeholder="https://example.com/image.jpg" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                             {thumbnailUrl && (
-                                <div className="mt-4 w-full aspect-video relative">
-                                    <Image src={thumbnailUrl} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
-                                </div>
-                            )}
-                        </FormItem>
-                    )}
-                />
+        <h1 className="text-xl font-semibold">Create New Course</h1>
+      </header>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader>
+            <CardTitle>Course Details</CardTitle>
+            <CardDescription>Enter the course information. Content will be added in the next step.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...courseForm}>
+              <form onSubmit={courseForm.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                      control={courseForm.control}
+                      name="thumbnailUrl"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Thumbnail Image URL</FormLabel>
+                              <FormControl>
+                                  <Input placeholder="https://example.com/image.jpg" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                               {thumbnailUrl && (
+                                  <div className="mt-4 w-full aspect-video relative">
+                                      <Image src={thumbnailUrl} alt="Thumbnail Preview" fill objectFit="cover" className="rounded-md border" />
+                                  </div>
+                              )}
+                          </FormItem>
+                      )}
+                  />
 
-              <FormField control={courseForm.control} name="name" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>कोर्स का नाम</FormLabel>
-                  <FormControl><Input placeholder="जैसे, प्रोग्रामिंग का परिचय" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={courseForm.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>विवरण</FormLabel>
-                  <FormControl><Textarea placeholder="कोर्स का संक्षिप्त सारांश" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={courseForm.control} name="price" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>कीमत (₹ में)</FormLabel>
-                  <FormControl><Input type="number" {...field} disabled={courseForm.watch('isFree')} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={courseForm.control} name="isFree" render={({ field }) => (
-                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                  <div className="space-y-0.5">
-                    <FormLabel>यह एक फ्री कोर्स है</FormLabel>
-                    <p className="text-xs text-muted-foreground">
-                        अगर यह चालू है, तो कीमत अपने आप 0 हो जाएगी।
-                    </p>
-                  </div>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={(checked) => {
-                        field.onChange(checked);
-                        if (checked) {
-                          courseForm.setValue('price', 0);
-                        }
-                      }}
-                    />
-                  </FormControl>
-                </FormItem>
-              )} />
-              <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? (<><Loader className="mr-2 h-4 w-4 animate-spin" /> बनाया जा रहा है...</>) : ('सहेजें और कंटेंट जोड़ें')}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+                <FormField control={courseForm.control} name="name" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course Name</FormLabel>
+                    <FormControl><Input placeholder="e.g., Introduction to Programming" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={courseForm.control} name="description" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl><Textarea placeholder="A brief summary of the course" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={courseForm.control} name="price" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Price (in ₹)</FormLabel>
+                    <FormControl><Input type="number" {...field} disabled={courseForm.watch('isFree')} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={courseForm.control} name="isFree" render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                    <div className="space-y-0.5">
+                      <FormLabel>This is a Free Course</FormLabel>
+                      <p className="text-xs text-muted-foreground">
+                          If enabled, the price will automatically be set to 0.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked);
+                          if (checked) {
+                            courseForm.setValue('price', 0);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )} />
+                <Button type="submit" disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? (<><Loader className="mr-2 h-4 w-4 animate-spin" /> Creating...</>) : ('Save and Add Content')}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }

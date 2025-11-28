@@ -1,3 +1,4 @@
+
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -34,6 +35,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+
+  // These paths will not use the admin layout and will be rendered as full pages
+  const fullPagePaths = ['/admin/create-course', '/admin/content/'];
+
+  if (fullPagePaths.some(p => pathname.startsWith(p))) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="container mx-auto p-4">

@@ -27,7 +27,7 @@ export default function CoursesPage() {
     const title = filter === 'free' ? 'फ्री कोर्सेस' : filter === 'paid' ? 'पेड कोर्सेस' : 'सभी कोर्सेस';
 
     return (
-        <div className="container mx-auto p-4">
+        <div className="w-full">
              <div className="mb-8">
                 <h1 className="text-3xl font-bold">{title}</h1>
                 <p className="text-muted-foreground">
@@ -42,7 +42,7 @@ export default function CoursesPage() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {courses?.map(course => (
                     <Card key={course.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                         {course.thumbnailUrl && (
@@ -70,7 +70,3 @@ export default function CoursesPage() {
         </div>
     );
 }
-
-    
-
-    

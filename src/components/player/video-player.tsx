@@ -14,6 +14,7 @@ import {
   Settings,
   ArrowLeft,
   Youtube,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -30,8 +31,9 @@ type VideoPlayerProps = {
 export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   const router = useRouter();
 
-  const isYoutubeVideo = videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'));
+  const isYoutubeVideo = !!(videoUrl && getYouTubeID(videoUrl));
   const videoId = isYoutubeVideo ? getYouTubeID(videoUrl) : null;
+  const isExternalVideo = !!videoUrl && !isYoutubeVideo;
 
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -44,9 +46,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressUpdateRef = useRef<NodeJS.Timeout | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-
 
   const stopProgressUpdates = () => {
     if (progressUpdateRef.current) {
@@ -60,8 +60,6 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
       progressUpdateRef.current = setInterval(() => {
         if (isYoutubeVideo && player && typeof player.getCurrentTime === 'function' && player.getPlayerState() === 1) {
             setCurrentTime(player.getCurrentTime());
-        } else if (videoRef.current) {
-            setCurrentTime(videoRef.current.currentTime);
         }
       }, 500);
   }
@@ -108,94 +106,64 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
         if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
     }
   };
-  
-  const handleNonYoutubePlayerEvents = () => {
-      if(!videoRef.current) return;
-      videoRef.current.onplay = () => { setIsPlaying(true); startProgressUpdates(); setDuration(videoRef.current?.duration || 0); };
-      videoRef.current.onpause = () => { setIsPlaying(false); stopProgressUpdates(); };
-      videoRef.current.onended = () => { setIsPlaying(false); stopProgressUpdates(); setShowControls(true); };
-      videoRef.current.ontimeupdate = () => setCurrentTime(videoRef.current?.currentTime || 0);
-  };
-
-  useEffect(() => {
-      handleNonYoutubePlayerEvents();
-  }, [videoRef.current]);
-
 
   const handlePlayPauseToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (isYoutubeVideo && player) {
         isPlaying ? player.pauseVideo() : player.playVideo();
-    } else if (videoRef.current) {
-        isPlaying ? videoRef.current.pause() : videoRef.current.play();
     }
   };
   
   const handleContainerClick = () => {
-     if (!isYoutubeVideo) return; // Don't toggle play/pause for iframe
      if (isYoutubeVideo && player) {
         isPlaying ? player.pauseVideo() : player.playVideo();
-    } else if (videoRef.current) {
-        isPlaying ? videoRef.current.pause() : videoRef.current.play();
     }
   }
 
 
   const handleSeek = (value: number[]) => {
-    if (!isYoutubeVideo) return;
     const newTime = value[0];
     setCurrentTime(newTime);
      if (isYoutubeVideo && player) {
         player.seekTo(newTime, true);
-    } else if (videoRef.current) {
-        videoRef.current.currentTime = newTime;
     }
     resetControlsTimeout();
   };
 
   const handleForward = (e: React.MouseEvent) => {
-    if (!isYoutubeVideo) return;
     e.stopPropagation();
     const newTime = currentTime + 10;
     if (isYoutubeVideo && player) player.seekTo(newTime, true);
-    else if (videoRef.current) videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
     resetControlsTimeout();
   };
 
   const handleBackward = (e: React.MouseEvent) => {
-    if (!isYoutubeVideo) return;
     e.stopPropagation();
     const newTime = currentTime - 10;
      if (isYoutubeVideo && player) player.seekTo(newTime, true);
-    else if (videoRef.current) videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
     resetControlsTimeout();
   };
 
   const handleMuteToggle = (e: React.MouseEvent) => {
-    if (!isYoutubeVideo) return;
     e.stopPropagation();
     if (isYoutubeVideo && player) {
         isMuted ? player.unMute() : player.mute();
-    } else if (videoRef.current) {
-        videoRef.current.muted = !isMuted;
     }
     setIsMuted(!isMuted);
     resetControlsTimeout();
   };
 
   const handlePlaybackRateChange = (rate: number) => {
-    if (!isYoutubeVideo) return;
     if (isYoutubeVideo && player) player.setPlaybackRate(rate);
-    else if (videoRef.current) videoRef.current.playbackRate = rate;
     setPlaybackRate(rate);
     resetControlsTimeout();
   };
   
   const handleFullScreen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const element = (isYoutubeVideo ? player.getIframe() : (iframeRef.current || videoRef.current)) as any;
+    const element = (isYoutubeVideo ? player.getIframe() : iframeRef.current) as any;
     if (!element) return;
 
     if (element.requestFullscreen) {
@@ -224,12 +192,12 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   
   if (!videoUrl) {
     return (
-       <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white">
-          <Youtube className="h-16 w-16 mb-4 text-red-600" />
-          <h2 className="text-2xl font-bold">अमान्य वीडियो लिंक</h2>
-          <p className="text-muted-foreground">इस कोर्स में कोई मान्य वीडियो लिंक नहीं है।</p>
+       <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
+          <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
+          <h2 className="text-2xl font-bold">Invalid Video Link</h2>
+          <p className="text-muted-foreground">The video for this content is not available.</p>
           <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
-             <ArrowLeft className="mr-2 h-4 w-4" /> वापस जाएं
+             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
           </Button>
        </div>
     );
@@ -252,8 +220,8 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
             onStateChange={onPlayerStateChange}
             className="w-full h-full"
             />
-        ) : (
-            <iframe
+        ) : isExternalVideo ? (
+             <iframe
                 ref={iframeRef}
                 src={videoUrl}
                 className="w-full h-full border-0"
@@ -261,6 +229,12 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
                 allowFullScreen
                 title="External Video"
             ></iframe>
+        ) : (
+             <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
+                <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
+                <h2 className="text-2xl font-bold">Unsupported Video Source</h2>
+                <p className="text-muted-foreground">The provided video link could not be played.</p>
+             </div>
         )}
       </div>
 
@@ -310,18 +284,18 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
       </div>
      )}
 
-      {!isYoutubeVideo && (
-         <header className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
-           <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
-                <ArrowLeft />
-           </Button>
-           <p className="font-semibold truncate">{title}</p>
-           <div className='flex-grow' />
-           <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10"><Fullscreen /></Button>
+      {isExternalVideo && (
+         <header className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0 pointer-events-auto", "opacity-0 pointer-events-none")}>
+           <div className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
+             <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
+                  <ArrowLeft />
+             </Button>
+             <p className="font-semibold truncate">{title}</p>
+             <div className='flex-grow' />
+             <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10"><Fullscreen /></Button>
+           </div>
         </header>
       )}
     </div>
   );
 }
-
-    
