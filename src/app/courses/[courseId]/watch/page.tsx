@@ -5,47 +5,8 @@ import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Loader } from 'lucide-react';
 import VideoPlayer from '@/components/player/video-player';
+import { getYouTubeID } from '@/lib/youtube';
 
-// Helper function to extract YouTube Video ID from any URL format
-const getYouTubeID = (url: string): string | null => {
-  if (!url) return null;
-
-  let ID = '';
-  try {
-    const urlObj = new URL(url);
-    if (urlObj.hostname === 'youtu.be') {
-      ID = urlObj.pathname.substring(1);
-    } else if (urlObj.hostname.includes('youtube.com')) {
-      if (urlObj.pathname === '/watch') {
-        ID = urlObj.searchParams.get('v') || '';
-      } else if (urlObj.pathname.startsWith('/live/')) {
-        ID = urlObj.pathname.split('/live/')[1].split('?')[0];
-      } else if (urlObj.pathname.startsWith('/embed/')) {
-        ID = urlObj.pathname.split('/embed/')[1];
-      }
-    }
-    
-    // Remove any extra query parameters from the ID
-    if (ID.includes('?')) {
-        ID = ID.split('?')[0];
-    }
-    return ID || null;
-
-  } catch (e) {
-     // Fallback for non-URL strings or invalid formats
-    const patterns = [
-      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|live\/|v\/|)([\w-]{11})/,
-    ];
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-  }
-  
-  return null;
-}
 
 export default function WatchCoursePage() {
   const { courseId } = useParams();

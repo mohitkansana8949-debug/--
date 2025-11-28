@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -16,59 +15,7 @@ import { Loader, Youtube, Calendar as CalendarIcon, Trash2, Clock } from 'lucide
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
-
-const getYouTubeID = (url: string): string | null => {
-  if (!url) return null;
-
-  let ID = '';
-  try {
-    const urlObj = new URL(url);
-    if (urlObj.hostname === 'youtu.be') {
-      ID = urlObj.pathname.substring(1);
-    } else if (urlObj.hostname.includes('youtube.com')) {
-      if (urlObj.pathname === '/watch') {
-        ID = urlObj.searchParams.get('v') || '';
-      } else if (urlObj.pathname.startsWith('/live/')) {
-        ID = urlObj.pathname.split('/live/')[1];
-      } else if (urlObj.pathname.startsWith('/embed/')) {
-        ID = urlObj.pathname.split('/embed/')[1];
-      }
-    }
-    
-    if (ID.includes('?')) {
-        ID = ID.split('?')[0];
-    }
-    return ID || null;
-
-  } catch (e) {
-    const patterns = [
-      /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|live\/|v\/|)([\w-]{11})/,
-    ];
-    for (const pattern of patterns) {
-      const match = url.match(pattern);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-  }
-  
-  return null;
-}
-
-const getLiveChatId = async (videoId: string, apiKey: string) => {
-    const url = `https://www.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id=${videoId}&key=${apiKey}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        if (data.items && data.items.length > 0 && data.items[0].liveStreamingDetails) {
-            return data.items[0].liveStreamingDetails.activeLiveChatId;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching live chat ID:", error);
-        return null;
-    }
-};
+import { getLiveChatId, getYouTubeID } from '@/lib/youtube';
 
 
 const liveClassSchema = z.object({
@@ -165,8 +112,7 @@ export default function ManageLiveClassPage() {
               <FormField control={form.control} name="youtubeUrl" render={({ field }) => ( <FormItem> <FormLabel>यूट्यूब वीडियो URL</FormLabel> <FormControl> <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               <FormField control={form.control} name="teacherName" render={({ field }) => ( <FormItem> <FormLabel>टीचर का नाम</FormLabel> <FormControl> <Input placeholder="जैसे, मोहित सर" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+               <FormField
                   control={form.control}
                   name="startDate"
                   render={({ field }) => (
@@ -192,7 +138,6 @@ export default function ManageLiveClassPage() {
                         </FormItem>
                     )}
                 />
-              </div>
 
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</> : 'लाइव क्लास सेव करें'}
