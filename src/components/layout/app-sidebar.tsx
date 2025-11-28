@@ -18,15 +18,11 @@ import { useUser, useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { useFirebase } from "@/firebase";
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user, isUserLoading } = useUser();
+  const { isUserLoading } = useUser();
   const auth = useAuth();
-  const { firestore } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -69,17 +65,6 @@ export function AppSidebar() {
   ];
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
-
-  const noSidebarPaths = ['/login', '/signup', '/youtube/'];
-  const fullScreenPaths = ['/courses/'];
-
-  if (noSidebarPaths.some(p => pathname.startsWith(p))) {
-    return null;
-  }
-
-  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p) && pathname.endsWith('/watch'))) {
-    return null;
-  }
   
   if (isUserLoading) {
       return (
@@ -93,11 +78,6 @@ export function AppSidebar() {
           </Sidebar>
       )
   }
-  
-  if (!user) {
-    return null; // Don't show sidebar if user is not logged in
-  }
-
 
   return (
     <Sidebar>
@@ -187,3 +167,5 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
+
+    

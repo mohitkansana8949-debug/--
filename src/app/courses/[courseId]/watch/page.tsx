@@ -1,64 +1,71 @@
+
 'use client';
 
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
+import { useParams, useRouter } from 'next/navigation';
+import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Loader, Video, FileText, ClipboardCheck, MessageSquare, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import RealtimeChat from '@/components/realtime-chat';
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
-import VideoPlayer from '@/components/player/video-player';
 
+function ContentItem({ item, courseId }: { item: any, courseId: string }) {
+    const getIcon = () => {
+        switch(item.type) {
+            case 'youtube': return <Video className="h-5 w-5 shrink-0 text-red-500" />;
+            case 'video': return <Video className="h-5 w-5 shrink-0" />;
+            case 'pdf': return <FileText className="h-5 w-5 shrink-0" />;
+            case 'test': return <ClipboardCheck className="h-5 w-5 shrink-0" />;
+            default: return null;
+        }
+    };
 
-function TestPlayer({ data }: { data: any[] }) {
-    // Basic test renderer.
+    const getLink = () => {
+        if (item.type === 'pdf') {
+            return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+        }
+        const videoId = getYouTubeID(item.url);
+        if (videoId) {
+             const url = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+             return url;
+        }
+        return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
+    };
+
     return (
-        <div className="space-y-6">
-            {data.map((question, qIndex) => (
-                <Card key={qIndex}>
-                    <CardContent className="p-4">
-                        <p className="font-bold mb-4">{qIndex + 1}. {question.question}</p>
-                        <div className="space-y-2">
-                            {question.options.map((option: string, oIndex: number) => (
-                                <div key={oIndex} className="flex items-center gap-2 p-2 border rounded-md">
-                                    <input type="radio" name={`question-${qIndex}`} id={`q${qIndex}o${oIndex}`} />
-                                    <label htmlFor={`q${qIndex}o${oIndex}`}>{option}</label>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
-    )
+         <Link href={getLink()} target={item.type === 'pdf' ? '_blank' : '_self'}>
+            <Card className="cursor-pointer hover:bg-muted">
+                <CardContent className="p-3 flex gap-3 items-center">
+                    {getIcon()}
+                    <div className="flex-1">
+                        <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
+                        {item.isLive && (
+                           <div className="flex items-center text-xs text-red-500 font-bold mt-1">
+                                <span className="relative flex h-2 w-2 mr-2">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                </span>
+                                LIVE
+                           </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
+    );
 }
-
 
 export default function WatchCoursePage() {
   const { courseId } = useParams();
   const firestore = useFirestore();
-  const router = useRouter();
-
-  const [activeContent, setActiveContent] = useState<any>(null);
 
   const courseRef = useMemoFirebase(
     () => (firestore && courseId ? doc(firestore, 'courses', courseId as string) : null),
     [firestore, courseId]
   );
   const { data: course, isLoading: courseLoading } = useDoc(courseRef);
-
-  useEffect(() => {
-    // Set the first video (if any) as the default active content
-    if (course && course.content && Array.isArray(course.content) && course.content.length > 0) {
-       const firstVideo = course.content.find((c: any) => c.type === 'youtube' || c.type === 'video');
-       setActiveContent(firstVideo || course.content[0]);
-    }
-  }, [course]);
 
   if (courseLoading) {
     return <div className="fixed inset-0 bg-background flex items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -81,94 +88,26 @@ export default function WatchCoursePage() {
   }
   
   const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
-  const videos = courseContent.filter((c: any) => c.type === 'youtube' || c.type === 'video') || [];
-  const notes = courseContent.filter((c: any) => c.type === 'pdf') || [];
-  const tests = courseContent.filter((c: any) => c.type === 'test') || [];
   
-  const renderActiveContent = () => {
-    if (!activeContent) return <div className="flex items-center justify-center h-full bg-muted rounded-lg"><p>Select content to start</p></div>;
-
-    switch(activeContent.type) {
-        case 'youtube':
-        case 'video':
-            return <VideoPlayer videoUrl={activeContent.url} title={activeContent.title} />;
-        case 'pdf':
-             return (
-                 <div className="h-[calc(100vh-200px)] w-full">
-                     <iframe src={activeContent.url} className="w-full h-full border-0" title={activeContent.title}></iframe>
-                 </div>
-             );
-        case 'test':
-             return <TestPlayer data={activeContent.data} />;
-        default:
-            return <p>Unsupported content type.</p>;
-    }
-  }
-
-  const isChatVisible = activeContent && (activeContent.type === 'youtube' || activeContent.type === 'video') && activeContent.isLive;
-
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-background">
-        <main className="flex-1 flex flex-col overflow-auto">
-            <div className="p-4 flex-shrink-0">
-                <h1 className="text-2xl font-bold">{activeContent?.title || course.name}</h1>
+    <div className="container mx-auto p-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">{course.name}</CardTitle>
+          <CardDescription>इस कोर्स के सभी कंटेंट नीचे दिए गए हैं।</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+           {courseContent.length > 0 ? courseContent.map((item: any) => (
+             <ContentItem key={item.id} item={item} courseId={courseId as string} />
+           )) : (
+            <div className="text-center text-muted-foreground p-8">
+                <p>इस कोर्स में अभी कोई कंटेंट नहीं है।</p>
             </div>
-            <div className="flex-1 p-4">
-                {renderActiveContent()}
-            </div>
-        </main>
-        <aside className="w-full lg:w-96 lg:h-screen flex flex-col border-l bg-card/50">
-            <Tabs defaultValue="videos" className="flex-1 flex flex-col">
-                <TabsList className="grid w-full grid-cols-4 shrink-0 rounded-none">
-                    <TabsTrigger value="videos" className="text-xs p-2"><Video className="h-4 w-4" /></TabsTrigger>
-                    <TabsTrigger value="notes" className="text-xs p-2"><FileText className="h-4 w-4" /></TabsTrigger>
-                    <TabsTrigger value="tests" className="text-xs p-2"><ClipboardCheck className="h-4 w-4" /></TabsTrigger>
-                    <TabsTrigger value="doubts" className="text-xs p-2"><MessageSquare className="h-4 w-4" /></TabsTrigger>
-                </TabsList>
-                <div className="flex-1 overflow-auto">
-                    <TabsContent value="videos" className="m-0 p-2 space-y-2">
-                         {videos.map((item: any) => (
-                            <Card key={item.id} className="cursor-pointer hover:bg-muted" onClick={() => setActiveContent(item)}>
-                                <CardContent className="p-2 flex gap-2 items-center">
-                                    {item.thumbnail && <Image src={item.thumbnail} alt={item.title} width={120} height={68} className="rounded-md aspect-video object-cover" />}
-                                    <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-                    <TabsContent value="notes" className="m-0 p-2 space-y-2">
-                        {notes.map((item: any) => (
-                             <Card key={item.id} className="cursor-pointer hover:bg-muted" onClick={() => setActiveContent(item)}>
-                                <CardContent className="p-3 flex gap-3 items-center">
-                                    <FileText className="h-5 w-5 shrink-0" />
-                                    <p className="font-semibold text-sm">{item.title}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-                    <TabsContent value="tests" className="m-0 p-2 space-y-2">
-                         {tests.map((item: any) => (
-                             <Card key={item.id} className="cursor-pointer hover:bg-muted" onClick={() => setActiveContent(item)}>
-                                <CardContent className="p-3 flex gap-3 items-center">
-                                    <ClipboardCheck className="h-5 w-5 shrink-0" />
-                                    <p className="font-semibold text-sm">{item.title}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </TabsContent>
-                    <TabsContent value="doubts" className="m-0 h-full">
-                       {isChatVisible ? (
-                           <RealtimeChat chatId={courseId as string} />
-                        ) : (
-                            <div className="p-4 text-center text-muted-foreground">
-                                <MessageSquare className="mx-auto h-8 w-8 mb-2" />
-                                <p>This is a recorded class. Chat is not available.</p>
-                            </div>
-                        )}
-                    </TabsContent>
-                </div>
-            </Tabs>
-        </aside>
+           )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+    

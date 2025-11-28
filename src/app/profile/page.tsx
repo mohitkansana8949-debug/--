@@ -147,10 +147,12 @@ export default function ProfilePage() {
             <ProfileInfoItem icon={<Phone size={18} />} label="Mobile" value={userData?.mobile} />
             <ProfileInfoItem icon={<UserIcon size={18} />} label="Category" value={userData?.category} />
             <ProfileInfoItem icon={<MapPin size={18} />} label="State" value={userData?.state} />
-            <ProfileInfoItem icon={<BookCopy size={18} />} label="Class / Exam" value={userData?.class} />
+            <ProfileInfoItem icon={<BookCopy size={18} />} label="Class/Exam" value={userData?.class} />
           </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    

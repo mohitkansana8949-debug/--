@@ -6,9 +6,20 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from '@/components/layout/app-sidebar';
+import { AppHeader } from '@/components/layout/app-header';
 
 const PUBLIC_PATHS = ['/login', '/signup'];
+const NO_LAYOUT_PATHS = ['/login', '/signup', '/complete-profile'];
+const FULL_SCREEN_PATHS = ['/courses/watch/', '/pdf-viewer', '/youtube/'];
 const PROFILE_COMPLETE_PATH = '/complete-profile';
+
+const shouldShowLayout = (pathname: string) => {
+    if (NO_LAYOUT_PATHS.includes(pathname)) return false;
+    if (FULL_SCREEN_PATHS.some(p => pathname.startsWith(p))) return false;
+    return true;
+}
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { user, isUserLoading } = useUser();
@@ -32,8 +43,6 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       try {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
-        // A profile is complete if the user doc exists and has a 'name' field.
-        // You can add more checks here (e.g., for state, class).
         if (userDoc.exists() && userDoc.data().name) {
           setIsProfileComplete(true);
         } else {
@@ -95,6 +104,22 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   if (user && !isProfileComplete && !isProfilePath) return null; // Waiting for redirect to /complete-profile
   if (user && isProfileComplete && isProfilePath) return null; // Waiting for redirect from /complete-profile
 
+  if (shouldShowLayout(pathname)) {
+      return (
+          <SidebarProvider>
+            <AppSidebar />
+            <SidebarInset>
+              <AppHeader />
+              <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+                {children}
+              </main>
+            </SidebarInset>
+          </SidebarProvider>
+      )
+  }
+
   // Render children only when all checks pass and no redirection is needed
   return <>{children}</>;
 }
+
+    

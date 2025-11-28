@@ -45,6 +45,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressUpdateRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
 
   const stopProgressUpdates = () => {
@@ -59,7 +60,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
       progressUpdateRef.current = setInterval(() => {
         if (isYoutubeVideo && player && typeof player.getCurrentTime === 'function' && player.getPlayerState() === 1) {
             setCurrentTime(player.getCurrentTime());
-        } else if (!isYoutubeVideo && videoRef.current) {
+        } else if (videoRef.current) {
             setCurrentTime(videoRef.current.currentTime);
         }
       }, 500);
@@ -131,6 +132,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   };
   
   const handleContainerClick = () => {
+     if (!isYoutubeVideo) return; // Don't toggle play/pause for iframe
      if (isYoutubeVideo && player) {
         isPlaying ? player.pauseVideo() : player.playVideo();
     } else if (videoRef.current) {
@@ -140,6 +142,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
 
 
   const handleSeek = (value: number[]) => {
+    if (!isYoutubeVideo) return;
     const newTime = value[0];
     setCurrentTime(newTime);
      if (isYoutubeVideo && player) {
@@ -151,6 +154,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   };
 
   const handleForward = (e: React.MouseEvent) => {
+    if (!isYoutubeVideo) return;
     e.stopPropagation();
     const newTime = currentTime + 10;
     if (isYoutubeVideo && player) player.seekTo(newTime, true);
@@ -160,6 +164,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   };
 
   const handleBackward = (e: React.MouseEvent) => {
+    if (!isYoutubeVideo) return;
     e.stopPropagation();
     const newTime = currentTime - 10;
      if (isYoutubeVideo && player) player.seekTo(newTime, true);
@@ -169,6 +174,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   };
 
   const handleMuteToggle = (e: React.MouseEvent) => {
+    if (!isYoutubeVideo) return;
     e.stopPropagation();
     if (isYoutubeVideo && player) {
         isMuted ? player.unMute() : player.mute();
@@ -180,6 +186,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   };
 
   const handlePlaybackRateChange = (rate: number) => {
+    if (!isYoutubeVideo) return;
     if (isYoutubeVideo && player) player.setPlaybackRate(rate);
     else if (videoRef.current) videoRef.current.playbackRate = rate;
     setPlaybackRate(rate);
@@ -188,7 +195,7 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   
   const handleFullScreen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const element = (isYoutubeVideo ? player.getIframe() : videoRef.current) as any;
+    const element = (isYoutubeVideo ? player.getIframe() : (iframeRef.current || videoRef.current)) as any;
     if (!element) return;
 
     if (element.requestFullscreen) {
@@ -246,10 +253,18 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
             className="w-full h-full"
             />
         ) : (
-            <video ref={videoRef} src={videoUrl} autoPlay className="w-full h-full" />
+            <iframe
+                ref={iframeRef}
+                src={videoUrl}
+                className="w-full h-full border-0"
+                allow="autoplay; encrypted-media; fullscreen"
+                allowFullScreen
+                title="External Video"
+            ></iframe>
         )}
       </div>
 
+     {isYoutubeVideo && (
       <div className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0")}>
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
@@ -293,6 +308,20 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
           </div>
         </div>
       </div>
+     )}
+
+      {!isYoutubeVideo && (
+         <header className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
+           <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
+                <ArrowLeft />
+           </Button>
+           <p className="font-semibold truncate">{title}</p>
+           <div className='flex-grow' />
+           <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10"><Fullscreen /></Button>
+        </header>
+      )}
     </div>
   );
 }
+
+    

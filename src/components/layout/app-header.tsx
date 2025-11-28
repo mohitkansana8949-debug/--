@@ -45,23 +45,8 @@ const getColorForId = (id: string) => {
 };
 
 export function AppHeader() {
-  const pathname = usePathname();
   const { user } = useUser();
-
-  // Paths that should not have the full header
-  const noHeaderPaths = ['/login', '/signup', '/complete-profile', '/youtube/'];
-  const fullScreenPaths = ['/courses/'];
-
-  // Don't render header at all on certain paths
-  if (noHeaderPaths.some(p => pathname.startsWith(p))) {
-    return null;
-  }
-
-  if (pathname && fullScreenPaths.some(p => pathname.startsWith(p) && pathname.endsWith('/watch'))) {
-    return null;
-  }
   
-  // A simplified header for paths where user is not fully logged in or in special sections
   if (!user) {
      return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
@@ -212,3 +197,5 @@ function UserMenu() {
         </DropdownMenu>
     );
 }
+
+    

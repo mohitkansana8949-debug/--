@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -74,7 +75,6 @@ export default function EditCourseContentPage() {
                 return;
             }
             contentData.url = videoUrl;
-            contentData.isLive = true; // Default to live
             break;
         case 'pdf':
             if (!pdfUrl.trim()) {
@@ -129,8 +129,8 @@ export default function EditCourseContentPage() {
   const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 lg:p-8">
-       <div className="mb-6">
+    <div className="flex flex-col h-screen">
+       <div className="p-4 border-b">
         <Button asChild variant="outline">
           <Link href="/admin/content">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -138,7 +138,8 @@ export default function EditCourseContentPage() {
           </Link>
         </Button>
       </div>
-      <Card className="max-w-4xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+      <Card className="w-full mx-auto">
         <CardHeader>
           {courseLoading ? (
             <>
@@ -166,7 +167,7 @@ export default function EditCourseContentPage() {
                         </CardHeader>
                         <CardContent>
                             <Tabs defaultValue="youtube" className="w-full">
-                                <TabsList className="grid w-full grid-cols-4">
+                                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
                                     <TabsTrigger value="youtube"><Youtube className="mr-1 h-4 w-4" />YouTube</TabsTrigger>
                                     <TabsTrigger value="video"><Video className="mr-1 h-4 w-4" />Video</TabsTrigger>
                                     <TabsTrigger value="pdf"><FileText className="mr-1 h-4 w-4" />PDF</TabsTrigger>
@@ -239,6 +240,9 @@ export default function EditCourseContentPage() {
             )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
+
+    

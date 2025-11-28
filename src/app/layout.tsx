@@ -1,12 +1,11 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { AppSidebar } from '@/components/layout/app-sidebar';
-import { AppHeader } from '@/components/layout/app-header';
 import { FirebaseClientProvider } from '@/firebase';
 import { AuthGate } from '@/components/layout/auth-gate';
+import { Suspense } from 'react';
 
 
 const APP_NAME = "Quickly Study";
@@ -53,19 +52,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <FirebaseClientProvider>
-            <AuthGate>
-              <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>
-                  <AppHeader />
-                  <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
-                    {children}
-                  </main>
-                </SidebarInset>
-              </SidebarProvider>
-            </AuthGate>
-          </FirebaseClientProvider>
+          <Suspense>
+            <FirebaseClientProvider>
+              <AuthGate>
+                {children}
+              </AuthGate>
+            </FirebaseClientProvider>
+          </Suspense>
           <Toaster />
           <div id="recaptcha-container"></div>
         </ThemeProvider>
@@ -73,3 +66,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    
