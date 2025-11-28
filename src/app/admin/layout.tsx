@@ -36,6 +36,7 @@ const adminNavItems = [
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
+  { href: '/admin/youtube', label: 'YouTube', icon: Youtube },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
 ];
 

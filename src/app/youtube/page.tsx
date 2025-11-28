@@ -1,13 +1,13 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { youtubeSearchFlow, type SearchInput, type SearchOutput } from '@/ai/flows/youtube-search-flow';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader, Search, UserPlus, Youtube, Video, CheckCircle } from 'lucide-react';
+import { Loader, Search, Video, Youtube } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -17,7 +17,13 @@ type SavedChannel = {
   thumbnailUrl: string;
 };
 
-const DEFAULT_CHANNEL_ID = 'UCY_25Yg1zIX1bVayr4Mh4FA'; // Quickly Study channel ID
+const DEFAULT_CHANNELS: SavedChannel[] = [
+    {
+        channelId: 'UCY_25Yg1zIX1bVayr4Mh4FA',
+        title: 'Quickly Study',
+        thumbnailUrl: 'https://yt3.ggpht.com/h5G-237G2DQx-sZ-bS0GAvTTb9I_4a5KNP5-oN2B2I8-5hMXQ-w1L3fnrWk86xRPAeS3Y_R7=s176-c-k-c0x00ffffff-no-rj'
+    }
+];
 
 export default function YouTubeExplorerPage() {
   const searchParams = useSearchParams();
@@ -26,68 +32,63 @@ export default function YouTubeExplorerPage() {
   const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedChannels, setSavedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', []);
+  const [savedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', DEFAULT_CHANNELS);
+
+  const fetchVideosFromSavedChannels = useCallback(async (query: string = '') => {
+    setIsLoading(true);
+    setError(null);
+    try {
+        let allVideos: SearchOutput['videos'] = [];
+
+        // To search in all channels, we can't just pass channel IDs to the search API.
+        // We need to construct a query that is likely to return results from our channels.
+        // A simple way is to search for the query within each channel's context.
+        // For default view, we'll just search for a generic term within the main channel.
+        const effectiveQuery = query || 'UPSC GS'; // A generic but relevant default query
+        
+        const results = await youtubeSearchFlow({ query: effectiveQuery });
+
+        const savedChannelIds = new Set(savedChannels.map(c => c.channelId));
+        
+        // Filter videos to only include those from saved channels
+        const filteredVideos = results.videos.filter(video => savedChannelIds.has(video.channelId));
+        
+        setSearchResults({ channels: [], videos: filteredVideos });
+
+    } catch (err: any) {
+        setError(err.message || 'An error occurred while fetching videos.');
+    } finally {
+        setIsLoading(false);
+    }
+  }, [savedChannels]);
+
 
   useEffect(() => {
-    const fetchDefaultVideos = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            // Using a known query that will return videos from the default channel
-            const result = await youtubeSearchFlow({ query: 'Quickly Study #UPSC' });
-            // Filter videos to only show those from the default channel
-            const filteredResult = {
-                ...result,
-                videos: result.videos.filter(v => v.channelId === DEFAULT_CHANNEL_ID)
-            };
-            setSearchResults(filteredResult);
-        } catch (err: any) {
-            setError(err.message || 'An error occurred fetching default videos.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    fetchDefaultVideos();
-  }, []);
+    // Initial load: Fetch videos from saved channels with a default term
+    fetchVideosFromSavedChannels();
+  }, [fetchVideosFromSavedChannels]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!searchQuery.trim()) return;
-
-    setIsLoading(true);
-    setError(null);
-    setSearchResults(null);
-    try {
-      const results = await youtubeSearchFlow({ query: searchQuery });
-      setSearchResults(results);
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while searching.');
-    } finally {
-      setIsLoading(false);
-    }
+    if (!searchQuery.trim()) {
+        // If search is cleared, fetch default videos again
+        fetchVideosFromSavedChannels();
+        return;
+    };
+    // When searching, use the user's query
+    fetchVideosFromSavedChannels(searchQuery);
   };
 
-  const isChannelSaved = (channelId: string) => {
-    return savedChannels.some(c => c.channelId === channelId);
-  }
-
-  const toggleSaveChannel = (channel: { channelId: string; title: string; thumbnailUrl: string; }) => {
-    if (isChannelSaved(channel.channelId)) {
-      setSavedChannels(savedChannels.filter(c => c.channelId !== channel.channelId));
-    } else {
-      setSavedChannels([...savedChannels, channel]);
-    }
-  };
 
   return (
     <div className="container mx-auto p-4 space-y-8">
       <div>
         <h1 className="text-3xl font-bold flex items-center">
             <Youtube className="mr-3 h-8 w-8 text-red-500" />
-            YouTube Explorer
+            YouTube Videos
         </h1>
         <p className="text-muted-foreground">
-          Search for YouTube channels and videos.
+          Watch videos from our selected channels.
         </p>
       </div>
 
@@ -96,7 +97,7 @@ export default function YouTubeExplorerPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search for channels or videos..."
+          placeholder="Search for videos from our channels..."
           className="flex-grow"
         />
         <Button type="submit" disabled={isLoading}>
@@ -114,34 +115,8 @@ export default function YouTubeExplorerPage() {
 
       {searchResults && (
         <div className="space-y-8">
-            {/* Channels Section */}
-            {searchResults.channels && searchResults.channels.length > 0 && (
-                 <div>
-                    <h2 className="text-2xl font-bold mb-4">Channels</h2>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                        {searchResults.channels.map(channel => (
-                        <Card key={channel.channelId} className="flex flex-col items-center p-4 text-center">
-                            <Image src={channel.thumbnailUrl} alt={channel.title} width={88} height={88} className="rounded-full mb-3" />
-                            <CardTitle className="text-sm font-semibold line-clamp-2 mb-2 h-10">{channel.title}</CardTitle>
-                             <Button 
-                                variant={isChannelSaved(channel.channelId) ? 'success' : 'outline'} 
-                                size="sm"
-                                onClick={() => toggleSaveChannel(channel)}
-                                className="w-full"
-                            >
-                                {isChannelSaved(channel.channelId) ? <CheckCircle className="mr-2 h-4 w-4"/> : <UserPlus className="mr-2 h-4 w-4"/>}
-                                {isChannelSaved(channel.channelId) ? 'Added' : 'Add Channel'}
-                            </Button>
-                        </Card>
-                        ))}
-                    </div>
-                </div>
-            )}
-           
-            {/* Videos Section */}
-            {searchResults.videos && searchResults.videos.length > 0 && (
+            {searchResults.videos && searchResults.videos.length > 0 ? (
                 <div>
-                    <h2 className="text-2xl font-bold mb-4">Videos</h2>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {searchResults.videos.map(video => (
                             <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
@@ -163,11 +138,9 @@ export default function YouTubeExplorerPage() {
                         ))}
                     </div>
                 </div>
-            )}
-
-             {!isLoading && searchResults.channels.length === 0 && searchResults.videos.length === 0 && (
+            ) : !isLoading && (
                  <div className="text-center text-muted-foreground mt-16">
-                    <p>No results found for "{searchQuery}".</p>
+                    <p>No videos found. Try a different search.</p>
                 </div>
             )}
         </div>
