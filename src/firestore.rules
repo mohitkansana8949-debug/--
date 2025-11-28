@@ -3,8 +3,10 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{path=**} {
-      allow read, write, list: if request.auth != null;
+    // This rule allows any user to read, write, and list any document.
+    // It is completely open and should be secured before production.
+    match /{document=**} {
+      allow read, write, list: if true;
     }
   }
 }
