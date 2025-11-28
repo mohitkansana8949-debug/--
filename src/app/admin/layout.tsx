@@ -25,7 +25,6 @@ const adminNavItems = [
   { href: '/admin/create-course', label: 'नया कोर्स', icon: FileText },
   { href: '/admin/content', label: 'कंटेंट', icon: FileText },
   { href: '/admin/demo-content', label: 'Demo Content', icon: Video },
-  { href: '/admin/upload', label: 'Upload Content', icon: Upload },
   { href: '/admin/live-content', label: 'Manage Live', icon: Radio },
   { href: '/admin/ebooks', label: 'E-books', icon: Book },
   { href: '/admin/create-ebook', label: 'Add E-book', icon: Book },
