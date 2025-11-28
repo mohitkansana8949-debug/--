@@ -1,34 +1,17 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { Loader, Youtube } from 'lucide-react';
-import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { Loader } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
-import { getLiveChatId, getYouTubeID } from '@/lib/youtube';
-
-
-const liveClassSchema = z.object({
-  youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),
-  teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
-});
-type LiveClassFormValues = z.infer<typeof liveClassSchema>;
 
 export default function ManageLiveClassPage() {
   const { firestore } = useFirebase();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const liveClassesQuery = useMemoFirebase(
     () => (firestore ? collection(firestore, 'liveClasses') : null),
@@ -36,92 +19,13 @@ export default function ManageLiveClassPage() {
   );
   const { data: liveClasses, isLoading: liveClassesLoading } = useCollection(liveClassesQuery);
 
-  const form = useForm<LiveClassFormValues>({
-    resolver: zodResolver(liveClassSchema),
-    defaultValues: {
-      youtubeUrl: '',
-      teacherName: '',
-    }
-  });
-
-  const onSubmit = async (values: LiveClassFormValues) => {
-    if (!firestore) return;
-    
-    const apiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
-    if (!apiKey) {
-        toast({ variant: 'destructive', title: 'त्रुटि', description: 'YouTube API की कॉन्फ़िगर नहीं है।'});
-        return;
-    }
-
-    const videoId = getYouTubeID(values.youtubeUrl);
-    if (!videoId) {
-        toast({ variant: 'destructive', title: 'गलत URL', description: 'इस URL से वीडियो ID नहीं मिल सका।'});
-        return;
-    }
-
-    setIsSubmitting(true);
-    
-    try {
-        const liveChatId = await getLiveChatId(videoId, apiKey);
-
-        // Schedule the class for 24 hours from now automatically
-        const startTime = new Date();
-        startTime.setHours(startTime.getHours() + 24);
-        
-        const liveClassesCollection = collection(firestore, 'liveClasses');
-        const liveClassData = {
-          youtubeVideoId: videoId,
-          liveChatId: liveChatId,
-          teacherName: values.teacherName,
-          startTime: Timestamp.fromDate(startTime),
-          createdAt: serverTimestamp(),
-        };
-
-        await addDoc(liveClassesCollection, liveClassData);
-        toast({
-          title: 'सफलता!',
-          description: 'नई लाइव क्लास 24 घंटे बाद के लिए शेड्यूल हो गई है।',
-        });
-        form.reset();
-
-    } catch (error: any) {
-        console.error("Error creating live class:", error);
-        const contextualError = new FirestorePermissionError({
-          operation: 'create',
-          path: 'liveClasses',
-          requestResourceData: {}, // data is dynamic, cannot construct here fully
-        });
-        errorEmitter.emit('permission-error', contextualError);
-        toast({ variant: 'destructive', title: 'त्रुटि', description: error.message || 'क्लास बनाने में विफल।'});
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="space-y-8">
       <Card>
         <CardHeader>
-          <CardTitle>नई लाइव क्लास जोड़ें</CardTitle>
-          <CardDescription>यहां से यूट्यूब लाइव क्लास की जानकारी जोड़ें। क्लास अपने-आप 24 घंटे बाद के लिए शेड्यूल हो जाएगी।</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField control={form.control} name="youtubeUrl" render={({ field }) => ( <FormItem> <FormLabel>यूट्यूब वीडियो URL</FormLabel> <FormControl> <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              <FormField control={form.control} name="teacherName" render={({ field }) => ( <FormItem> <FormLabel>टीचर का नाम</FormLabel> <FormControl> <Input placeholder="जैसे, मोहित सर" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
-              
-              <Button type="submit" disabled={isSubmitting} className="w-full">
-                {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</> : 'लाइव क्लास सेव करें'}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>शेड्यूल की गई लाइव क्लासेस</CardTitle>
+          <CardDescription>यहां सभी आने वाली और हो चुकी लाइव क्लासेस की लिस्ट देखें।</CardDescription>
         </CardHeader>
         <CardContent>
           {liveClassesLoading ? (
