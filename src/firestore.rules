@@ -30,7 +30,7 @@ service cloud.firestore {
     }
     
     match /liveClasses/{liveClassId} {
-      allow read: if request.auth != null;
+      allow list, read: if request.auth != null;
       allow create: if isAdmin(request.auth.uid) && isSecureWrite(request.resource.data) && isFutureClass(request.resource.data);
       allow write: if isAdmin(request.auth.uid);
     }
