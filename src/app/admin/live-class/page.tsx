@@ -180,16 +180,16 @@ export default function ManageLiveClassPage() {
                       <FormLabel>लाइव क्लास की तारीख</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, "PPP") : <span>एक तारीख चुनें</span>}
-                            </Button>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-full justify-start text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value ? format(field.value, "PPP") : <span>एक तारीख चुनें</span>}
+                          </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <Calendar
@@ -254,4 +254,4 @@ export default function ManageLiveClassPage() {
       </Card>
     </div>
   );
-}
+ 
