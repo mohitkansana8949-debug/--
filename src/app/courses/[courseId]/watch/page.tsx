@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -67,8 +66,7 @@ export default function WatchCoursePage() {
 
   return (
     <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
-      <VideoPlayer videoId={videoId} />
+      <VideoPlayer title={title} videoId={videoId} />
     </div>
   );
 }
-

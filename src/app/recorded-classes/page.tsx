@@ -6,52 +6,51 @@ import { collection, query, orderBy, where, Timestamp } from 'firebase/firestore
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Loader, Youtube, UserCircle, Calendar } from 'lucide-react';
+import { Loader, Video, UserCircle, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function LiveClassesPage() {
+export default function RecordedClassesPage() {
     const firestore = useFirestore();
 
-    // Query for upcoming live classes
-    const upcomingClassesQuery = useMemoFirebase(() => {
+    // Query for recorded (past) live classes
+    const recordedClassesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
             collection(firestore, 'liveClasses'),
-            where('startTime', '>=', Timestamp.now()),
-            orderBy('startTime', 'asc')
+            where('startTime', '<', Timestamp.now()),
+            orderBy('startTime', 'desc')
         );
     }, [firestore]);
 
-    const { data: upcomingClasses, isLoading: upcomingLoading } = useCollection(upcomingClassesQuery);
+    const { data: recordedClasses, isLoading: recordedLoading } = useCollection(recordedClassesQuery);
 
     return (
         <div className="container mx-auto p-4 space-y-12">
             <div>
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold flex items-center">
-                        <Youtube className="mr-3 h-8 w-8 text-red-500" />
-                        आने वाली लाइव क्लासेस
+                        <Video className="mr-3 h-8 w-8 text-primary" />
+                        रिकॉर्डेड क्लास
                     </h1>
                     <p className="text-muted-foreground">
-                        हमारी आने वाली सभी लाइव क्लासेस की लिस्ट।
+                        जो लाइव क्लास हो चुकी हैं, उन्हें यहाँ देखें।
                     </p>
                 </div>
 
-                {upcomingLoading && (
+                {recordedLoading && (
                     <div className="flex h-48 items-center justify-center">
                         <Loader className="h-12 w-12 animate-spin" />
                     </div>
                 )}
 
-                {!upcomingLoading && upcomingClasses?.length === 0 && (
+                {!recordedLoading && recordedClasses?.length === 0 && (
                     <div className="text-center text-muted-foreground mt-16 p-8 border rounded-lg">
-                        <p className="text-lg">अभी कोई लाइव क्लास शेड्यूल नहीं है।</p>
-                        <p>कृपया बाद में दोबारा देखें।</p>
+                        <p className="text-lg">अभी कोई रिकॉर्डेड क्लास उपलब्ध नहीं है।</p>
                     </div>
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {upcomingClasses?.map(liveClass => (
+                    {recordedClasses?.map(liveClass => (
                         <ClassCard key={liveClass.id} liveClass={liveClass} />
                     ))}
                 </div>
@@ -80,7 +79,7 @@ function ClassCard({ liveClass }: { liveClass: any }) {
             <CardFooter>
                 <Button asChild className="w-full">
                     <Link href={`/live-classes/${liveClass.id}`}>
-                        क्लास ज्वाइन करें
+                        वीडियो देखें
                     </Link>
                 </Button>
             </CardFooter>
