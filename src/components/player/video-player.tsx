@@ -77,13 +77,13 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
 
   const onPlayerReady = (event: any) => {
     setPlayer(event.target);
-    // The playVideo() call will trigger the onStateChange event with data=1 (playing)
     event.target.playVideo(); 
     resetControlsTimeout();
   };
 
   const onPlayerStateChange = (event: any) => {
-    if (event.data === 1) { // Playing
+    // State 1 is playing
+    if (event.data === 1) { 
       setIsPlaying(true);
       setDuration(player.getDuration());
       startProgressUpdates();
@@ -98,12 +98,12 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
   };
 
   const handlePlayPause = () => {
+    // If the click was on the player itself and not a button, toggle play/pause
     if (isPlaying) {
       player.pauseVideo();
     } else {
       player.playVideo();
     }
-    // No need to call resetControlsTimeout here, onPlayerStateChange will handle it
   };
 
   const handleSeek = (value: number[]) => {
@@ -158,6 +158,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
     const date = new Date(0);
     date.setSeconds(time);
     const timeString = date.toISOString().substr(11, 8);
+    // Hide hours if video is less than an hour
     return duration >= 3600 ? timeString : timeString.substr(3);
   };
   
@@ -167,7 +168,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
           <Youtube className="h-16 w-16 mb-4 text-red-600" />
           <h2 className="text-2xl font-bold">अमान्य यूट्यूब लिंक</h2>
           <p className="text-muted-foreground">इस कोर्स में कोई मान्य यूट्यूब वीडियो लिंक नहीं है।</p>
-          <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white">
+          <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
              <ArrowLeft className="mr-2 h-4 w-4" /> वापस जाएं
           </Button>
        </div>
@@ -180,6 +181,12 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
       className="w-full h-full bg-black text-white flex items-center justify-center relative overflow-hidden group/player"
       onMouseMove={resetControlsTimeout}
       onMouseLeave={() => { if(isPlaying) setShowControls(false) }}
+      onClick={(e) => {
+          // Only toggle play/pause if the click is directly on the container, not on the controls inside
+          if (e.target === playerContainerRef.current) {
+             handlePlayPause();
+          }
+      }}
     >
       <div className="w-full h-full absolute" id="youtube-player-container">
         <YouTube
@@ -188,7 +195,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
             height: '100%',
             width: '100%',
             playerVars: {
-              autoplay: 1,
+              autoplay: 1, // Autoplay enabled
               controls: 0,
               rel: 0,
               showinfo: 0,
@@ -200,7 +207,7 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
           }}
           onReady={onPlayerReady}
           onStateChange={onPlayerStateChange}
-          className="w-full h-full"
+          className="w-full h-full pointer-events-none"
         />
       </div>
 
@@ -211,43 +218,39 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
             showControls ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Click to play/pause */}
-        <div 
-            className="absolute inset-0 w-full h-full"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) handlePlayPause();
-            }}
-        />
-
-        {/* Black Gradient Overlay */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/70 to-transparent pointer-events-none"></div>
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
+        {/* Black Gradient Overlays */}
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
         
         {/* Top Controls Header */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center gap-4">
-           <Button variant="ghost" size="icon" onClick={() => router.back()}>
+           <Button variant="ghost" size="icon" onClick={() => router.back()} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <ArrowLeft />
            </Button>
-           <h1 className="text-lg font-bold truncate">{title}</h1>
         </div>
 
         {/* Middle Controls */}
-        <div className="absolute inset-0 flex items-center justify-center gap-16 pointer-events-none">
-          <Button variant="ghost" size="icon" className="h-16 w-16 pointer-events-auto" onClick={handleBackward}>
+        <div className="absolute inset-0 flex items-center justify-center gap-16"
+            onClick={(e) => e.stopPropagation()} // Prevent middle controls from toggling play/pause
+        >
+          <Button variant="ghost" size="icon" className="h-16 w-16 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleBackward}>
             <RotateCcw className="h-8 w-8" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-24 w-24 pointer-events-auto" onClick={handlePlayPause}>
+          <Button variant="ghost" size="icon" className="h-24 w-24 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handlePlayPause}>
             {isPlaying ? <Pause className="h-16 w-16" /> : <Play className="h-16 w-16" />}
           </Button>
-          <Button variant="ghost" size="icon" className="h-16 w-16 pointer-events-auto" onClick={handleForward}>
+          <Button variant="ghost" size="icon" className="h-16 w-16 hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0" onClick={handleForward}>
             <RotateCw className="h-8 w-8" />
           </Button>
         </div>
 
         {/* Bottom Controls */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-4">
+        <div 
+            className="absolute bottom-0 left-0 right-0 p-4 space-y-4"
+            onClick={(e) => e.stopPropagation()} // Prevent bottom controls from toggling play/pause
+        >
             <div className="flex items-center gap-4">
-                <span className="text-xs font-mono">{formatTime(currentTime)}</span>
+                <span className="text-xs font-mono select-none">{formatTime(currentTime)}</span>
                 <Slider
                     min={0}
                     max={duration}
@@ -255,18 +258,18 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
                     value={[currentTime]}
                     onValueChange={handleSeek}
                 />
-                <span className="text-xs font-mono">{formatTime(duration)}</span>
+                <span className="text-xs font-mono select-none">{formatTime(duration)}</span>
             </div>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={handleMuteToggle}>
+              <Button variant="ghost" size="icon" onClick={handleMuteToggle} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 {isMuted ? <VolumeX /> : <Volume2 />}
               </Button>
             </div>
             <div className="flex items-center gap-2">
                  <Popover>
                     <PopoverTrigger asChild>
-                       <Button variant="ghost" size="icon"><Settings /></Button>
+                       <Button variant="ghost" size="icon" className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0"><Settings /></Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-40 bg-black/80 border-gray-700 text-white backdrop-blur-sm p-0 mb-2">
                        <div className="flex flex-col">
@@ -275,15 +278,15 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
                                     key={rate} 
                                     variant="ghost" 
                                     onClick={() => handlePlaybackRateChange(rate)}
-                                    className={cn("justify-start rounded-none", playbackRate === rate && "bg-red-600/50")}
+                                    className={cn("justify-start rounded-none hover:bg-white/10", playbackRate === rate && "bg-red-600/50 hover:bg-red-600/60")}
                                 >
-                                    {rate}x
+                                    {rate === 1 ? "Normal" : `${rate}x`}
                                 </Button>
                            ))}
                        </div>
                     </PopoverContent>
                 </Popover>
-              <Button variant="ghost" size="icon" onClick={handleFullScreen}>
+              <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <Fullscreen />
               </Button>
             </div>
@@ -293,3 +296,5 @@ export default function VideoPlayer({ videoId, title }: VideoPlayerProps) {
     </div>
   );
 }
+
+    
