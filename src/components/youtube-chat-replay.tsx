@@ -7,6 +7,40 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getLiveChatMessages, type LiveChatMessage } from '@/ai/flows/youtube-live-chat-flow';
 
+const getColorForId = (id: string) => {
+  const colors = [
+    'bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
+    'bg-orange-500', 'bg-cyan-500'
+  ];
+  let hash = 0;
+  if (!id) return colors[0];
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const getTextColorForId = (id: string) => {
+  const colors = [
+    'text-red-400', 'text-green-400', 'text-blue-400', 'text-yellow-400', 
+    'text-purple-400', 'text-pink-400', 'text-indigo-400', 'text-teal-400',
+    'text-orange-400', 'text-cyan-400'
+  ];
+  let hash = 0;
+  if (!id) return colors[0];
+  for (let i = 0; i < id.length; i++) {
+    hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
+const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'A';
+    return name.substring(0, 1).toUpperCase();
+}
+
+
 // This component is for replaying a chat from a completed stream.
 export default function YouTubeChatReplay({ liveChatId }: { liveChatId: string }) {
     const [messages, setMessages] = useState<LiveChatMessage[]>([]);
@@ -29,7 +63,7 @@ export default function YouTubeChatReplay({ liveChatId }: { liveChatId: string }
               setMessages(prev => {
                 const existingIds = new Set(prev.map(m => m.id));
                 const newMessages = result.messages.filter(m => !existingIds.has(m.id));
-                return [...prev, ...newMessages];
+                return [...prev, ...newMessages].sort((a,b) => new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime());
               });
             }
 
@@ -71,10 +105,10 @@ export default function YouTubeChatReplay({ liveChatId }: { liveChatId: string }
                 <h3 className="font-semibold text-center">लाइव चैट रिप्ले</h3>
             </div>
             
-            <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4" ref={scrollViewportRef}>
+            <ScrollArea className="flex-1" viewportRef={scrollViewportRef}>
+                <div className="p-4 space-y-4">
                     {messages.length === 0 && !error && (
-                         <div className="flex justify-center items-center h-full">
+                         <div className="flex justify-center items-center h-full p-8">
                             <Loader className="animate-spin" />
                          </div>
                     )}
@@ -82,11 +116,13 @@ export default function YouTubeChatReplay({ liveChatId }: { liveChatId: string }
                         <div key={`${msg.id}-${index}`} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={msg.authorPhotoUrl} alt={msg.authorName} />
-                                <AvatarFallback>{msg.authorName.charAt(0)}</AvatarFallback>
+                                <AvatarFallback className={`text-white font-bold ${getColorForId(msg.authorName)}`}>
+                                    {getInitials(msg.authorName)}
+                                </AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-bold text-sm text-muted-foreground">{msg.authorName}</p>
-                                <p className="text-sm text-foreground/90">{msg.messageText}</p>
+                                <p className={`font-bold text-sm ${getTextColorForId(msg.authorName)}`}>{msg.authorName}</p>
+                                <p className="text-sm text-foreground/90 break-words">{msg.messageText}</p>
                             </div>
                         </div>
                     ))}
