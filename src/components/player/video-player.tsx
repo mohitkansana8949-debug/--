@@ -13,7 +13,6 @@ import {
   VolumeX,
   Settings,
   ArrowLeft,
-  Youtube,
   AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -22,18 +21,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { getYouTubeID } from '@/lib/youtube';
+import JioVideoPlayer from './jio-video-player';
 
 type VideoPlayerProps = {
     videoUrl: string | null;
     title?: string;
 };
 
+const isJioCloudUrl = (url: string | null): boolean => {
+    if (!url) return false;
+    return url.includes('jioaicloud.com');
+}
+
 export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
   const router = useRouter();
 
-  const isYoutubeVideo = !!(videoUrl && getYouTubeID(videoUrl));
+  const isJioVideo = isJioCloudUrl(videoUrl);
+  const isYoutubeVideo = !!(videoUrl && getYouTubeID(videoUrl) && !isJioVideo);
   const videoId = isYoutubeVideo ? getYouTubeID(videoUrl) : null;
-  const isExternalVideo = !!videoUrl && !isYoutubeVideo;
+  const isExternalVideo = !!videoUrl && !isYoutubeVideo && !isJioVideo;
 
   const [player, setPlayer] = useState<any>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -220,6 +226,8 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
             onStateChange={onPlayerStateChange}
             className="w-full h-full"
             />
+        ) : isJioVideo ? (
+            <JioVideoPlayer videoUrl={videoUrl} />
         ) : isExternalVideo ? (
              <iframe
                 ref={iframeRef}
@@ -247,7 +255,6 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
            <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                 <ArrowLeft />
            </Button>
-           <p className="font-semibold truncate">{title}</p>
         </header>
 
         <div className="absolute inset-0 flex items-center justify-center gap-16" onClick={(e) => e.stopPropagation()}>
@@ -284,13 +291,12 @@ export default function VideoPlayer({ videoUrl, title }: VideoPlayerProps) {
       </div>
      )}
 
-      {isExternalVideo && (
-         <header className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0 pointer-events-auto", "opacity-0 pointer-events-none")}>
+      {(isExternalVideo || isJioVideo) && (
+         <header className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0 pointer-events-none")}>
            <div className="absolute top-0 left-0 right-0 p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
              <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">
                   <ArrowLeft />
              </Button>
-             <p className="font-semibold truncate">{title}</p>
              <div className='flex-grow' />
              <Button variant="ghost" size="icon" onClick={handleFullScreen} className="hover:bg-white/10"><Fullscreen /></Button>
            </div>
