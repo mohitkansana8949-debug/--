@@ -1,36 +1,23 @@
+
 'use client';
 
-import { useState, FormEvent, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, FormEvent } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader, Search, Youtube as YoutubeIcon, UserPlus, CheckCircle, Video } from 'lucide-react';
 import Image from 'next/image';
-import { searchChannels, type YouTubeChannel } from '@/ai/flows/youtube-search-flow';
+import { searchChannels, searchVideos, type YouTubeChannel, type YouTubeVideo } from '@/ai/flows/youtube-search-flow';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 
-function formatSubscriberCount(count: string): string {
-    const num = parseInt(count, 10);
-    if (isNaN(num)) return count;
-
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-}
-
 export default function YouTubePage() {
   const [query, setQuery] = useState('');
   const [channels, setChannels] = useState<YouTubeChannel[]>([]);
+  const [videos, setVideos] = useState<YouTubeVideo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const [myChannels, setMyChannels] = useLocalStorage<YouTubeChannel[]>('my-youtube-channels', []);
   
   const myChannelIds = new Set(myChannels.map(c => c.id));
@@ -41,11 +28,16 @@ export default function YouTubePage() {
 
     setIsLoading(true);
     setChannels([]);
+    setVideos([]);
     try {
-      const results = await searchChannels({ query });
-      setChannels(results);
+      const [channelResults, videoResults] = await Promise.all([
+        searchChannels({ query }),
+        searchVideos({ query })
+      ]);
+      setChannels(channelResults);
+      setVideos(videoResults);
     } catch (error) {
-      console.error('Error searching channels:', error);
+      console.error('Error searching YouTube:', error);
     } finally {
       setIsLoading(false);
     }
@@ -67,13 +59,13 @@ export default function YouTubePage() {
             YouTube Explorer
             </h1>
             <p className="text-muted-foreground mt-2">
-            Search for educational channels and save them to your library.
+            Search for educational channels and videos.
             </p>
         </div>
 
       <Tabs defaultValue="search">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="search">Search Channels</TabsTrigger>
+          <TabsTrigger value="search">Search</TabsTrigger>
           <TabsTrigger value="my-channels">My Channels ({myChannels.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="search" className="mt-6">
@@ -82,7 +74,7 @@ export default function YouTubePage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search for channels like 'Quickly Study'..."
+                placeholder="Search for 'Quickly Study', 'Sainik School'..."
                 className="flex-grow"
                 />
                 <Button type="submit" disabled={isLoading}>
@@ -101,34 +93,69 @@ export default function YouTubePage() {
                 </div>
             )}
             
-            <div className="space-y-4">
-                {channels.map((channel) => (
-                    <Card key={channel.id} className="flex items-center p-4 gap-4">
-                         <Link href={`/youtube/channel/${channel.id}`} className="flex items-center gap-4 flex-grow">
-                            <Avatar className="h-16 w-16">
-                                <AvatarImage src={channel.thumbnailUrl} alt={channel.title} />
-                                <AvatarFallback>{channel.title.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-grow">
-                                <h3 className="font-semibold text-lg">{channel.title}</h3>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{channel.description}</p>
-                                <p className="text-xs text-muted-foreground mt-1">{formatSubscriberCount(channel.subscriberCount)} subscribers</p>
-                            </div>
-                         </Link>
-                         {myChannelIds.has(channel.id) ? (
-                             <Button variant="secondary" disabled>
-                                <CheckCircle className="mr-2 h-4 w-4" />
-                                Added
-                             </Button>
-                         ) : (
-                            <Button onClick={() => handleAddChannel(channel)}>
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Add Channel
-                            </Button>
-                         )}
-                    </Card>
-                ))}
-            </div>
+            {!isLoading && channels.length > 0 && (
+                <div className="mb-8">
+                    <h2 className="text-2xl font-bold mb-4">Channels</h2>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {channels.map((channel) => (
+                             <Card key={channel.id} className="flex flex-col items-center text-center p-3">
+                                 <Link href={`/youtube/channel/${channel.id}`} className="flex flex-col items-center gap-2 w-full">
+                                    <Avatar className="h-16 w-16">
+                                        <AvatarImage src={channel.thumbnailUrl} alt={channel.title} />
+                                        <AvatarFallback>{channel.title.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <p className="font-semibold text-sm line-clamp-2">{channel.title}</p>
+                                 </Link>
+                                  {myChannelIds.has(channel.id) ? (
+                                    <Button variant="secondary" disabled className="w-full mt-2 text-xs h-8">
+                                        <CheckCircle className="mr-2 h-4 w-4" />
+                                        Added
+                                    </Button>
+                                ) : (
+                                    <Button onClick={() => handleAddChannel(channel)} className="w-full mt-2 text-xs h-8">
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        Add Channel
+                                    </Button>
+                                )}
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            {!isLoading && videos.length > 0 && (
+                 <div>
+                    <h2 className="text-2xl font-bold mb-4">Videos</h2>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {videos.map((video) => (
+                        <Link href={`/youtube/${video.id}`} key={video.id}>
+                            <Card
+                                className="overflow-hidden cursor-pointer transition-transform hover:scale-105 hover:shadow-lg h-full"
+                            >
+                                <div className="aspect-video relative">
+                                <Image
+                                    src={video.thumbnailUrl}
+                                    alt={video.title}
+                                    layout="fill"
+                                    objectFit="cover"
+                                />
+                                </div>
+                                <CardContent className="p-4">
+                                <h3 className="font-semibold text-base line-clamp-2">{video.title}</h3>
+                                <p className="text-muted-foreground text-sm mt-1">{video.channelTitle}</p>
+                                </CardContent>
+                            </Card>
+                        </Link>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {!isLoading && channels.length === 0 && videos.length === 0 && (
+                 <div className="text-center text-muted-foreground py-16">
+                    <p>No results found. Try a different search.</p>
+                </div>
+            )}
 
         </TabsContent>
         <TabsContent value="my-channels" className="mt-6">
@@ -148,7 +175,7 @@ export default function YouTubePage() {
                                 </Avatar>
                                 <div className="flex-grow">
                                     <h3 className="font-semibold text-lg">{channel.title}</h3>
-                                    <p className="text-xs text-muted-foreground mt-1">{formatSubscriberCount(channel.subscriberCount)} subscribers</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{channel.subscriberCount} subscribers</p>
                                 </div>
                             </Link>
                             <Button variant="destructive" onClick={() => handleRemoveChannel(channel.id)}>Remove</Button>
@@ -161,3 +188,4 @@ export default function YouTubePage() {
     </div>
   );
 }
+
