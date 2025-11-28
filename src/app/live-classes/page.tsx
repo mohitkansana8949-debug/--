@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
@@ -8,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Loader, Youtube, UserCircle, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
 export default function LiveClassesPage() {
     const firestore = useFirestore();
 
-    // Query for upcoming live classes
+    // Query for upcoming live classes (startTime is in the future)
     const upcomingClassesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(
@@ -64,18 +64,19 @@ export default function LiveClassesPage() {
 function ClassCard({ liveClass }: { liveClass: any }) {
      return (
         <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
+            {liveClass.thumbnailUrl && <Image src={liveClass.thumbnailUrl} alt={liveClass.title} width={400} height={225} className="w-full h-auto aspect-video object-cover" />}
             <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <UserCircle className="h-5 w-5 text-primary" /> 
-                    {liveClass.teacherName}
-                </CardTitle>
+                <CardTitle className="line-clamp-2">{liveClass.title}</CardTitle>
                 <CardDescription className="flex items-center gap-2 pt-2">
-                    <Calendar className="h-4 w-4" />
-                    {liveClass.startTime ? format(liveClass.startTime.toDate(), 'PPP p') : 'समय तय नहीं है'}
+                    <UserCircle className="h-4 w-4" /> 
+                    {liveClass.teacherName}
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow">
-                <p className="text-muted-foreground line-clamp-2">विषय: {liveClass.youtubeVideoId}</p>
+                 <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    {liveClass.startTime ? format(liveClass.startTime.toDate(), 'PPP p') : 'समय तय नहीं है'}
+                </p>
             </CardContent>
             <CardFooter>
                 <Button asChild className="w-full">

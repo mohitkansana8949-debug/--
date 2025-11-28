@@ -1,5 +1,5 @@
 'use client';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
@@ -48,26 +48,16 @@ export default function LiveClassWatchPage() {
     );
   }
 
-  const isClassPast = isPast(liveClass.startTime);
-  const showLiveChat = !isClassPast && liveClass.liveChatId;
+  // Show chat for both past and present classes if liveChatId exists.
+  const showLiveChat = liveClass.liveChatId;
   
-  // If it's a recorded (past) class, show full screen player
-  if (isClassPast) {
-    return (
-        <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
-            <VideoPlayer title={liveClass.teacherName} videoId={liveClass.youtubeVideoId} />
-        </div>
-    )
-  }
-
-  // If it is an upcoming or current live class, show the player with chat
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row h-screen w-screen p-0 gap-0">
         <div className="flex-grow flex flex-col relative">
-            <VideoPlayer title={liveClass.teacherName} videoId={liveClass.youtubeVideoId} />
+            <VideoPlayer title={liveClass.title} videoId={liveClass.youtubeVideoId} />
         </div>
         <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0 bg-background p-2">
-            {showLiveChat ? <RealtimeYouTubeChat liveChatId={liveClass.liveChatId} /> : <div className="flex h-full items-center justify-center text-muted-foreground">लाइव शुरू होने पर चैट यहां दिखेगी।</div>}
+            {showLiveChat ? <RealtimeYouTubeChat liveChatId={liveClass.liveChatId} /> : <div className="flex h-full items-center justify-center text-muted-foreground">इस वीडियो के लिए चैट उपलब्ध नहीं है।</div>}
         </div>
     </div>
   );
@@ -80,20 +70,30 @@ function RealtimeYouTubeChat({ liveChatId }: { liveChatId: string }) {
     const nextPageTokenRef = useRef<string | undefined>(undefined);
     const scrollViewportRef = useRef<HTMLDivElement>(null);
     const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isFetching = useRef(false);
 
     const fetchMessages = async () => {
+        if(isFetching.current) return;
+        isFetching.current = true;
         try {
             const result = await getLiveChatMessages({
                 liveChatId,
                 nextPageToken: nextPageTokenRef.current
             });
 
-            setMessages(prev => [...prev, ...result.messages]);
+            if (result.messages.length > 0) {
+              setMessages(prev => {
+                const existingIds = new Set(prev.map(m => m.id));
+                const newMessages = result.messages.filter(m => !existingIds.has(m.id));
+                return [...prev, ...newMessages];
+              });
+            }
+
             nextPageTokenRef.current = result.nextPageToken;
             setError(null);
             
             // Schedule next poll
-            pollingTimeoutRef.current = setTimeout(fetchMessages, result.pollingIntervalMillis || 5000);
+            pollingTimeoutRef.current = setTimeout(fetchMessages, result.pollingIntervalMillis || 7000);
 
         } catch (err: any) {
             console.error("Error fetching YouTube chat:", err);
@@ -102,6 +102,8 @@ function RealtimeYouTubeChat({ liveChatId }: { liveChatId: string }) {
             if (pollingTimeoutRef.current) {
                 clearTimeout(pollingTimeoutRef.current);
             }
+        } finally {
+            isFetching.current = false;
         }
     };
     
@@ -124,11 +126,16 @@ function RealtimeYouTubeChat({ liveChatId }: { liveChatId: string }) {
     return (
         <Card className="h-full w-full flex flex-col bg-card/50">
             <div className="p-4 border-b">
-                <h3 className="font-semibold text-center">लाइव चैट (YouTube)</h3>
+                <h3 className="font-semibold text-center">लाइव चैट रिप्ले</h3>
             </div>
             
             <ScrollArea className="flex-1">
                 <div className="p-4 space-y-4" ref={scrollViewportRef}>
+                    {messages.length === 0 && !error && (
+                         <div className="flex justify-center items-center h-full">
+                            <Loader className="animate-spin" />
+                         </div>
+                    )}
                     {messages.map((msg, index) => (
                         <div key={`${msg.id}-${index}`} className="flex items-start gap-3">
                             <Avatar className="h-8 w-8">
@@ -152,7 +159,7 @@ function RealtimeYouTubeChat({ liveChatId }: { liveChatId: string }) {
             
             <div className="p-4 border-t mt-auto bg-muted/50">
                 <p className="text-center text-xs text-muted-foreground">
-                    चैट करने के लिए, कृपया YouTube पर वीडियो देखें।
+                    यह चैट का रिकॉर्डेड वर्जन है।
                 </p>
             </div>
         </Card>
