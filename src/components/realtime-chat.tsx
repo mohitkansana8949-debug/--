@@ -6,10 +6,12 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit } from 'fire
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Loader, Send } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Loader, Send, AlertTriangle } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { getLiveChatMessages, type LiveChatMessage } from '@/ai/flows/youtube-live-chat-flow';
+
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
