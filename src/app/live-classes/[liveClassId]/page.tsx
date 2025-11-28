@@ -4,9 +4,9 @@ import { useParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Card } from '@/components/ui/card';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Loader, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import VideoPlayer from '@/components/player/video-player';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -56,9 +56,9 @@ function DummyChat() {
   }, []);
 
   return (
-    <Card className="h-full w-full flex flex-col">
+    <Card className="h-full w-full flex flex-col bg-card/50">
         <div className="p-4 border-b">
-            <h3 className="font-semibold text-center">Live Chat</h3>
+            <h3 className="font-semibold text-center">लाइव चैट</h3>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg: any) => (
@@ -92,10 +92,9 @@ export default function LiveClassWatchPage() {
   const { data: liveClass, isLoading } = useDoc(liveClassRef);
   
   const youtubeVideoId = liveClass?.youtubeVideoId;
-  const videoSrc = youtubeVideoId ? `https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0&hl=hi&controls=0` : '';
   
   useEffect(() => {
-    if (youtubeVideoId) {
+    if (youtubeVideoId && process.env.YOUTUBE_API_KEY) {
       setIsVideoLoading(true);
       fetch(`https://www.googleapis.com/youtube/v3/videos?id=${youtubeVideoId}&part=liveStreamingDetails&key=${process.env.YOUTUBE_API_KEY}`)
         .then(res => res.json())
@@ -110,12 +109,16 @@ export default function LiveClassWatchPage() {
             setIsLive(false);
             setIsVideoLoading(false);
         });
+    } else if (youtubeVideoId) {
+        // Fallback if no API key, assume it's live for dummy chat
+        setIsLive(true);
+        setIsVideoLoading(false);
     }
   }, [youtubeVideoId]);
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <div className="fixed inset-0 bg-background z-50 flex items-center justify-center">
         <Loader className="h-12 w-12 animate-spin" />
       </div>
     );
@@ -123,7 +126,7 @@ export default function LiveClassWatchPage() {
 
   if (!liveClass) {
     return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-background text-center text-muted-foreground p-8">
+      <div className="fixed inset-0 bg-background z-50 flex flex-col items-center justify-center text-center text-muted-foreground p-8">
         <AlertTriangle className="h-12 w-12 mb-4" />
         <h2 className="text-xl font-bold">लाइव क्लास नहीं मिली</h2>
         <p>हो सकता है कि यह क्लास हटा दी गई हो या लिंक गलत हो।</p>
@@ -132,26 +135,11 @@ export default function LiveClassWatchPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-background z-50 flex flex-col lg:flex-row h-screen w-screen p-2 gap-2">
-        <div className="flex-grow flex flex-col">
-            <div className="w-full flex-grow">
-                <AspectRatio ratio={16 / 9} className="bg-muted rounded-lg overflow-hidden h-full">
-                    {videoSrc ? (
-                        <iframe
-                            src={videoSrc}
-                            title="YouTube video player"
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowFullScreen
-                            className="w-full h-full"
-                        ></iframe>
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">वीडियो लोड हो रहा है...</div>
-                    )}
-                </AspectRatio>
-            </div>
+    <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row h-screen w-screen p-0 gap-0">
+        <div className="flex-grow flex flex-col relative">
+            <VideoPlayer videoId={liveClass.youtubeVideoId} title={liveClass.teacherName} />
         </div>
-        <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0">
+        <div className="w-full lg:w-96 h-1/2 lg:h-full shrink-0 bg-background p-2">
           {(isVideoLoading) ? (
             <div className="flex h-full items-center justify-center bg-muted rounded-lg text-center p-4 text-muted-foreground">
                 <Loader className="animate-spin" />
