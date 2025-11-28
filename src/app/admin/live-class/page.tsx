@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useCollection, useMemoFirebase } from '@/firebase';
 import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { Loader, Youtube, Calendar as CalendarIcon, Trash2, Clock } from 'lucide-react';
+import { Loader, Youtube, Trash2 } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -22,7 +22,7 @@ import { getLiveChatId, getYouTubeID } from '@/lib/youtube';
 const liveClassSchema = z.object({
   youtubeUrl: z.string().url("कृपया एक मान्य यूट्यूब URL दर्ज करें।").min(5, 'यूट्यूब वीडियो URL आवश्यक है।'),
   teacherName: z.string().min(2, 'टीचर का नाम आवश्यक है।'),
-  startDate: z.string().min(1, "लाइव क्लास की तारीख आवश्यक है।"),
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "कृपया YYYY-MM-DD फॉर्मेट में तारीख दर्ज करें।"),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "कृपया HH:mm फॉर्मेट में सही समय दर्ज करें।"),
 });
 type LiveClassFormValues = z.infer<typeof liveClassSchema>;
@@ -69,6 +69,12 @@ export default function ManageLiveClassPage() {
         const liveChatId = await getLiveChatId(videoId, apiKey);
 
         const combinedDateTime = new Date(`${values.startDate}T${values.startTime}:00`);
+        if (isNaN(combinedDateTime.getTime())) {
+            toast({ variant: 'destructive', title: 'गलत तारीख/समय', description: 'कृपया सही तारीख और समय फॉर्मेट का उपयोग करें।'});
+            setIsSubmitting(false);
+            return;
+        }
+
 
         const liveClassesCollection = collection(firestore, 'liveClasses');
         const liveClassData = {
@@ -113,34 +119,32 @@ export default function ManageLiveClassPage() {
               <FormField control={form.control} name="youtubeUrl" render={({ field }) => ( <FormItem> <FormLabel>यूट्यूब वीडियो URL</FormLabel> <FormControl> <Input placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               <FormField control={form.control} name="teacherName" render={({ field }) => ( <FormItem> <FormLabel>टीचर का नाम</FormLabel> <FormControl> <Input placeholder="जैसे, मोहित सर" {...field} /> </FormControl> <FormMessage /> </FormItem> )}/>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
+               <FormField
                     control={form.control}
                     name="startDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>लाइव क्लास की तारीख</FormLabel>
+                        <FormLabel>लाइव क्लास की तारीख (YYYY-MM-DD)</FormLabel>
                         <FormControl>
-                          <Input type="date" {...field} />
+                          <Input type="text" placeholder="2024-12-31" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
-                  <FormField 
-                      control={form.control} 
-                      name="startTime" 
-                      render={({ field }) => (
-                          <FormItem> 
-                              <FormLabel>लाइव क्लास का समय (24-घंटे)</FormLabel> 
-                              <FormControl> 
-                                  <Input type="time" {...field} /> 
-                              </FormControl> 
-                              <FormMessage /> 
-                          </FormItem>
-                      )}
-                  />
-              </div>
+                />
+                <FormField 
+                    control={form.control} 
+                    name="startTime" 
+                    render={({ field }) => (
+                        <FormItem> 
+                            <FormLabel>लाइव क्लास का समय (HH:mm)</FormLabel> 
+                            <FormControl> 
+                                <Input type="text" placeholder="14:30" {...field} /> 
+                            </FormControl> 
+                            <FormMessage /> 
+                        </FormItem>
+                    )}
+                />
 
               <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> सेव हो रहा है...</> : 'लाइव क्लास सेव करें'}
