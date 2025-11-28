@@ -63,8 +63,10 @@ const getLiveChatMessagesFlow = ai.defineFlow(
 
       if (!response.ok) {
         const errorReason = data.error?.errors?.[0]?.reason;
+        const errorMessage = data.error?.message || '';
+
         // Gracefully handle cases where the chat has ended or the token is invalid
-        if (errorReason === 'chatDisabled' || errorReason === 'liveChatEnded' || errorReason === 'pageTokenNotValid' ) {
+        if (errorReason === 'chatDisabled' || errorReason === 'liveChatEnded' || errorReason === 'pageTokenNotValid' || errorMessage.includes('pageTokenNotValid') || errorMessage.includes('liveChatEnded')) {
             return {
                 messages: [],
                 pollingIntervalMillis: 120000, // Stop polling frequently
