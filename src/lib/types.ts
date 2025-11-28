@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 
 export type Flashcard = {
@@ -44,13 +45,29 @@ export interface Course {
   content: CourseContent[];
 }
 
-export interface CourseEnrollment {
+export interface Enrollment {
   id: string;
   userId: string;
-  courseId: string;
+  itemId: string; // Can be courseId, ebookId, testId, etc.
+  itemType: 'course' | 'ebook' | 'pyq' | 'test';
   enrollmentDate: Timestamp;
   paymentMethod: string;
   paymentTransactionId: string;
-  adminApproval: boolean;
   status: 'pending' | 'approved' | 'rejected';
+}
+
+export type TestQuestion = {
+  question: string;
+  options: string[];
+  answer: string;
+};
+
+export interface TestSeries {
+  id: string;
+  name: string;
+  description: string;
+  duration: number; // in minutes
+  price: number;
+  isFree: boolean;
+  questions: TestQuestion[];
 }

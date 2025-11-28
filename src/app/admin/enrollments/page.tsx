@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, updateDoc, getDocs } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, CheckCircle, XCircle, Clock } from 'lucide-react';
@@ -11,22 +11,79 @@ import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
+type EnrichedEnrollment = {
+  id: string;
+  userName: string;
+  itemName: string;
+  itemType: string;
+  status: 'approved' | 'pending' | 'rejected';
+  paymentTransactionId: string;
+};
 
 export default function AdminEnrollmentsPage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const enrollmentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courseEnrollments') : null), [firestore]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'enrollments') : null), [firestore]);
   const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
+
+  const [enrichedEnrollments, setEnrichedEnrollments] = useState<EnrichedEnrollment[]>([]);
+  const [isEnriching, setIsEnriching] = useState(true);
+
+  const enrichData = useCallback(async () => {
+    if (!enrollments || !firestore) {
+      if (!enrollmentsLoading) setIsEnriching(false);
+      return;
+    }
+    setIsEnriching(true);
+    
+    const userIds = [...new Set(enrollments.map(e => e.userId))];
+    const courseIds = [...new Set(enrollments.filter(e => e.itemType === 'course').map(e => e.itemId))];
+    const ebookIds = [...new Set(enrollments.filter(e => e.itemType === 'ebook').map(e => e.itemId))];
+    const pyqIds = [...new Set(enrollments.filter(e => e.itemType === 'pyq').map(e => e.itemId))];
+    const testIds = [...new Set(enrollments.filter(e => e.itemType === 'test').map(e => e.itemId))];
+    
+    const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap] = await Promise.all([
+      userIds.length ? getDocs(query(collection(firestore, 'users'), where('__name__', 'in', userIds))) : Promise.resolve({ docs: [] }),
+      courseIds.length ? getDocs(query(collection(firestore, 'courses'), where('__name__', 'in', courseIds))) : Promise.resolve({ docs: [] }),
+      ebookIds.length ? getDocs(query(collection(firestore, 'ebooks'), where('__name__', 'in', ebookIds))) : Promise.resolve({ docs: [] }),
+      pyqIds.length ? getDocs(query(collection(firestore, 'pyqs'), where('__name__', 'in', pyqIds))) : Promise.resolve({ docs: [] }),
+      testIds.length ? getDocs(query(collection(firestore, 'tests'), where('__name__', 'in', testIds))) : Promise.resolve({ docs: [] }),
+    ]);
+
+    const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data().name || 'Unknown User']));
+    const itemsMap = new Map([
+        ...coursesSnap.docs.map(d => [d.id, d.data().name || 'Unknown Course']),
+        ...ebooksSnap.docs.map(d => [d.id, d.data().name || 'Unknown E-book']),
+        ...pyqsSnap.docs.map(d => [d.id, d.data().name || 'Unknown PYQ']),
+        ...testsSnap.docs.map(d => [d.id, d.data().name || 'Unknown Test']),
+    ]);
+
+    const enriched = enrollments.map(e => ({
+      id: e.id,
+      userName: usersMap.get(e.userId) || e.userId,
+      itemName: itemsMap.get(e.itemId) || e.itemId,
+      itemType: e.itemType || 'N/A',
+      status: e.status,
+      paymentTransactionId: e.paymentTransactionId,
+    }));
+
+    setEnrichedEnrollments(enriched);
+    setIsEnriching(false);
+  }, [enrollments, firestore, enrollmentsLoading]);
+
+  useEffect(() => {
+    enrichData();
+  }, [enrichData]);
 
   const handleEnrollmentStatusChange = async (enrollmentId: string, status: 'approved' | 'rejected') => {
     if (!firestore) return;
 
     setUpdatingId(enrollmentId);
-    const enrollmentRef = doc(firestore, 'courseEnrollments', enrollmentId);
+    const enrollmentRef = doc(firestore, 'enrollments', enrollmentId);
     const updateData = { status: status };
 
     updateDoc(enrollmentRef, updateData)
@@ -55,19 +112,22 @@ export default function AdminEnrollmentsPage() {
     }
   }
 
+  const finalLoading = enrollmentsLoading || isEnriching;
+
   return (
     <Card>
         <CardHeader><CardTitle>सभी एनरोलमेंट्स</CardTitle></CardHeader>
         <CardContent>
             <Table>
-                <TableHeader><TableRow><TableHead>Enrollment ID</TableHead><TableHead>User ID</TableHead><TableHead>Course ID</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Item</TableHead><TableHead>Type</TableHead><TableHead>Payment No.</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {enrollmentsLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
-                    {enrollments?.map(enrollment => (
+                    {finalLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
+                    {enrichedEnrollments.map(enrollment => (
                         <TableRow key={enrollment.id}>
-                            <TableCell className="font-mono text-xs">{enrollment.id}</TableCell>
-                            <TableCell className="font-mono text-xs">{enrollment.userId}</TableCell>
-                            <TableCell className="font-mono text-xs">{enrollment.courseId}</TableCell>
+                            <TableCell className="font-medium">{enrollment.userName}</TableCell>
+                            <TableCell>{enrollment.itemName}</TableCell>
+                            <TableCell><Badge variant="outline">{enrollment.itemType}</Badge></TableCell>
+                            <TableCell>{enrollment.paymentTransactionId}</TableCell>
                             <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
                             <TableCell className="space-x-2">
                                 <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id || enrollment.status === 'approved'}>
@@ -79,9 +139,9 @@ export default function AdminEnrollmentsPage() {
                             </TableCell>
                         </TableRow>
                     ))}
-                     {!enrollmentsLoading && enrollments?.length === 0 && (
+                     {!finalLoading && enrichedEnrollments.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center text-muted-foreground">
+                            <TableCell colSpan={6} className="text-center text-muted-foreground">
                                 कोई एनरोलमेंट नहीं मिला।
                             </TableCell>
                         </TableRow>
