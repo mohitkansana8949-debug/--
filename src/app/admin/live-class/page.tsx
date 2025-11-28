@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +30,9 @@ export default function ScheduleLiveClassPage() {
 
   const form = useForm<LiveClassFormValues>({
     resolver: zodResolver(liveClassSchema),
+    defaultValues: {
+        videoUrl: '',
+    }
   });
 
   const handleFetchDetails = async () => {
