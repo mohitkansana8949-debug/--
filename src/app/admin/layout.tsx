@@ -12,8 +12,9 @@ import {
   LayoutDashboard,
   Settings,
   FileText,
-  Youtube,
   Radio,
+  Book,
+  FileQuestion,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -22,6 +23,10 @@ const adminNavItems = [
   { href: '/admin/create-course', label: 'नया कोर्स', icon: FileText },
   { href: '/admin/content', label: 'कंटेंट', icon: FileText },
   { href: '/admin/live-content', label: 'Manage Live', icon: Radio },
+  { href: '/admin/ebooks', label: 'E-books', icon: Book },
+  { href: '/admin/create-ebook', label: 'Add E-book', icon: Book },
+  { href: '/admin/pyqs', label: 'PYQs', icon: FileQuestion },
+  { href: '/admin/create-pyq', label: 'Add PYQ', icon: FileQuestion },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
@@ -36,7 +41,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   // These paths will not use the admin layout and will be rendered as full pages
-  const fullPagePaths = ['/admin/create-course', '/admin/content/'];
+  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;

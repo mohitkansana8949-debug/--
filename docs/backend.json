@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -218,6 +219,70 @@
         "userName",
         "createdAt"
       ]
+    },
+    "Ebook": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ebook",
+      "type": "object",
+      "description": "Represents a single E-book.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "isFree": {
+          "type": "boolean"
+        },
+        "pdfUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["name", "description", "price", "isFree", "pdfUrl"]
+    },
+    "PYQ": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PYQ",
+      "type": "object",
+      "description": "Represents a single Previous Year Question paper.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "isFree": {
+          "type": "boolean"
+        },
+        "pdfUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["name", "description", "price", "isFree", "pdfUrl"]
     }
   },
   "auth": {
@@ -300,18 +365,50 @@
           ]
         }
       },
-      {
-        "path": "/courseEnrollments/{courseEnrollmentId}",
+       {
+        "path": "/ebooks/{ebookId}",
         "definition": {
-          "entityName": "CourseEnrollment",
+          "entityName": "Ebook",
+          "schema": {
+            "$ref": "#/backend/entities/Ebook"
+          },
+          "description": "Stores E-book information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "ebookId",
+              "description": "The unique identifier of the ebook."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/pyqs/{pyqId}",
+        "definition": {
+          "entityName": "PYQ",
+          "schema": {
+            "$ref": "#/backend/entities/PYQ"
+          },
+          "description": "Stores Previous Year Question paper information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "pyqId",
+              "description": "The unique identifier of the PYQ."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/enrollments/{enrollmentId}",
+        "definition": {
+          "entityName": "Enrollment",
           "schema": {
             "$ref": "#/backend/entities/CourseEnrollment"
           },
-          "description": "Stores course enrollment information. Includes denormalized 'userId' and 'courseId' for authorization independence. Admin approval is required.",
+          "description": "Stores enrollment information for courses, e-books, and PYQs. Includes denormalized 'userId' and 'itemId' for authorization independence.",
           "params": [
             {
-              "name": "courseEnrollmentId",
-              "description": "The unique identifier of the course enrollment."
+              "name": "enrollmentId",
+              "description": "The unique identifier of the enrollment."
             }
           ]
         }

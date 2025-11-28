@@ -18,8 +18,9 @@ import {
   Rss,
   ClipboardList,
   Users,
-  Youtube,
   Download,
+  Book as EbookIcon,
+  FileQuestion
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection } from 'firebase/firestore';
@@ -27,6 +28,8 @@ import { useEffect, useState } from 'react';
 
 const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
+  { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
+  { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'स्कॉलरशिप', href: '/scholarship', icon: GraduationCap, color: 'bg-green-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
@@ -48,11 +51,8 @@ function InstallPWA() {
 
     useEffect(() => {
         const handleBeforeInstallPrompt = (e: Event) => {
-            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             setInstallPrompt(e);
-            // Show the install button if the app is not already installed
             if (window.matchMedia('(display-mode: standalone)').matches) {
                 setIsVisible(false);
             } else {
@@ -62,9 +62,7 @@ function InstallPWA() {
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // Listen for app installation
         window.addEventListener('appinstalled', () => {
-            // Hide the install prompt
             setIsVisible(false);
             setInstallPrompt(null);
             console.log('PWA was installed');
@@ -84,8 +82,6 @@ function InstallPWA() {
             } else {
                 console.log('User dismissed the install prompt');
             }
-            // We don't need to set the prompt to null here, it can only be used once.
-            // The `appinstalled` event will handle hiding the button.
         }
     };
 
@@ -140,7 +136,7 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         {featureCards.map((card) => (
           <Link href={card.href} key={card.title}>
             <Card
