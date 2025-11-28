@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
@@ -26,107 +26,69 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/firebase';
-import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
 
-const phoneSchema = z.object({
-  phone: z.string().min(10, 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।').max(10, 'कृपया 10 अंकों का मोबाइल नंबर दर्ज करें।'),
-});
-const otpSchema = z.object({
-    otp: z.string().min(6, 'कृपया 6 अंकों का OTP दर्ज करें।').max(6, 'कृपया 6 अंकों का OTP दर्ज करें।'),
+const signupSchema = z.object({
+  name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
+  email: z.string().email('कृपया एक मान्य ईमेल पता दर्ज करें।'),
+  password: z.string().min(6, 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।'),
 });
 
-type PhoneFormValues = z.infer<typeof phoneSchema>;
-type OtpFormValues = z.infer<typeof otpSchema>;
+type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
   const auth = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
-  const phoneForm = useForm<PhoneFormValues>({
-    resolver: zodResolver(phoneSchema),
-    defaultValues: { phone: '' },
+  const form = useForm<SignupFormValues>({
+    resolver: zodResolver(signupSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
   });
 
-  const otpForm = useForm<OtpFormValues>({
-      resolver: zodResolver(otpSchema),
-      defaultValues: { otp: '' },
-  });
-  
-  useEffect(() => {
-    if (auth && !recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': () => {
-              // reCAPTCHA solved, allow signInWithPhoneNumber.
-            }
-        });
-    }
-  }, [auth]);
-
-  const onPhoneSubmit = async (data: PhoneFormValues) => {
-    if (!auth || !recaptchaVerifierRef.current) {
-        toast({ variant: "destructive", title: "Authentication Error", description: "प्रमाणीकरण सेवा से कनेक्ट नहीं हो सका।"});
-        return;
-    }
+  const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
     try {
-      const phoneNumber = `+91${data.phone}`;
-      const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifierRef.current);
-      setConfirmationResult(result);
-      toast({ title: 'OTP भेजा गया', description: `आपके नंबर ${phoneNumber} पर एक OTP भेजा गया है।`});
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
+
+      // Update the user's profile with the name
+      await updateProfile(userCredential.user, {
+        displayName: data.name,
+      });
+
+      toast({
+        title: 'अकाउंट बन गया',
+        description: "आपका सफलतापूर्वक साइन अप हो गया है!",
+      });
+      router.push('/complete-profile');
     } catch (error) {
-      console.error(error);
-      let description = 'एक अप्रत्याशित त्रुटि हुई।';
+      let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {
-        description = error.message;
+        if (error.code === 'auth/email-already-in-use') {
+          description =
+            'यह ईमेल पहले से उपयोग में है। कृपया दूसरा प्रयास करें।';
+        } else {
+          description = error.message;
+        }
       }
-      toast({ variant: 'destructive', title: 'OTP भेजने में विफल', description });
-      // Reset reCAPTCHA
-      if (recaptchaVerifierRef.current) {
-          recaptchaVerifierRef.current.render().then(widgetId => {
-              //@ts-ignore
-              window.grecaptcha.reset(widgetId);
-          });
-      }
+      toast({
+        variant: 'destructive',
+        title: 'साइन अप विफल',
+        description,
+      });
     } finally {
       setIsLoading(false);
-    }
-  };
-  
-  const onOtpSubmit = async (data: OtpFormValues) => {
-    if (!confirmationResult) {
-        toast({ variant: "destructive", title: "Error", description: "पहले OTP का अनुरोध करें।"});
-        return;
-    }
-    setIsLoading(true);
-    try {
-        await confirmationResult.confirm(data.otp);
-        toast({ title: 'साइन अप सफल', description: "आप सफलतापूर्वक साइन अप हो गए हैं।" });
-        router.push('/complete-profile');
-    } catch (error) {
-        console.error(error);
-        let description = 'एक अप्रत्याशित त्रुटि हुई।';
-        if (error instanceof FirebaseError) {
-             switch (error.code) {
-                case 'auth/invalid-verification-code':
-                    description = 'अमान्य OTP। कृपया पुनः प्रयास करें।';
-                    break;
-                case 'auth/code-expired':
-                    description = 'OTP समाप्त हो गया है। कृपया एक नया अनुरोध करें।';
-                    break;
-                default:
-                    description = error.message;
-            }
-        }
-        toast({ variant: 'destructive', title: 'साइन अप विफल', description });
-    } finally {
-        setIsLoading(false);
     }
   };
 
@@ -144,40 +106,63 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {!confirmationResult ? (
-            <Form {...phoneForm}>
-                <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
-                <FormField control={phoneForm.control} name="phone" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>मोबाइल नंबर</FormLabel>
-                        <FormControl><Input type="tel" placeholder="98765 43210" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}/>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>भेजा जा रहा है...</> : 'OTP भेजें'}
-                </Button>
-                </form>
-            </Form>
-          ) : (
-            <Form {...otpForm}>
-                <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
-                <FormField control={otpForm.control} name="otp" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>OTP दर्ज करें</FormLabel>
-                        <FormControl><Input type="text" placeholder="••••••" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}/>
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>पुष्टि हो रही है...</> : 'साइन अप करें'}
-                </Button>
-                <Button variant="link" size="sm" className="w-full" onClick={() => setConfirmationResult(null)}>
-                    गलत नंबर? वापस जाएं
-                </Button>
-                </form>
-            </Form>
-          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>पूरा नाम</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="जैसे, मोहित कुमार"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ईमेल</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>पासवर्ड</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>अकाउंट बन रहा है...</> : 'अकाउंट बनाएं'}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <p className="text-sm text-muted-foreground">
