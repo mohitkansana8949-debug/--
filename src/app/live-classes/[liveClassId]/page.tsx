@@ -47,7 +47,17 @@ export default function LiveClassWatchPage() {
     );
   }
 
-  const showLiveChat = liveClass.liveChatId && isLive(liveClass.startTime);
+  const live = isLive(liveClass.startTime);
+  const showLiveChat = liveClass.liveChatId && live;
+  
+  // If it's a recorded class (i.e., not live), show full screen player
+  if (!live) {
+    return (
+        <div className="fixed inset-0 bg-black z-50 h-screen w-screen">
+            <VideoPlayer videoId={liveClass.youtubeVideoId} title={liveClass.teacherName} />
+        </div>
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col lg:flex-row h-screen w-screen p-0 gap-0">
