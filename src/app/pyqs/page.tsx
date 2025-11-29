@@ -119,7 +119,7 @@ export default function PYQsPage() {
                             <p className="text-lg font-bold">{item.isFree ? 'फ्री' : `₹${item.price}`}</p>
                             {item.isFree || item.isEnrolled ? (
                                 <Button asChild>
-                                    <Link href={`/pdf-viewer?url=${encodeURIComponent(item.pdfUrl)}`} target="_blank">देखें</Link>
+                                    <Link href={`/pdf-viewer?url=${encodeURIComponent(item.pdfUrl)}`}>देखें</Link>
                                 </Button>
                             ) : (
                                 <Button asChild>

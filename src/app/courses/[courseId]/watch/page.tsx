@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye } from 'lucide-react';
+import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -26,39 +26,29 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'video': return <Video className="h-5 w-5 shrink-0" />;
             case 'pdf': return <FileText className="h-5 w-5 shrink-0" />;
             case 'pyq': return <Newspaper className="h-5 w-5 shrink-0" />;
+            case 'test': return <ClipboardCheck className="h-5 w-5 shrink-0 text-blue-500" />;
             default: return <Book className="h-5 w-5 shrink-0" />;
         }
     };
-
-    const handleActionClick = () => {
-        let path = '#';
-        let openInNewTab = false;
-
-        switch (item.type) {
+    
+    const getActionPath = () => {
+         switch (item.type) {
             case 'youtube':
             case 'video':
                  const videoId = getYouTubeID(item.url);
                  if (videoId) {
-                    path = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
-                 } else {
-                    path = `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
+                    return `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
                  }
-                 break;
+                 return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
             case 'pdf':
             case 'pyq':
-                path = `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
-                openInNewTab = true;
-                break;
+                return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+            case 'test':
+                 return `/courses/test/${item.id}?courseId=${courseId}`;
+            default:
+                return '#';
         }
-
-        if (path !== '#') {
-            if (openInNewTab) {
-                window.open(path, '_blank');
-            } else {
-                router.push(path);
-            }
-        }
-    };
+    }
 
     const getActionText = () => {
         switch (item.type) {
@@ -68,6 +58,8 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'pdf':
             case 'pyq':
                 return 'View PDF';
+            case 'test':
+                return 'Start Test';
             default:
                 return 'View';
         }
@@ -81,6 +73,8 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'pdf':
             case 'pyq':
                 return <Eye className="h-4 w-4" />;
+            case 'test':
+                return <PlayCircle className="h-4 w-4" />;
             default:
                 return <Eye className="h-4 w-4" />;
         }
@@ -104,9 +98,11 @@ function ContentItem({ item, courseId }: ContentItemProps) {
                         )}
                     </div>
                 </div>
-                <Button size="sm" onClick={handleActionClick}>
-                    {getActionIcon()}
-                    <span className="ml-2">{getActionText()}</span>
+                <Button asChild size="sm">
+                   <Link href={getActionPath()}>
+                        {getActionIcon()}
+                        <span className="ml-2">{getActionText()}</span>
+                   </Link>
                 </Button>
             </CardContent>
         </Card>
@@ -128,6 +124,7 @@ export default function WatchCoursePage() {
   const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube' || item.type === 'video'), [courseContent]);
   const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf'), [courseContent]);
   const pyqs = useMemo(() => courseContent.filter(item => item.type === 'pyq'), [courseContent]);
+  const tests = useMemo(() => courseContent.filter(item => item.type === 'test'), [courseContent]);
   
   if (courseLoading) {
     return <div className="fixed inset-0 bg-background flex items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -158,10 +155,11 @@ export default function WatchCoursePage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="videos" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="videos">Videos ({videos.length})</TabsTrigger>
                     <TabsTrigger value="notes">Notes ({documents.length})</TabsTrigger>
                     <TabsTrigger value="pyqs">PYQs ({pyqs.length})</TabsTrigger>
+                    <TabsTrigger value="tests">Tests ({tests.length})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="videos" className="mt-4 space-y-3">
@@ -180,6 +178,12 @@ export default function WatchCoursePage() {
                     {pyqs.length > 0 ? pyqs.map((item: any) => (
                         <ContentItem key={item.id} item={item} courseId={courseId as string} />
                     )) : <p className="text-center text-muted-foreground p-8">No PYQs in this course.</p>}
+                </TabsContent>
+
+                <TabsContent value="tests" className="mt-4 space-y-3">
+                    {tests.length > 0 ? tests.map((item: any) => (
+                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
+                    )) : <p className="text-center text-muted-foreground p-8">No tests in this course.</p>}
                 </TabsContent>
             </Tabs>
         </CardContent>

@@ -111,7 +111,7 @@ export default function MyLibraryPage() {
             case 'pyq':
                 return `/pdf-viewer?url=${encodeURIComponent(item.url || '')}`;
             case 'test':
-                 return `/test-series/${item.id}`;
+                 return `/take-test/${item.id}`;
             default:
                 return '#';
         }
@@ -200,7 +200,7 @@ export default function MyLibraryPage() {
                                     <span className="font-semibold">Enrolled</span>
                                 </div>
                                 <Button asChild>
-                                    <Link href={getItemLink(item)} target={(item.type === 'ebook' || item.type === 'pyq') && item.url ? '_blank' : '_self'}>
+                                    <Link href={getItemLink(item)}>
                                         {item.type === 'course' ? 'पढ़ाई शुरू करें' : 'देखें'}
                                     </Link>
                                 </Button>

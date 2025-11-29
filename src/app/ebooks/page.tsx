@@ -119,7 +119,7 @@ export default function EbooksPage() {
                             <p className="text-lg font-bold">{ebook.isFree ? 'फ्री' : `₹${ebook.price}`}</p>
                             {ebook.isFree || ebook.isEnrolled ? (
                                 <Button asChild>
-                                    <Link href={`/pdf-viewer?url=${encodeURIComponent(ebook.pdfUrl)}`} target="_blank">पढ़ें</Link>
+                                    <Link href={`/pdf-viewer?url=${encodeURIComponent(ebook.pdfUrl)}`}>पढ़ें</Link>
                                 </Button>
                             ) : (
                                 <Button asChild>
