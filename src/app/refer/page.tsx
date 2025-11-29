@@ -46,7 +46,7 @@ export default function ReferAndEarnPage() {
         }
 
         setIsSharing(true);
-        const messageTemplate = appSettings?.referralMessage || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}';
+        const messageTemplate = appSettings?.message || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}';
         const message = messageTemplate.replace('{link}', referralLink);
         
         if (navigator.share) {
@@ -56,11 +56,10 @@ export default function ReferAndEarnPage() {
                     text: message,
                 });
             } catch (error: any) {
-                // Check if the error is a user cancellation
                 if (error.name !== 'AbortError') {
                     console.error('Error sharing:', error);
                 } else {
-                    toast({ title: 'Sharing was cancelled.' });
+                     toast({ title: 'Sharing was cancelled.' });
                 }
             }
         } else {
@@ -112,9 +111,9 @@ export default function ReferAndEarnPage() {
                     <CardDescription>Share your unique link with friends. For every friend that joins, you earn 10 points!</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 p-3 border rounded-md bg-muted min-w-0">
+                    <div className="flex items-center gap-2 p-3 border rounded-md bg-muted overflow-hidden">
                         <p className="text-sm font-mono text-muted-foreground flex-1 truncate">{referralLink}</p>
-                        <Button variant="ghost" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={copyToClipboard} className="shrink-0"><Copy className="h-4 w-4" /></Button>
                     </div>
                     <Button onClick={handleShare} className="w-full" disabled={isSharing || settingsLoading}>
                         {isSharing || settingsLoading ? <Loader className="animate-spin" /> : <Share2 className="mr-2" />}
@@ -129,6 +128,7 @@ export default function ReferAndEarnPage() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                    <p><span className="font-bold">1 friend joins</span> = 10 Points</p>
+                   <p><span className="font-bold">5 points</span> = New user signup bonus</p>
                    <p><span className="font-bold">200 Points</span> = 1 Free Test Series</p>
                    <Button className="mt-4 w-full" disabled>Redeem (Coming Soon)</Button>
                 </CardContent>
