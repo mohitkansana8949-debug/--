@@ -28,7 +28,7 @@ import { useFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
-import { doc, getDoc, writeBatch, collection } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, collection, runTransaction } from 'firebase/firestore';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
@@ -89,35 +89,48 @@ export default function SignupPage() {
         displayName: data.name,
       });
 
-      // Handle referral logic
-      if (data.referralCode) {
-          const batch = writeBatch(firestore);
-          
-          // 1. Create a referral record
-          const referralRef = doc(collection(firestore, 'referrals'));
-          batch.set(referralRef, {
-              referrerId: data.referralCode,
-              referredId: userCredential.user.uid,
-              referredName: data.name,
-              createdAt: new Date(),
-          });
+      // Handle referral and initial points logic in a transaction
+      await runTransaction(firestore, async (transaction) => {
+        const referredId = userCredential.user.uid;
+        
+        // 1. Give the new user 5 points for signing up
+        const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
+        transaction.set(newUserPointsRef, {
+          userId: referredId,
+          points: 5,
+        });
+        
+        // 2. If there's a referral code, handle the referrer's points and record the referral
+        if (data.referralCode) {
+            const referrerId = data.referralCode;
+            
+            // Create a referral record
+            const referralRef = doc(collection(firestore, 'referrals'));
+            transaction.set(referralRef, {
+                referrerId: referrerId,
+                referredId: referredId,
+                referredName: data.name,
+                createdAt: new Date(),
+            });
 
-          // 2. Award points to the referrer
-          const referrerPointsRef = doc(firestore, 'referralPoints', data.referralCode);
-          const pointsDoc = await getDoc(referrerPointsRef);
+            // Award points to the referrer
+            const referrerPointsRef = doc(firestore, 'referralPoints', referrerId);
+            const referrerPointsDoc = await transaction.get(referrerPointsRef);
 
-          if (pointsDoc.exists()) {
-              batch.update(referrerPointsRef, {
-                  points: (pointsDoc.data().points || 0) + 10,
-              });
-          } else {
-              batch.set(referrerPointsRef, {
-                  userId: data.referralCode,
-                  points: 10,
-              });
-          }
-          await batch.commit();
-      }
+            if (referrerPointsDoc.exists()) {
+                const currentPoints = referrerPointsDoc.data().points || 0;
+                transaction.update(referrerPointsRef, {
+                    points: currentPoints + 10,
+                });
+            } else {
+                transaction.set(referrerPointsRef, {
+                    userId: referrerId,
+                    points: 10,
+                });
+            }
+        }
+      });
+
 
       toast({
         title: 'अकाउंट बन गया',
@@ -134,6 +147,7 @@ export default function SignupPage() {
           description = 'साइन अप करने में विफल। कृपया अपनी जानकारी जांचें।';
         }
       }
+      console.error("Signup Error: ", error);
       toast({
         variant: 'destructive',
         title: 'साइन अप विफल',
@@ -160,7 +174,7 @@ export default function SignupPage() {
         <CardContent>
           {referrerName && (
               <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md text-center text-sm text-blue-800 dark:text-blue-200">
-                  You have been referred by <strong>{referrerName}</strong>.
+                  You have been referred by <strong>{referrerName}</strong>. You'll get 5 bonus points!
               </div>
           )}
           <Form {...form}>

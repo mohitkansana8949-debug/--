@@ -148,50 +148,55 @@
         "content"
       ]
     },
-    "CourseEnrollment": {
+    "Enrollment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CourseEnrollment",
+      "title": "Enrollment",
       "type": "object",
-      "description": "Represents a user's enrollment in a course.",
+      "description": "Represents a user's enrollment in a course, ebook, or test.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the course enrollment entity."
+          "description": "Unique identifier for the enrollment."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N CourseEnrollment)"
+          "description": "Reference to User."
         },
-        "courseId": {
+        "itemId": {
           "type": "string",
-          "description": "Reference to Course. (Relationship: Course 1:N CourseEnrollment)"
+          "description": "Reference to the Course, Ebook, or Test."
+        },
+        "itemType": {
+          "type": "string",
+          "description": "The type of item enrolled in.",
+          "enum": ["course", "ebook", "pyq", "test"]
         },
         "enrollmentDate": {
           "type": "string",
-          "description": "Date and time the user enrolled in the course.",
+          "description": "Date and time of enrollment.",
           "format": "date-time"
         },
         "paymentMethod": {
           "type": "string",
-          "description": "Payment method used for enrollment."
+          "description": "Payment method used."
         },
         "paymentTransactionId": {
           "type": "string",
           "description": "Transaction ID of the payment."
         },
-        "adminApproval": {
-          "type": "boolean",
-          "description": "Indicates if the enrollment is approved by the admin."
+        "status": {
+          "type": "string",
+          "description": "Status of the enrollment.",
+          "enum": ["pending", "approved", "rejected"]
         }
       },
       "required": [
         "id",
         "userId",
-        "courseId",
+        "itemId",
+        "itemType",
         "enrollmentDate",
-        "paymentMethod",
-        "paymentTransactionId",
-        "adminApproval"
+        "status"
       ]
     },
     "ChatMessage": {
@@ -430,7 +435,7 @@
         "definition": {
           "entityName": "Enrollment",
           "schema": {
-            "$ref": "#/backend/entities/CourseEnrollment"
+            "$ref": "#/backend/entities/Enrollment"
           },
           "description": "Stores enrollment information for courses, e-books, and PYQs. Includes denormalized 'userId' and 'itemId' for authorization independence.",
           "params": [
@@ -496,6 +501,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `CourseEnrollment` collection includes both `userId` and `courseId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/courseEnrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `Enrollment` collection includes both `userId` and `itemId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/enrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
   }
 }
