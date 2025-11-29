@@ -43,7 +43,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showControls, setShowControls] = useState(true);
-  const [errorOccurred, setErrorOccurred] = useState(false);
+  const [errorOccurred, setErrorOccurred] = useState<string | null>(null);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +96,17 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   
   const onPlayerError = (event: any) => {
     console.error("YouTube Player Error:", event.data);
-    setErrorOccurred(true);
+    let errorMessage = "The video may be private, removed, or unavailable.";
+    switch (event.data) {
+        case 101:
+        case 150:
+            errorMessage = "The video owner has disabled playback on other websites.";
+            break;
+        case 100:
+            errorMessage = "The video was not found.";
+            break;
+    }
+    setErrorOccurred(errorMessage);
   };
 
 
@@ -203,7 +213,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
        <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
           <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
           <h2 className="text-2xl font-bold">Could Not Load Video</h2>
-          <p className="text-muted-foreground">{!videoUrl ? 'The video link is missing.' : 'The video may be private, removed, or unavailable.'}</p>
+          <p className="text-muted-foreground">{!videoUrl ? 'The video link is missing.' : errorOccurred}</p>
           <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
              <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
           </Button>
