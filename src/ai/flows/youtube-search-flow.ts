@@ -44,22 +44,46 @@ async function searchYouTube(query: string, channelId: string | null) {
   let channels: z.infer<typeof ChannelSchema>[] = [];
   let videos: z.infer<typeof VideoSchema>[] = [];
 
-  // If a channelId is provided, we primarily search for videos within that channel.
+  // If a channelId is provided, we fetch all videos from that channel's uploads playlist.
   if (channelId) {
-     const videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&channelId=${channelId}&type=video&maxResults=50&key=${youtubeApiKey}`;
-     const videoSearchResponse = await fetch(videoSearchUrl);
-     const videoSearchData = await videoSearchResponse.json();
+     // First, get the channel's uploads playlist ID
+     const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&id=${channelId}&key=${youtubeApiKey}`;
+     const channelDetailsResponse = await fetch(channelDetailsUrl);
+     const channelDetailsData = await channelDetailsResponse.json();
 
-     if (videoSearchData.error) {
-        console.error('YouTube Video API Error:', videoSearchData.error);
-        throw new Error(videoSearchData.error.message);
+     if (channelDetailsData.error || !channelDetailsData.items || channelDetailsData.items.length === 0) {
+        console.error('YouTube Channel Details API Error:', channelDetailsData.error);
+        throw new Error(channelDetailsData.error?.message || 'Could not find channel details.');
      }
-     videos = videoSearchData.items.map((item: any) => ({
-        videoId: item.id.videoId,
+     
+     const uploadsPlaylistId = channelDetailsData.items[0].contentDetails.relatedPlaylists.uploads;
+     const channelTitle = channelDetailsData.items[0].snippet.title;
+
+     // Now, fetch all videos from that playlist
+     let allVideos: any[] = [];
+     let nextPageToken = '';
+     do {
+        const playlistItemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&pageToken=${nextPageToken}&key=${youtubeApiKey}`;
+        const playlistItemsResponse = await fetch(playlistItemsUrl);
+        const playlistItemsData = await playlistItemsResponse.json();
+        
+        if (playlistItemsData.error) {
+           console.error('YouTube PlaylistItems API Error:', playlistItemsData.error);
+           throw new Error(playlistItemsData.error.message);
+        }
+        
+        allVideos = allVideos.concat(playlistItemsData.items);
+        nextPageToken = playlistItemsData.nextPageToken;
+
+     } while (nextPageToken);
+
+
+     videos = allVideos.map((item: any) => ({
+        videoId: item.snippet.resourceId.videoId,
         title: item.snippet.title,
         description: item.snippet.description,
         thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-        channelTitle: item.snippet.channelTitle,
+        channelTitle: channelTitle, // Use the fetched channel title
         channelId: item.snippet.channelId,
      }));
 

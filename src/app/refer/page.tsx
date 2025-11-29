@@ -27,11 +27,16 @@ export default function ReferAndEarnPage() {
         }
     }, [appSettings]);
     
-    const referralLink = `${appUrl}/signup?ref=${user?.uid || ''}`;
+    const referralLink = user ? `${appUrl}/signup?ref=${user.uid}` : '';
 
     const handleShare = async () => {
+        if (!referralLink) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not generate referral link. Are you logged in?' });
+            return;
+        }
+
         setIsSharing(true);
-        const messageTemplate = appSettings?.referralMessage || 'Check out this cool app! Use my link to join: {link}';
+        const messageTemplate = appSettings?.referralMessage || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}';
         const message = messageTemplate.replace('{link}', referralLink);
         
         if (navigator.share) {
@@ -40,8 +45,13 @@ export default function ReferAndEarnPage() {
                     title: 'Refer a Friend to Quickly Study',
                     text: message,
                 });
-            } catch (error) {
-                console.error('Error sharing:', error);
+            } catch (error: any) {
+                // Check if the error is a user cancellation
+                if (error.name !== 'AbortError') {
+                    console.error('Error sharing:', error);
+                } else {
+                    toast({ title: 'Sharing was cancelled.' });
+                }
             }
         } else {
             // Fallback for browsers that don't support sharing API (like desktop)
@@ -52,6 +62,10 @@ export default function ReferAndEarnPage() {
     };
 
     const copyToClipboard = () => {
+        if (!referralLink) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not generate referral link.' });
+            return;
+        }
         navigator.clipboard.writeText(referralLink).then(() => {
             toast({ title: 'Link Copied!' });
         }).catch(() => {
@@ -60,7 +74,7 @@ export default function ReferAndEarnPage() {
     };
 
     return (
-        <div className="container mx-auto p-4 space-y-6 max-w-4xl">
+        <div className="container mx-auto p-4 space-y-6 max-w-2xl">
             <div>
                 <h1 className="text-3xl font-bold flex items-center gap-2"><Trophy className="h-8 w-8 text-yellow-500" /> Refer &amp; Earn</h1>
                 <p className="text-muted-foreground">Invite friends and earn rewards!</p>
@@ -88,7 +102,7 @@ export default function ReferAndEarnPage() {
                     <CardDescription>Share your unique link with friends. For every friend that joins, you earn 10 points!</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 p-3 border rounded-md bg-muted">
+                    <div className="flex items-center gap-2 p-3 border rounded-md bg-muted min-w-0">
                         <p className="text-sm font-mono text-muted-foreground flex-1 truncate">{referralLink}</p>
                         <Button variant="ghost" size="icon" onClick={copyToClipboard}><Copy className="h-4 w-4" /></Button>
                     </div>

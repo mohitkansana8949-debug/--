@@ -75,7 +75,7 @@ export default function LoginPage() {
         if (commonErrorCodes.includes(error.code)) {
           description = 'अमान्य ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।';
         } else {
-          description = error.message;
+          description = 'लॉगिन करने में विफल। कृपया अपनी जानकारी जांचें।';
         }
       }
       toast({

@@ -8,6 +8,7 @@ import { Loader, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { getYouTubeID } from '@/lib/youtube';
 
 export default function ChannelVideosPage() {
     const { channelId } = useParams();
@@ -22,14 +23,16 @@ export default function ChannelVideosPage() {
             setIsLoading(true);
             setError(null);
             try {
-                // To get all videos from a channel, we need to use a different endpoint or a search query.
-                // A common trick is to search for "*" within a specific channel.
-                // However, the current flow searches globally. We will need a new flow or modify the existing one.
-                // For now, let's adapt by just searching for the channel's content.
                 const results = await youtubeSearchFlow({ query: '', channelId: channelId });
                 setVideos(results.videos);
                 if (results.videos.length > 0) {
                     setChannelTitle(results.videos[0].channelTitle);
+                } else {
+                    // Fallback to fetch channel title if no videos are found
+                    const channelInfo = await youtubeSearchFlow({ query: channelId, channelId: null });
+                     if (channelInfo.channels.length > 0) {
+                        setChannelTitle(channelInfo.channels[0].title);
+                    }
                 }
             } catch (err: any) {
                 setError(err.message || "Failed to fetch videos.");
@@ -61,23 +64,28 @@ export default function ChannelVideosPage() {
                 <p className="text-destructive text-center">{error}</p>
             ) : videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {videos.map(video => (
-                        <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
-                            <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full">
-                                <div className="relative w-full aspect-video">
-                                    <Image
-                                        src={video.thumbnailUrl}
-                                        alt={video.title}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                                <CardHeader>
-                                    <CardTitle className="text-base line-clamp-2 h-12">{video.title}</CardTitle>
-                                </CardHeader>
-                            </Card>
-                        </Link>
-                    ))}
+                    {videos.map(video => {
+                        const videoId = getYouTubeID(video.videoId); // Ensure we have a clean ID
+                        if (!videoId) return null;
+                        
+                        return (
+                            <Link href={`/courses/watch/${videoId}?chatId=${video.channelId}`} key={video.videoId}>
+                                <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full">
+                                    <div className="relative w-full aspect-video">
+                                        <Image
+                                            src={video.thumbnailUrl}
+                                            alt={video.title}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <CardHeader>
+                                        <CardTitle className="text-base line-clamp-2 h-12">{video.title}</CardTitle>
+                                    </CardHeader>
+                                </Card>
+                            </Link>
+                        );
+                    })}
                 </div>
             ) : (
                 <p className="text-muted-foreground text-center mt-16">No videos found for this channel.</p>
