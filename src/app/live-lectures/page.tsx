@@ -1,16 +1,18 @@
+
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import Image from 'next/image';
 import { Loader, Clapperboard, Badge } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hi } from 'date-fns/locale';
+import { useRouter } from 'next/navigation';
 
 export default function LiveLecturesPage() {
     const firestore = useFirestore();
+    const router = useRouter();
 
     const lecturesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
@@ -18,6 +20,10 @@ export default function LiveLecturesPage() {
     }, [firestore]);
 
     const { data: lectures, isLoading } = useCollection(lecturesQuery);
+    
+    const handleLectureClick = (lecture: any) => {
+        router.push(`/live-lectures/${lecture.videoId}?chatId=${lecture.id}`);
+    }
 
     return (
         <div className="w-full">
@@ -40,35 +46,33 @@ export default function LiveLecturesPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {lectures?.map(lecture => (
-                    <Link href={`/live-lectures/${lecture.videoId}?chatId=${lecture.id}`} key={lecture.id}>
-                        <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
-                            <div className="relative w-full aspect-video">
-                                <Image 
-                                    src={lecture.thumbnailUrl} 
-                                    alt={lecture.title} 
-                                    fill
-                                    className="object-cover"
-                                />
-                                {lecture.isLive && (
-                                   <div className="absolute top-2 left-2 flex items-center text-xs text-white font-bold bg-red-600 px-2 py-1 rounded-md">
-                                        <span className="relative flex h-2 w-2 mr-2">
-                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                        </span>
-                                        LIVE
-                                   </div>
-                                )}
-                            </div>
-                            <CardHeader>
-                                <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{lecture.title}</CardTitle>
-                                {lecture.createdAt && (
-                                    <CardDescription className="text-xs">
-                                        {formatDistanceToNow(lecture.createdAt.toDate(), { addSuffix: true, locale: hi })}
-                                    </CardDescription>
-                                )}
-                            </CardHeader>
-                        </Card>
-                    </Link>
+                    <Card key={lecture.id} onClick={() => handleLectureClick(lecture)} className="cursor-pointer overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
+                        <div className="relative w-full aspect-video">
+                            <Image 
+                                src={lecture.thumbnailUrl} 
+                                alt={lecture.title} 
+                                fill
+                                className="object-cover"
+                            />
+                            {lecture.isLive && (
+                               <div className="absolute top-2 left-2 flex items-center text-xs text-white font-bold bg-red-600 px-2 py-1 rounded-md">
+                                    <span className="relative flex h-2 w-2 mr-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                    </span>
+                                    LIVE
+                               </div>
+                            )}
+                        </div>
+                        <CardHeader>
+                            <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{lecture.title}</CardTitle>
+                            {lecture.createdAt && (
+                                <CardDescription className="text-xs">
+                                    {formatDistanceToNow(lecture.createdAt.toDate(), { addSuffix: true, locale: hi })}
+                                </CardDescription>
+                            )}
+                        </CardHeader>
+                    </Card>
                 ))}
             </div>
         </div>

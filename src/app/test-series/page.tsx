@@ -8,6 +8,7 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, Timer, Newspaper } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useRouter } from 'next/navigation';
 
 type TestSeries = {
     id: string;
@@ -22,6 +23,7 @@ type TestSeries = {
 export default function TestSeriesPage() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
     const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
     const [tests, setTests] = useState<TestSeries[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +82,14 @@ export default function TestSeriesPage() {
         checkEnrollments();
     }, [checkEnrollments]);
     
+    const handleActionClick = (path: string, openInNewTab: boolean) => {
+        if (openInNewTab) {
+            window.open(path, '_blank');
+        } else {
+            router.push(path);
+        }
+    }
+
     const renderTests = (items: TestSeries[] | null, loading: boolean) => {
         if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -106,12 +116,12 @@ export default function TestSeriesPage() {
                                 <p className='text-sm text-muted-foreground flex items-center'><Timer className="mr-1 h-4 w-4"/>{test.duration} mins</p>
                             </div>
                            {test.isFree || test.isEnrolled ? (
-                                <Button asChild>
-                                    <Link href={`/test-series/${test.id}`} target="_blank">टेस्ट दें</Link>
+                                <Button onClick={() => handleActionClick(`/test-series/${test.id}`, true)}>
+                                    टेस्ट दें
                                 </Button>
                             ) : (
-                                <Button asChild>
-                                    <Link href={`/payment?itemId=${test.id}&itemType=test`}>अभी खरीदें</Link>
+                                <Button onClick={() => handleActionClick(`/payment?itemId=${test.id}&itemType=test`, false)}>
+                                    अभी खरीदें
                                 </Button>
                             )}
                         </CardContent>

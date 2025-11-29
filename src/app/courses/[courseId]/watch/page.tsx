@@ -1,16 +1,16 @@
 
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 
 type ContentItemProps = { 
   item: any; 
@@ -18,6 +18,8 @@ type ContentItemProps = {
 };
 
 function ContentItem({ item, courseId }: ContentItemProps) {
+    const router = useRouter();
+
     const getIcon = () => {
         switch(item.type) {
             case 'youtube': return <Youtube className="h-5 w-5 shrink-0 text-red-500" />;
@@ -28,24 +30,38 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             default: return <Book className="h-5 w-5 shrink-0" />;
         }
     };
-    
-    const getActionLink = () => {
+
+    const handleActionClick = () => {
+        let path = '#';
+        let openInNewTab = false;
+
         switch (item.type) {
             case 'youtube':
             case 'video':
                  const videoId = getYouTubeID(item.url);
                  if (videoId) {
-                    return `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+                    path = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+                 } else {
+                    path = `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
                  }
-                 return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
+                 break;
             case 'pdf':
             case 'pyq':
-                return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+                path = `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+                openInNewTab = true;
+                break;
             case 'test':
-                 // This link will navigate to the specific test-taking page for a course test
-                 return `/courses/test/${item.id}?courseId=${courseId}`;
-            default:
-                return '#';
+                 path = `/courses/test/${item.id}?courseId=${courseId}`;
+                 openInNewTab = true; // Open tests in a new tab to avoid disrupting the main app flow
+                 break;
+        }
+
+        if (path !== '#') {
+            if (openInNewTab) {
+                window.open(path, '_blank');
+            } else {
+                router.push(path);
+            }
         }
     };
 
@@ -79,9 +95,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
         }
     };
 
-    const isExternalLink = item.type === 'pdf' || item.type === 'pyq' || item.type === 'test';
-
-
     return (
          <Card>
             <CardContent className="p-3 flex gap-3 items-center justify-between">
@@ -100,11 +113,9 @@ function ContentItem({ item, courseId }: ContentItemProps) {
                         )}
                     </div>
                 </div>
-                <Button asChild size="sm">
-                    <Link href={getActionLink()} target={isExternalLink ? "_blank" : "_self"}>
-                        {getActionIcon()}
-                        <span className="ml-2">{getActionText()}</span>
-                    </Link>
+                <Button size="sm" onClick={handleActionClick}>
+                    {getActionIcon()}
+                    <span className="ml-2">{getActionText()}</span>
                 </Button>
             </CardContent>
         </Card>
