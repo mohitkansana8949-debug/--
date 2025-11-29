@@ -6,7 +6,6 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, Timer, Newspaper } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -23,21 +22,13 @@ type TestSeries = {
 export default function TestSeriesPage() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const router = useRouter();
-    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
     const [tests, setTests] = useState<TestSeries[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const testsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        let q = query(collection(firestore, 'tests'), orderBy('createdAt', 'desc'));
-        if (filter === 'free') {
-            q = query(q, where('isFree', '==', true));
-        } else if (filter === 'paid') {
-            q = query(q, where('isFree', '==', false));
-        }
-        return q;
-    }, [firestore, filter]);
+        return query(collection(firestore, 'tests'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
 
     const { data: rawTests, isLoading: testsLoading } = useCollection(testsQuery);
 
@@ -130,14 +121,6 @@ export default function TestSeriesPage() {
                 <p className="text-muted-foreground">
                     हमारी टेस्ट सीरीज के साथ अपनी तैयारी को परखें।
                 </p>
-            </div>
-            
-            <div className="flex justify-center mb-6">
-                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
-                    <ToggleGroupItem value="all">All</ToggleGroupItem>
-                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
-                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
-                </ToggleGroup>
             </div>
 
             {renderTests(tests, isLoading)}
