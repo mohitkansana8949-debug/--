@@ -3,16 +3,21 @@
 
 import { useParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, ClipboardCheck, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
+import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
-function ContentItem({ item, courseId }: { item: any, courseId: string }) {
+type ContentItemProps = { 
+  item: any; 
+  courseId: string;
+};
+
+function ContentItem({ item, courseId }: ContentItemProps) {
     const getIcon = () => {
         switch(item.type) {
             case 'youtube': return <Youtube className="h-5 w-5 shrink-0 text-red-500" />;
@@ -23,34 +28,62 @@ function ContentItem({ item, courseId }: { item: any, courseId: string }) {
             default: return <Book className="h-5 w-5 shrink-0" />;
         }
     };
+    
+    const getActionLink = () => {
+        switch (item.type) {
+            case 'youtube':
+            case 'video':
+                 const videoId = getYouTubeID(item.url);
+                 if (videoId) {
+                    return `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+                 }
+                 return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
+            case 'pdf':
+            case 'pyq':
+                return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+            case 'test':
+                 // This link will navigate to the specific test-taking page for a course test
+                 return `/courses/test/${item.id}?courseId=${courseId}`;
+            default:
+                return '#';
+        }
+    };
 
-    const getLink = () => {
-        if (item.type === 'pdf' || item.type === 'pyq') {
-            return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+    const getActionText = () => {
+        switch (item.type) {
+            case 'youtube':
+            case 'video':
+                return 'Play Video';
+            case 'pdf':
+            case 'pyq':
+                return 'View PDF';
+            case 'test':
+                return 'Start Test';
+            default:
+                return 'View';
         }
-        if (item.type === 'test') {
-            const testId = item.id; // Assuming the test ID is stored in the content item itself
-            return `/test-series/${testId}`;
-        }
-        const videoId = getYouTubeID(item.url);
-        if (videoId) {
-             const url = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
-             return url;
-        }
-        return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
     };
     
-     const getTarget = () => {
-        if (item.type === 'pdf' || item.type === 'pyq') return '_blank';
-        if (item.type === 'test') return '_blank'; // Open test in new tab
-        return '_self';
-    }
+     const getActionIcon = () => {
+        switch (item.type) {
+            case 'youtube':
+            case 'video':
+                return <PlayCircle className="h-4 w-4" />;
+            case 'pdf':
+            case 'pyq':
+                return <Eye className="h-4 w-4" />;
+            case 'test':
+                return <PlayCircle className="h-4 w-4" />;
+            default:
+                return <Eye className="h-4 w-4" />;
+        }
+    };
 
 
     return (
-         <Link href={getLink()} target={getTarget()}>
-            <Card className="cursor-pointer hover:bg-muted">
-                <CardContent className="p-3 flex gap-3 items-center">
+         <Card>
+            <CardContent className="p-3 flex gap-3 items-center justify-between">
+                <div className="flex gap-3 items-center flex-1 min-w-0">
                     {getIcon()}
                     <div className="flex-1">
                         <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
@@ -64,9 +97,15 @@ function ContentItem({ item, courseId }: { item: any, courseId: string }) {
                            </div>
                         )}
                     </div>
-                </CardContent>
-            </Card>
-        </Link>
+                </div>
+                <Button asChild size="sm">
+                    <Link href={getActionLink()}>
+                        {getActionIcon()}
+                        <span className="ml-2">{getActionText()}</span>
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -83,7 +122,8 @@ export default function WatchCoursePage() {
   const courseContent = useMemo(() => (course?.content && Array.isArray(course.content)) ? course.content : [], [course]);
 
   const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube' || item.type === 'video'), [courseContent]);
-  const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf' || item.type === 'pyq'), [courseContent]);
+  const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf'), [courseContent]);
+  const pyqs = useMemo(() => courseContent.filter(item => item.type === 'pyq'), [courseContent]);
   const tests = useMemo(() => courseContent.filter(item => item.type === 'test'), [courseContent]);
 
   if (courseLoading) {
@@ -115,9 +155,10 @@ export default function WatchCoursePage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="videos" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                     <TabsTrigger value="videos">Videos ({videos.length})</TabsTrigger>
-                    <TabsTrigger value="notes">PDF & Notes ({documents.length})</TabsTrigger>
+                    <TabsTrigger value="notes">Notes ({documents.length})</TabsTrigger>
+                    <TabsTrigger value="pyqs">PYQs ({pyqs.length})</TabsTrigger>
                     <TabsTrigger value="tests">Tests ({tests.length})</TabsTrigger>
                 </TabsList>
 
@@ -131,6 +172,12 @@ export default function WatchCoursePage() {
                     {documents.length > 0 ? documents.map((item: any) => (
                         <ContentItem key={item.id} item={item} courseId={courseId as string} />
                     )) : <p className="text-center text-muted-foreground p-8">No documents in this course.</p>}
+                </TabsContent>
+                
+                 <TabsContent value="pyqs" className="mt-4 space-y-3">
+                    {pyqs.length > 0 ? pyqs.map((item: any) => (
+                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
+                    )) : <p className="text-center text-muted-foreground p-8">No PYQs in this course.</p>}
                 </TabsContent>
 
                 <TabsContent value="tests" className="mt-4 space-y-3">
