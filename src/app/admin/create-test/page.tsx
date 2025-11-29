@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -28,11 +27,11 @@ const testSchema = z.object({
   questions: z.string().min(1, 'कृपया JSON प्रारूप में प्रश्न दर्ज करें।').refine(val => {
     try {
       const parsed = JSON.parse(val);
-      return Array.isArray(parsed);
+      return Array.isArray(parsed) && parsed.length > 0;
     } catch {
       return false;
     }
-  }, { message: 'JSON अमान्य है या यह एक ऐरे (array) नहीं है।' }),
+  }, { message: 'JSON अमान्य है या यह एक खाली ऐरे (array) है।' }),
 });
 
 type TestFormValues = z.infer<typeof testSchema>;
