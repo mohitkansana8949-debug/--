@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
@@ -12,11 +11,12 @@ import { AppHeader } from '@/components/layout/app-header';
 
 const PUBLIC_PATHS = ['/login', '/signup'];
 const NO_LAYOUT_PATHS = ['/login', '/signup', '/complete-profile'];
-const FULL_SCREEN_PATHS = ['/courses/watch/', '/pdf-viewer', '/youtube/'];
+const FULL_SCREEN_PATHS = ['/courses/watch/', '/live-lectures', '/pdf-viewer', '/youtube/'];
 const PROFILE_COMPLETE_PATH = '/complete-profile';
 
 const shouldShowLayout = (pathname: string) => {
     if (NO_LAYOUT_PATHS.includes(pathname)) return false;
+    // Check with startsWith for dynamic paths
     if (FULL_SCREEN_PATHS.some(p => pathname.startsWith(p))) return false;
     return true;
 }
@@ -43,7 +43,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       try {
         const userDocRef = doc(firestore, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data().name) {
+        if (userDoc.exists() && userDoc.data().profileComplete === true) {
           setIsProfileComplete(true);
         } else {
           setIsProfileComplete(false);
@@ -57,7 +57,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     };
 
     checkUserProfile();
-  }, [user, isUserLoading, firestore]);
+  }, [user, isUserLoading, firestore, pathname]); // Rerun on pathname change too
 
   useEffect(() => {
     const isLoading = isUserLoading || isCheckingProfile;
@@ -121,5 +121,3 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Render children only when all checks pass and no redirection is needed
   return <>{children}</>;
 }
-
-    

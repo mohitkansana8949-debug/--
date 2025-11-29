@@ -16,6 +16,7 @@ import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const lectureSchema = z.object({
   youtubeUrl: z.string().url('Please enter a valid YouTube URL.'),
@@ -44,6 +45,7 @@ export default function AddLiveLecturePage() {
   });
 
   const youtubeUrl = useWatch({ control: form.control, name: 'youtubeUrl' });
+  const youtubeApiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
 
   const handleFetchDetails = async () => {
     if (!youtubeUrl) {
@@ -56,26 +58,35 @@ export default function AddLiveLecturePage() {
       return;
     }
 
+    if (!youtubeApiKey) {
+      toast({ variant: 'destructive', title: 'API Key Missing', description: 'YouTube API key is not configured.' });
+      console.error("YOUTUBE_API_KEY is not set in environment variables.");
+      return;
+    }
+
     setIsFetching(true);
     setFetchedDetails(null);
     try {
-      // In a real app, you'd call a server-side function to fetch this to not expose API keys
-      // For now, we'll simulate it, knowing that fetching oEmbed is generally safe client-side.
-      const oembedUrl = `https://www.youtube.com/oembed?url=http://www.youtube.com/watch?v=${videoId}&format=json`;
-      const response = await fetch(oembedUrl);
-      if (!response.ok) throw new Error('Failed to fetch video details.');
+      const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtubeApiKey}`;
+      const response = await fetch(detailsUrl);
+      if (!response.ok) throw new Error('Failed to fetch video details from YouTube API.');
       
       const data = await response.json();
-      
-      setFetchedDetails({
-          title: data.title,
-          thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, // Use high-quality default thumbnail
-          videoId: videoId
-      });
 
-    } catch (error) {
+      if (data.items && data.items.length > 0) {
+        const snippet = data.items[0].snippet;
+        setFetchedDetails({
+            title: snippet.title,
+            thumbnailUrl: snippet.thumbnails.high?.url || snippet.thumbnails.default.url,
+            videoId: videoId
+        });
+      } else {
+        throw new Error('Video not found on YouTube.');
+      }
+
+    } catch (error: any) {
         console.error("Fetch error:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch video details. Please check the URL and try again.' });
+        toast({ variant: 'destructive', title: 'Error', description: error.message || 'Could not fetch video details. Please check the URL and try again.' });
     } finally {
         setIsFetching(false);
     }

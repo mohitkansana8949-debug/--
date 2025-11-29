@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -124,7 +123,7 @@ export default function CompleteProfilePage() {
         description: 'आपकी प्रोफ़ाइल सफलतापूर्वक अपडेट हो गई है।',
       });
       
-      router.replace('/');
+      router.push('/'); // Redirect after successful save
 
     } catch (error) {
       console.error("Profile update error:", error);

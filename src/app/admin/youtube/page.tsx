@@ -5,8 +5,8 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader, PlusCircle, Trash2, Youtube } from 'lucide-react';
-import { youtubeSearchFlow, type SearchOutput } from '@/ai/flows/youtube-search-flow';
+import { Loader, PlusCircle, Trash2 } from 'lucide-react';
+import { youtubeSearchFlow } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,16 +16,8 @@ export type SavedChannel = {
   thumbnailUrl: string;
 };
 
-const DEFAULT_CHANNELS: SavedChannel[] = [
-    {
-        channelId: 'UCY_25Yg1zIX1bVayr4Mh4FA',
-        title: 'Quickly Study',
-        thumbnailUrl: 'https://yt3.ggpht.com/h5G-237G2DQx-sZ-bS0GAvTTb9I_4a5KNP5-oN2B2I8-5hMXQ-w1L3fnrWk86xRPAeS3Y_R7=s176-c-k-c0x00ffffff-no-rj'
-    }
-];
-
 export default function ManageYoutubePage() {
-    const [savedChannels, setSavedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', DEFAULT_CHANNELS);
+    const [savedChannels, setSavedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', []);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
