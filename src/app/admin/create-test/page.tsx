@@ -27,12 +27,12 @@ const testSchema = z.object({
   isFree: z.boolean().default(false),
   questions: z.string().min(1, 'कृपया JSON प्रारूप में प्रश्न दर्ज करें।').refine(val => {
     try {
-      JSON.parse(val);
-      return true;
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed);
     } catch {
       return false;
     }
-  }, { message: 'JSON अमान्य है।' }),
+  }, { message: 'JSON अमान्य है या यह एक ऐरे (array) नहीं है।' }),
 });
 
 type TestFormValues = z.infer<typeof testSchema>;
@@ -47,6 +47,16 @@ const jsonExample = `[
       "चेन्नई"
     ],
     "answer": "नई दिल्ली"
+  },
+  {
+    "question": "सूर्य किस दिशा में उगता है?",
+    "options": [
+      "पूर्व",
+      "पश्चिम",
+      "उत्तर",
+      "दक्षिण"
+    ],
+    "answer": "पूर्व"
   }
 ]`;
 
@@ -77,7 +87,7 @@ export default function CreateTestPage() {
         name: values.name,
         description: values.description,
         duration: values.duration,
-        price: values.price,
+        price: values.isFree ? 0 : values.price,
         isFree: values.isFree,
         questions: JSON.parse(values.questions),
         createdAt: serverTimestamp(),

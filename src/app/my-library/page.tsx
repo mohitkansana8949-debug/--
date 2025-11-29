@@ -2,13 +2,14 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BookOpen, Loader, ShieldCheck, AlertCircle, FileQuestion, Newspaper, Book as EbookIcon } from "lucide-react";
+import { BookOpen, Loader, ShieldCheck, FileQuestion, Newspaper, Book as EbookIcon } from "lucide-react";
 import { useUser, useCollection, useMemoFirebase, useFirestore } from '@/firebase';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type EnrolledItem = {
     id: string; // This is the item's ID (courseId, ebookId, etc.)
@@ -24,10 +25,11 @@ export default function MyLibraryPage() {
     const firestore = useFirestore();
     const [enrolledItems, setEnrolledItems] = useState<EnrolledItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'course' | 'ebook' | 'pyq' | 'test'>('all');
 
     const enrollmentsQuery = useMemoFirebase(
         () => (user && firestore ? query(
-            collection(firestore, 'enrollments'), // Corrected to 'enrollments'
+            collection(firestore, 'enrollments'),
             where('userId', '==', user.uid),
             where('status', '==', 'approved')
         ) : null),
@@ -95,6 +97,11 @@ export default function MyLibraryPage() {
     }, [enrollments, enrollmentsLoading, fetchItemDetails]);
 
     const finalLoading = isUserLoading || isLoading;
+    
+    const filteredItems = filter === 'all' 
+        ? enrolledItems 
+        : enrolledItems.filter(item => item.type === filter);
+
 
     const getItemLink = (item: EnrolledItem) => {
         switch(item.type) {
@@ -128,6 +135,16 @@ export default function MyLibraryPage() {
                     आपके द्वारा एनरोल किए गए सभी आइटम्स।
                 </p>
             </div>
+            
+            <div className="flex justify-center mb-6">
+                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
+                    <ToggleGroupItem value="all">All</ToggleGroupItem>
+                    <ToggleGroupItem value="course">Courses</ToggleGroupItem>
+                    <ToggleGroupItem value="ebook">E-books</ToggleGroupItem>
+                    <ToggleGroupItem value="pyq">PYQs</ToggleGroupItem>
+                    <ToggleGroupItem value="test">Tests</ToggleGroupItem>
+                </ToggleGroup>
+            </div>
 
             {finalLoading && (
                 <div className="flex flex-col items-center justify-center text-center p-12">
@@ -136,12 +153,19 @@ export default function MyLibraryPage() {
                 </div>
             )}
 
-            {!finalLoading && enrolledItems.length === 0 && (
+            {!finalLoading && filteredItems.length === 0 && (
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-12">
                         <BookOpen className="h-12 w-12 mb-4" />
-                        <h3 className="text-xl font-semibold">आपकी लाइब्रेरी खाली है</h3>
-                        <p>आपने अभी तक किसी भी आइटम में एनरोल नहीं किया है।</p>
+                        <h3 className="text-xl font-semibold">
+                            {filter === 'all' ? 'आपकी लाइब्रेरी खाली है' : `No ${filter}s found`}
+                        </h3>
+                        <p>
+                            {filter === 'all' 
+                                ? 'आपने अभी तक किसी भी आइटम में एनरोल नहीं किया है।' 
+                                : `आपने अभी तक किसी ${filter} में एनरोल नहीं किया है।`
+                            }
+                        </p>
                         <Button asChild className="mt-4">
                             <Link href="/courses">कोर्सेस देखें</Link>
                         </Button>
@@ -149,9 +173,9 @@ export default function MyLibraryPage() {
                 </Card>
             )}
 
-            {!finalLoading && enrolledItems.length > 0 && (
+            {!finalLoading && filteredItems.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {enrolledItems.map(item => (
+                    {filteredItems.map(item => (
                         <Card key={`${item.type}-${item.id}`} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                            {item.thumbnailUrl ? (
                              <Image 
@@ -176,7 +200,7 @@ export default function MyLibraryPage() {
                                     <span className="font-semibold">Enrolled</span>
                                 </div>
                                 <Button asChild>
-                                    <Link href={getItemLink(item)} target={item.type === 'ebook' || item.type === 'pyq' ? '_blank' : '_self'}>
+                                    <Link href={getItemLink(item)} target={(item.type === 'ebook' || item.type === 'pyq') && item.url ? '_blank' : '_self'}>
                                         {item.type === 'course' ? 'पढ़ाई शुरू करें' : 'देखें'}
                                     </Link>
                                 </Button>

@@ -110,7 +110,9 @@ export default function EditCourseContentPage() {
                 return;
             }
             contentData.url = pyq.pdfUrl;
-            // The title from input field is used, no need to set pyq.name as title
+            contentData.name = pyq.name;
+            contentData.price = pyq.price;
+            contentData.isFree = pyq.isFree;
             break;
         default:
             toast({ variant: 'destructive', title: 'अमान्य प्रकार' });

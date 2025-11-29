@@ -3,28 +3,86 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import { Loader, BookOpen } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+type Ebook = {
+    id: string;
+    name: string;
+    description: string;
+    thumbnailUrl?: string;
+    isFree: boolean;
+    price: number;
+    pdfUrl: string;
+    isEnrolled?: boolean;
+};
+
 export default function EbooksPage() {
+    const { user } = useUser();
     const firestore = useFirestore();
     const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+    const [ebooks, setEbooks] = useState<Ebook[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const ebooksQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        const baseQuery = query(collection(firestore, 'ebooks'), orderBy('createdAt', 'desc'));
-        if (filter === 'free') return query(collection(firestore, 'ebooks'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
-        if (filter === 'paid') return query(collection(firestore, 'ebooks'), where('isFree', '==', false), orderBy('createdAt', 'desc'));
-        return baseQuery;
+        let q = query(collection(firestore, 'ebooks'), orderBy('createdAt', 'desc'));
+        if (filter === 'free') {
+            q = query(q, where('isFree', '==', true));
+        } else if (filter === 'paid') {
+            q = query(q, where('isFree', '==', false));
+        }
+        return q;
     }, [firestore, filter]);
 
-    const { data: ebooks, isLoading } = useCollection(ebooksQuery);
+    const { data: rawEbooks, isLoading: ebooksLoading } = useCollection(ebooksQuery);
 
-    const renderEbooks = (items: any[] | null, loading: boolean) => {
+    const checkEnrollments = useCallback(async () => {
+        if (!rawEbooks || !user || !firestore) {
+             if (rawEbooks) {
+                setEbooks(rawEbooks.map(ebook => ({ ...ebook, isEnrolled: false })));
+            }
+            if(!ebooksLoading) setIsLoading(false);
+            return;
+        };
+
+        setIsLoading(true);
+        const ebookIds = rawEbooks.map(e => e.id);
+        if (ebookIds.length === 0) {
+            setEbooks([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const enrollmentsRef = collection(firestore, 'enrollments');
+        const enrollmentsQuery = query(enrollmentsRef, 
+            where('userId', '==', user.uid), 
+            where('itemType', '==', 'ebook'),
+            where('itemId', 'in', ebookIds),
+            where('status', '==', 'approved')
+        );
+
+        const querySnapshot = await getDocs(enrollmentsQuery);
+        const enrolledIds = new Set(querySnapshot.docs.map(doc => doc.data().itemId));
+
+        const updatedEbooks = rawEbooks.map(ebook => ({
+            ...ebook,
+            isEnrolled: enrolledIds.has(ebook.id),
+        }));
+
+        setEbooks(updatedEbooks);
+        setIsLoading(false);
+    }, [rawEbooks, user, firestore, ebooksLoading]);
+
+    useEffect(() => {
+        checkEnrollments();
+    }, [checkEnrollments]);
+
+    const renderEbooks = (items: Ebook[] | null, loading: boolean) => {
         if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
         }
@@ -59,9 +117,15 @@ export default function EbooksPage() {
                         </CardHeader>
                         <CardContent className="flex-grow flex justify-between items-end">
                             <p className="text-lg font-bold">{ebook.isFree ? 'फ्री' : `₹${ebook.price}`}</p>
-                            <Button asChild>
-                                <Link href={`/pdf-viewer?url=${encodeURIComponent(ebook.pdfUrl)}`} target="_blank">पढ़ें</Link>
-                            </Button>
+                            {ebook.isFree || ebook.isEnrolled ? (
+                                <Button asChild>
+                                    <Link href={`/pdf-viewer?url=${encodeURIComponent(ebook.pdfUrl)}`} target="_blank">पढ़ें</Link>
+                                </Button>
+                            ) : (
+                                <Button asChild>
+                                    <Link href={`/payment?itemId=${ebook.id}&itemType=ebook`}>अभी खरीदें</Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ))}

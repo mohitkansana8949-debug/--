@@ -3,32 +3,94 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
-import { Loader, Timer } from 'lucide-react';
-import { useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Loader, Timer, Newspaper } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+type TestSeries = {
+    id: string;
+    name: string;
+    description: string;
+    isFree: boolean;
+    price: number;
+    duration: number;
+    isEnrolled?: boolean;
+};
+
 export default function TestSeriesPage() {
+    const { user } = useUser();
     const firestore = useFirestore();
     const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
+    const [tests, setTests] = useState<TestSeries[] | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     const testsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        const baseQuery = query(collection(firestore, 'tests'), orderBy('createdAt', 'desc'));
-        if (filter === 'free') return query(collection(firestore, 'tests'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
-        if (filter === 'paid') return query(collection(firestore, 'tests'), where('isFree', '==', false), orderBy('createdAt', 'desc'));
-        return baseQuery;
+        let q = query(collection(firestore, 'tests'), orderBy('createdAt', 'desc'));
+        if (filter === 'free') {
+            q = query(q, where('isFree', '==', true));
+        } else if (filter === 'paid') {
+            q = query(q, where('isFree', '==', false));
+        }
+        return q;
     }, [firestore, filter]);
 
-    const { data: tests, isLoading } = useCollection(testsQuery);
+    const { data: rawTests, isLoading: testsLoading } = useCollection(testsQuery);
+
+     const checkEnrollments = useCallback(async () => {
+        if (!rawTests || !user || !firestore) {
+             if (rawTests) {
+                setTests(rawTests.map(test => ({ ...test, isEnrolled: false })));
+            }
+            if(!testsLoading) setIsLoading(false);
+            return;
+        };
+
+        setIsLoading(true);
+        const testIds = rawTests.map(t => t.id);
+        if (testIds.length === 0) {
+            setTests([]);
+            setIsLoading(false);
+            return;
+        }
+
+        const enrollmentsRef = collection(firestore, 'enrollments');
+        const enrollmentsQuery = query(enrollmentsRef, 
+            where('userId', '==', user.uid), 
+            where('itemType', '==', 'test'),
+            where('itemId', 'in', testIds),
+            where('status', '==', 'approved')
+        );
+
+        const querySnapshot = await getDocs(enrollmentsQuery);
+        const enrolledIds = new Set(querySnapshot.docs.map(doc => doc.data().itemId));
+
+        const updatedTests = rawTests.map(test => ({
+            ...test,
+            isEnrolled: enrolledIds.has(test.id),
+        }));
+
+        setTests(updatedTests);
+        setIsLoading(false);
+    }, [rawTests, user, firestore, testsLoading]);
+
+    useEffect(() => {
+        checkEnrollments();
+    }, [checkEnrollments]);
     
-    const renderTests = (items: any[] | null, loading: boolean) => {
+    const renderTests = (items: TestSeries[] | null, loading: boolean) => {
         if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
         }
         if (!items || items.length === 0) {
-            return <div className="text-center text-muted-foreground mt-16"><p>इस श्रेणी में कोई टेस्ट उपलब्ध नहीं है।</p></div>;
+            return (
+                 <div className="text-center text-muted-foreground mt-16">
+                    <Newspaper className="mx-auto h-12 w-12 text-gray-400" />
+                    <p className="mt-4">इस श्रेणी में कोई टेस्ट उपलब्ध नहीं है।</p>
+                </div>
+            );
         }
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -43,9 +105,15 @@ export default function TestSeriesPage() {
                                 <p className="text-lg font-bold">{test.isFree ? 'फ्री' : `₹${test.price}`}</p>
                                 <p className='text-sm text-muted-foreground flex items-center'><Timer className="mr-1 h-4 w-4"/>{test.duration} mins</p>
                             </div>
-                            <Button asChild>
-                                <Link href={`/test-series/${test.id}`}>टेस्ट दें</Link>
-                            </Button>
+                           {test.isFree || test.isEnrolled ? (
+                                <Button asChild>
+                                    <Link href={`/test-series/${test.id}`}>टेस्ट दें</Link>
+                                </Button>
+                            ) : (
+                                <Button asChild>
+                                    <Link href={`/payment?itemId=${test.id}&itemType=test`}>अभी खरीदें</Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
                 ))}
