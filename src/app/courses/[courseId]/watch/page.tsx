@@ -79,6 +79,8 @@ function ContentItem({ item, courseId }: ContentItemProps) {
         }
     };
 
+    const isExternalLink = item.type === 'pdf' || item.type === 'pyq' || item.type === 'test';
+
 
     return (
          <Card>
@@ -99,7 +101,7 @@ function ContentItem({ item, courseId }: ContentItemProps) {
                     </div>
                 </div>
                 <Button asChild size="sm">
-                    <Link href={getActionLink()}>
+                    <Link href={getActionLink()} target={isExternalLink ? "_blank" : "_self"}>
                         {getActionIcon()}
                         <span className="ml-2">{getActionText()}</span>
                     </Link>

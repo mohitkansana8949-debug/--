@@ -107,7 +107,7 @@ export default function TestSeriesPage() {
                             </div>
                            {test.isFree || test.isEnrolled ? (
                                 <Button asChild>
-                                    <Link href={`/test-series/${test.id}`}>टेस्ट दें</Link>
+                                    <Link href={`/test-series/${test.id}`} target="_blank">टेस्ट दें</Link>
                                 </Button>
                             ) : (
                                 <Button asChild>
