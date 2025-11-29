@@ -1,13 +1,14 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { useDoc, useMemoFirebase, useFirebase } from '@/firebase';
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { useDoc, useMemoFirebase, useFirebase, useCollection } from '@/firebase';
+import { doc, updateDoc, arrayUnion, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileJson } from 'lucide-react';
+import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileJson, FileQuestion } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,8 +19,9 @@ import { Textarea } from '@/components/ui/textarea';
 import Image from 'next/image';
 import { getYouTubeID } from '@/lib/youtube';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-type ContentType = 'youtube' | 'video' | 'pdf' | 'test';
+type ContentType = 'youtube' | 'video' | 'pdf' | 'test' | 'pyq';
 
 export default function EditCourseContentPage() {
   const { courseId } = useParams();
@@ -32,6 +34,7 @@ export default function EditCourseContentPage() {
   const [videoUrl, setVideoUrl] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
   const [testJson, setTestJson] = useState('');
+  const [selectedPyq, setSelectedPyq] = useState('');
   const [title, setTitle] = useState('');
   const [isLive, setIsLive] = useState(false);
 
@@ -40,6 +43,9 @@ export default function EditCourseContentPage() {
     [firestore, courseId]
   );
   const { data: course, isLoading: courseLoading } = useDoc(courseRef);
+
+  const pyqsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'pyqs') : null), [firestore]);
+  const { data: pyqs, isLoading: pyqsLoading } = useCollection(pyqsQuery);
 
   useEffect(() => {
     if (youtubeUrl) {
@@ -58,7 +64,7 @@ export default function EditCourseContentPage() {
         return;
     };
 
-    let contentData: any = { type, title, id: Date.now().toString(), isLive: false };
+    let contentData: any = { type, title, id: Date.now().toString() };
     
     switch (type) {
         case 'youtube':
@@ -97,6 +103,15 @@ export default function EditCourseContentPage() {
                 return;
             }
             break;
+        case 'pyq':
+            const pyq = pyqs?.find(p => p.id === selectedPyq);
+            if (!pyq) {
+                 toast({ variant: 'destructive', title: 'त्रुटि', description: 'कृपया एक PYQ चुनें।' });
+                return;
+            }
+            contentData.url = pyq.pdfUrl;
+            // The title from input field is used, no need to set pyq.name as title
+            break;
         default:
             toast({ variant: 'destructive', title: 'अमान्य प्रकार' });
             return;
@@ -113,6 +128,7 @@ export default function EditCourseContentPage() {
         setVideoUrl('');
         setPdfUrl('');
         setTestJson('');
+        setSelectedPyq('');
         setIsLive(false);
       })
       .catch((error) => {
@@ -155,10 +171,11 @@ export default function EditCourseContentPage() {
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="youtube" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
                         <TabsTrigger value="youtube"><Youtube className="mr-1 h-4 w-4" />YT</TabsTrigger>
                         <TabsTrigger value="video"><Video className="mr-1 h-4 w-4" />Video</TabsTrigger>
                         <TabsTrigger value="pdf"><FileText className="mr-1 h-4 w-4" />PDF</TabsTrigger>
+                        <TabsTrigger value="pyq"><FileQuestion className="mr-1 h-4 w-4" />PYQ</TabsTrigger>
                         <TabsTrigger value="test"><FileJson className="mr-1 h-4 w-4" />Test</TabsTrigger>
                     </TabsList>
                     <div className="space-y-4 pt-6">
@@ -200,6 +217,24 @@ export default function EditCourseContentPage() {
                             </div>
                             <Button onClick={() => handleAddContent('pdf')} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add PDF/Notes'}
+                            </Button>
+                        </TabsContent>
+                        <TabsContent value="pyq" className="space-y-4 m-0">
+                             <div className="space-y-2">
+                                <Label htmlFor="pyq-select">Select PYQ</Label>
+                                <Select onValueChange={setSelectedPyq} value={selectedPyq}>
+                                    <SelectTrigger id="pyq-select">
+                                        <SelectValue placeholder={pyqsLoading ? "Loading PYQs..." : "Select a PYQ"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {pyqs?.map(pyq => (
+                                            <SelectItem key={pyq.id} value={pyq.id}>{pyq.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button onClick={() => handleAddContent('pyq')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add PYQ'}
                             </Button>
                         </TabsContent>
                          <TabsContent value="test" className="space-y-4 m-0">

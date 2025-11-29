@@ -1,40 +1,38 @@
 
 'use client';
-import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Loader, Timer } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from 'react';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function TestSeriesPage() {
-    const searchParams = useSearchParams();
-    const filter = searchParams.get('filter');
     const firestore = useFirestore();
+    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
 
-    const getQuery = (isFree: boolean) => {
+    const testsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'tests'), where('isFree', '==', isFree));
-    }
+        const baseQuery = query(collection(firestore, 'tests'), orderBy('createdAt', 'desc'));
+        if (filter === 'free') return query(collection(firestore, 'tests'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+        if (filter === 'paid') return query(collection(firestore, 'tests'), where('isFree', '==', false), orderBy('createdAt', 'desc'));
+        return baseQuery;
+    }, [firestore, filter]);
 
-    const freeTestsQuery = useMemoFirebase(() => getQuery(true), [firestore]);
-    const paidTestsQuery = useMemoFirebase(() => getQuery(false), [firestore]);
-
-    const { data: freeTests, isLoading: freeLoading } = useCollection(freeTestsQuery);
-    const { data: paidTests, isLoading: paidLoading } = useCollection(paidTestsQuery);
+    const { data: tests, isLoading } = useCollection(testsQuery);
     
-    const renderTests = (tests: any[] | null, isLoading: boolean) => {
-        if (isLoading) {
+    const renderTests = (items: any[] | null, loading: boolean) => {
+        if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
         }
-        if (tests?.length === 0) {
+        if (!items || items.length === 0) {
             return <div className="text-center text-muted-foreground mt-16"><p>इस श्रेणी में कोई टेस्ट उपलब्ध नहीं है।</p></div>;
         }
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {tests?.map(test => (
+                {items?.map(test => (
                     <Card key={test.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                         <CardHeader>
                             <CardTitle>{test.name}</CardTitle>
@@ -57,25 +55,22 @@ export default function TestSeriesPage() {
 
     return (
         <div className="w-full">
-             <div className="mb-8">
+             <div className="mb-6">
                 <h1 className="text-3xl font-bold">टेस्ट सीरीज</h1>
                 <p className="text-muted-foreground">
                     हमारी टेस्ट सीरीज के साथ अपनी तैयारी को परखें।
                 </p>
             </div>
             
-            <Tabs defaultValue="free" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="free">फ्री टेस्ट</TabsTrigger>
-                    <TabsTrigger value="paid">पेड टेस्ट</TabsTrigger>
-                </TabsList>
-                <TabsContent value="free">
-                    {renderTests(freeTests, freeLoading)}
-                </TabsContent>
-                <TabsContent value="paid">
-                    {renderTests(paidTests, paidLoading)}
-                </TabsContent>
-            </Tabs>
+            <div className="flex justify-center mb-6">
+                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
+                    <ToggleGroupItem value="all">All</ToggleGroupItem>
+                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
+                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+
+            {renderTests(tests, isLoading)}
         </div>
     );
 }

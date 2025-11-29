@@ -4,30 +4,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Loader, FileQuestion } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from 'react';
 import Image from 'next/image';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function PYQsPage() {
     const firestore = useFirestore();
+    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
 
-    const getQuery = (isFree: boolean) => {
+    const pyqsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'pyqs'), where('isFree', '==', isFree));
-    }
+        const baseQuery = query(collection(firestore, 'pyqs'), orderBy('createdAt', 'desc'));
+        if (filter === 'free') return query(collection(firestore, 'pyqs'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+        if (filter === 'paid') return query(collection(firestore, 'pyqs'), where('isFree', '==', false), orderBy('createdAt', 'desc'));
+        return baseQuery;
+    }, [firestore, filter]);
 
-    const freeQuery = useMemoFirebase(() => getQuery(true), [firestore]);
-    const paidQuery = useMemoFirebase(() => getQuery(false), [firestore]);
+    const { data: items, isLoading } = useCollection(pyqsQuery);
 
-    const { data: freeItems, isLoading: freeLoading } = useCollection(freeQuery);
-    const { data: paidItems, isLoading: paidLoading } = useCollection(paidQuery);
-
-    const renderItems = (items: any[] | null, isLoading: boolean) => {
-        if (isLoading) {
+    const renderItems = (pyqs: any[] | null, loading: boolean) => {
+        if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
         }
-        if (!items || items.length === 0) {
+        if (!pyqs || pyqs.length === 0) {
             return (
                 <div className="text-center text-muted-foreground mt-16">
                     <FileQuestion className="mx-auto h-12 w-12 text-gray-400" />
@@ -37,7 +38,7 @@ export default function PYQsPage() {
         }
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {items.map(item => (
+                {pyqs.map(item => (
                     <Card key={item.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                         {item.thumbnailUrl ? (
                             <Image 
@@ -70,25 +71,22 @@ export default function PYQsPage() {
 
     return (
         <div className="w-full">
-             <div className="mb-8">
+             <div className="mb-6">
                 <h1 className="text-3xl font-bold">Previous Year Questions (PYQs)</h1>
                 <p className="text-muted-foreground">
                     पिछले वर्षों के प्रश्न पत्रों के साथ अभ्यास करें।
                 </p>
             </div>
             
-            <Tabs defaultValue="free" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="free">फ्री PYQs</TabsTrigger>
-                    <TabsTrigger value="paid">पेड PYQs</TabsTrigger>
-                </TabsList>
-                <TabsContent value="free">
-                    {renderItems(freeItems, freeLoading)}
-                </TabsContent>
-                <TabsContent value="paid">
-                    {renderItems(paidItems, paidLoading)}
-                </TabsContent>
-            </Tabs>
+            <div className="flex justify-center mb-6">
+                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
+                    <ToggleGroupItem value="all">All</ToggleGroupItem>
+                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
+                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+            
+            {renderItems(items, isLoading)}
         </div>
     );
 }

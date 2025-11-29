@@ -4,30 +4,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import Image from 'next/image';
 import { Loader, BookOpen } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from 'react';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export default function EbooksPage() {
     const firestore = useFirestore();
+    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
 
-    const getQuery = (isFree: boolean) => {
+    const ebooksQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collection(firestore, 'ebooks'), where('isFree', '==', isFree));
-    }
+        const baseQuery = query(collection(firestore, 'ebooks'), orderBy('createdAt', 'desc'));
+        if (filter === 'free') return query(collection(firestore, 'ebooks'), where('isFree', '==', true), orderBy('createdAt', 'desc'));
+        if (filter === 'paid') return query(collection(firestore, 'ebooks'), where('isFree', '==', false), orderBy('createdAt', 'desc'));
+        return baseQuery;
+    }, [firestore, filter]);
 
-    const freeEbooksQuery = useMemoFirebase(() => getQuery(true), [firestore]);
-    const paidEbooksQuery = useMemoFirebase(() => getQuery(false), [firestore]);
+    const { data: ebooks, isLoading } = useCollection(ebooksQuery);
 
-    const { data: freeEbooks, isLoading: freeLoading } = useCollection(freeEbooksQuery);
-    const { data: paidEbooks, isLoading: paidLoading } = useCollection(paidEbooksQuery);
-
-    const renderEbooks = (ebooks: any[] | null, isLoading: boolean) => {
-        if (isLoading) {
+    const renderEbooks = (items: any[] | null, loading: boolean) => {
+        if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
         }
-        if (!ebooks || ebooks.length === 0) {
+        if (!items || items.length === 0) {
             return (
                 <div className="text-center text-muted-foreground mt-16">
                     <BookOpen className="mx-auto h-12 w-12 text-gray-400" />
@@ -37,7 +38,7 @@ export default function EbooksPage() {
         }
         return (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {ebooks.map(ebook => (
+                {items.map(ebook => (
                     <Card key={ebook.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                         {ebook.thumbnailUrl ? (
                             <Image 
@@ -70,25 +71,22 @@ export default function EbooksPage() {
 
     return (
         <div className="w-full">
-             <div className="mb-8">
+             <div className="mb-6">
                 <h1 className="text-3xl font-bold">ई-बुक्स</h1>
                 <p className="text-muted-foreground">
                     हमारी ई-बुक्स के संग्रह को ब्राउज़ करें।
                 </p>
             </div>
             
-            <Tabs defaultValue="free" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="free">फ्री ई-बुक्स</TabsTrigger>
-                    <TabsTrigger value="paid">पेड ई-बुक्स</TabsTrigger>
-                </TabsList>
-                <TabsContent value="free">
-                    {renderEbooks(freeEbooks, freeLoading)}
-                </TabsContent>
-                <TabsContent value="paid">
-                    {renderEbooks(paidEbooks, paidLoading)}
-                </TabsContent>
-            </Tabs>
+            <div className="flex justify-center mb-6">
+                 <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
+                    <ToggleGroupItem value="all">All</ToggleGroupItem>
+                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
+                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
+                </ToggleGroup>
+            </div>
+
+            {renderEbooks(ebooks, isLoading)}
         </div>
     );
 }
