@@ -8,7 +8,7 @@ import { doc, updateDoc, arrayUnion, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileQuestion } from 'lucide-react';
+import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileQuestion, ClipboardCheck } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,8 +19,22 @@ import Image from 'next/image';
 import { getYouTubeID } from '@/lib/youtube';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-type ContentType = 'youtube' | 'video' | 'pdf' | 'pyq';
+type ContentType = 'youtube' | 'video' | 'pdf' | 'pyq' | 'test';
+
+const jsonTestExample = `[
+  {
+    "question": "भारत की राजधानी क्या है?",
+    "options": [
+      "मुंबई",
+      "नई दिल्ली",
+      "कोलकाता",
+      "चेन्नई"
+    ],
+    "answer": "नई दिल्ली"
+  }
+]`;
 
 export default function EditCourseContentPage() {
   const { courseId } = useParams();
@@ -33,6 +47,7 @@ export default function EditCourseContentPage() {
   const [videoUrl, setVideoUrl] = useState('');
   const [pdfUrl, setPdfUrl] = useState('');
   const [selectedPyq, setSelectedPyq] = useState('');
+  const [testJson, setTestJson] = useState('');
   const [title, setTitle] = useState('');
   const [isLive, setIsLive] = useState(false);
 
@@ -100,6 +115,19 @@ export default function EditCourseContentPage() {
             contentData.price = pyq.price;
             contentData.isFree = pyq.isFree;
             break;
+        case 'test':
+             try {
+                const parsedJson = JSON.parse(testJson);
+                if (!Array.isArray(parsedJson) || parsedJson.length === 0) {
+                     toast({ variant: 'destructive', title: 'त्रुटि', description: 'JSON अमान्य है या यह एक खाली ऐरे (array) है।' });
+                     return;
+                }
+                contentData.data = parsedJson;
+             } catch {
+                toast({ variant: 'destructive', title: 'त्रुटि', description: 'अमान्य JSON फॉर्मेट।' });
+                return;
+             }
+             break;
         default:
             toast({ variant: 'destructive', title: 'अमान्य प्रकार' });
             return;
@@ -116,6 +144,7 @@ export default function EditCourseContentPage() {
         setVideoUrl('');
         setPdfUrl('');
         setSelectedPyq('');
+        setTestJson('');
         setIsLive(false);
       })
       .catch((error) => {
@@ -158,11 +187,12 @@ export default function EditCourseContentPage() {
             </CardHeader>
             <CardContent>
                 <Tabs defaultValue="youtube" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-5">
                         <TabsTrigger value="youtube"><Youtube className="mr-1 h-4 w-4" />YT</TabsTrigger>
                         <TabsTrigger value="video"><Video className="mr-1 h-4 w-4" />Video</TabsTrigger>
                         <TabsTrigger value="pdf"><FileText className="mr-1 h-4 w-4" />PDF</TabsTrigger>
                         <TabsTrigger value="pyq"><FileQuestion className="mr-1 h-4 w-4" />PYQ</TabsTrigger>
+                        <TabsTrigger value="test"><ClipboardCheck className="mr-1 h-4 w-4" />Test</TabsTrigger>
                     </TabsList>
                     <div className="space-y-4 pt-6">
                         <div className="space-y-2">
@@ -221,6 +251,21 @@ export default function EditCourseContentPage() {
                             </div>
                             <Button onClick={() => handleAddContent('pyq')} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add PYQ'}
+                            </Button>
+                        </TabsContent>
+                         <TabsContent value="test" className="space-y-4 m-0">
+                             <div className="space-y-2">
+                                <Label htmlFor="test-json">Test Questions (JSON format)</Label>
+                                <Textarea 
+                                    id="test-json" 
+                                    placeholder={jsonTestExample} 
+                                    value={testJson} 
+                                    onChange={(e) => setTestJson(e.target.value)} 
+                                    rows={10}
+                                />
+                            </div>
+                            <Button onClick={() => handleAddContent('test')} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader className="animate-spin" /> : 'Add Test'}
                             </Button>
                         </TabsContent>
                     </div>

@@ -4,13 +4,13 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye, ChevronRight } from 'lucide-react';
+import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 type ContentItemProps = { 
   item: any; 
@@ -19,6 +19,7 @@ type ContentItemProps = {
 
 function ContentItem({ item, courseId }: ContentItemProps) {
     const router = useRouter();
+    const [showActions, setShowActions] = useState(false);
 
     const getIcon = () => {
         switch(item.type) {
@@ -31,79 +32,76 @@ function ContentItem({ item, courseId }: ContentItemProps) {
         }
     };
     
-    const getActionPath = () => {
+    const handleItemClick = () => {
+        if(item.type === 'youtube' || item.type === 'video') {
+            handleActionClick();
+        } else {
+            setShowActions(!showActions);
+        }
+    }
+
+    const handleActionClick = () => {
+         let path = '#';
          switch (item.type) {
             case 'youtube':
             case 'video':
                  const videoId = getYouTubeID(item.url);
                  if (videoId) {
-                    return `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+                    path = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
+                 } else {
+                    path = `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
                  }
-                 return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
+                 break;
             case 'pdf':
             case 'pyq':
-                return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+                path = `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+                break;
             case 'test':
-                 return `/courses/test/${item.id}?courseId=${courseId}`;
-            default:
-                return '#';
+                 path = `/courses/test/${item.id}?courseId=${courseId}`;
+                 break;
         }
+        router.push(path);
     }
 
     const getActionText = () => {
         switch (item.type) {
-            case 'youtube':
-            case 'video':
-                return 'Play Video';
-            case 'pdf':
-            case 'pyq':
-                return 'View PDF';
-            case 'test':
-                return 'Start Test';
-            default:
-                return 'View';
-        }
-    };
-    
-     const getActionIcon = () => {
-        switch (item.type) {
-            case 'youtube':
-            case 'video':
-                return <PlayCircle className="h-4 w-4" />;
-            case 'pdf':
-            case 'pyq':
-                return <Eye className="h-4 w-4" />;
-            case 'test':
-                return <PlayCircle className="h-4 w-4" />;
-            default:
-                return <Eye className="h-4 w-4" />;
+            case 'youtube': case 'video': return 'Play Video';
+            case 'pdf': case 'pyq': return 'View PDF';
+            case 'test': return 'Start Test';
+            default: return 'View';
         }
     };
 
     return (
-         <Card>
-            <CardContent className="p-3 flex gap-3 items-center justify-between">
-                <div className="flex gap-3 items-center flex-1 min-w-0">
-                    {getIcon()}
-                    <div className="flex-1">
-                        <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
-                        {item.isLive && (
-                           <div className="flex items-center text-xs text-red-500 font-bold mt-1">
-                                <span className="relative flex h-2 w-2 mr-2">
-                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                </span>
-                                LIVE
-                           </div>
-                        )}
+         <Card onClick={handleItemClick} className="cursor-pointer hover:bg-muted/50">
+            <CardContent className="p-3">
+                <div className="flex gap-3 items-center justify-between">
+                    <div className="flex gap-3 items-center flex-1 min-w-0">
+                        {getIcon()}
+                        <div className="flex-1">
+                            <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
+                             {item.isLive && (
+                               <div className="flex items-center text-xs text-red-500 font-bold mt-1">
+                                    <span className="relative flex h-2 w-2 mr-2">
+                                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                    </span>
+                                    LIVE
+                               </div>
+                            )}
+                        </div>
                     </div>
+                     {(item.type === 'youtube' || item.type === 'video') && (
+                        <PlayCircle className="h-6 w-6 text-muted-foreground" />
+                    )}
                 </div>
-                <Button asChild size="sm">
-                   <Link href={getActionPath()}>
-                        {getActionIcon()}
-                        <span className="ml-2">{getActionText()}</span>
-                   </Link>
-                </Button>
+                {showActions && (
+                    <div className="mt-3 text-right">
+                        <Button onClick={handleActionClick} size="sm">
+                            {getActionText()}
+                        </Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

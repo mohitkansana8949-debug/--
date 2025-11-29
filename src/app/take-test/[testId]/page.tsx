@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { Loader, AlertTriangle, ArrowLeft, Award } from 'lucide-react';
@@ -19,6 +19,7 @@ export default function TakeTestPage() {
     const firestore = useFirestore();
     const { user } = useUser();
     const { toast } = useToast();
+    const router = useRouter();
 
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
@@ -101,11 +102,11 @@ export default function TakeTestPage() {
                 <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
                 <h2 className="text-2xl font-bold">Test Not Found</h2>
                 <p className="text-muted-foreground">The test you are looking for does not exist.</p>
-                <Button asChild className="mt-6">
-                    <Link href="/test-series">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Test Series
-                    </Link>
+                <Button asChild className="mt-6" onClick={() => router.back()}>
+                   <button>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back
+                   </button>
                 </Button>
             </div>
         );
@@ -146,7 +147,7 @@ export default function TakeTestPage() {
                            ))}
                         </div>
                         
-                        <Button asChild className="w-full" onClick={() => window.close()}>Finish Review & Close Tab</Button>
+                        <Button className="w-full" onClick={() => router.back()}>Finish Review</Button>
                      </CardContent>
                  </Card>
              </div>

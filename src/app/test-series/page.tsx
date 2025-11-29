@@ -7,6 +7,7 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, Timer, Newspaper } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 type TestSeries = {
     id: string;
@@ -21,6 +22,7 @@ type TestSeries = {
 export default function TestSeriesPage() {
     const { user } = useUser();
     const firestore = useFirestore();
+    const router = useRouter();
     const [tests, setTests] = useState<TestSeries[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -72,6 +74,14 @@ export default function TestSeriesPage() {
         checkEnrollments();
     }, [checkEnrollments]);
     
+    const handleActionClick = (test: TestSeries) => {
+        if (test.isFree || test.isEnrolled) {
+            router.push(`/take-test/${test.id}`);
+        } else {
+            router.push(`/payment?itemId=${test.id}&itemType=test`);
+        }
+    };
+    
     const renderTests = (items: TestSeries[] | null, loading: boolean) => {
         if (loading) {
             return <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -97,15 +107,9 @@ export default function TestSeriesPage() {
                                 <p className="text-lg font-bold">{test.isFree ? 'फ्री' : `₹${test.price}`}</p>
                                 <p className='text-sm text-muted-foreground flex items-center'><Timer className="mr-1 h-4 w-4"/>{test.duration} mins</p>
                             </div>
-                           {test.isFree || test.isEnrolled ? (
-                                <Button asChild>
-                                    <Link href={`/take-test/${test.id}`}>टेस्ट दें</Link>
-                                </Button>
-                            ) : (
-                                <Button asChild>
-                                    <Link href={`/payment?itemId=${test.id}&itemType=test`}>अभी खरीदें</Link>
-                                </Button>
-                            )}
+                           <Button onClick={() => handleActionClick(test)}>
+                                {test.isFree || test.isEnrolled ? 'टेस्ट दें' : 'अभी खरीदें'}
+                           </Button>
                         </CardContent>
                     </Card>
                 ))}

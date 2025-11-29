@@ -31,7 +31,7 @@ export interface User {
 
 export type CourseContent = {
     id: string;
-    type: 'youtube' | 'video' | 'pdf' | 'test';
+    type: 'youtube' | 'video' | 'pdf' | 'pyq' | 'test';
     title: string;
     url?: string;
     thumbnail?: string;
@@ -75,6 +75,7 @@ export interface TestSeries {
   price: number;
   isFree: boolean;
   questions: TestQuestion[];
+  bundledCourseId?: string | null;
 }
 
 export interface Ebook {
@@ -96,3 +97,4 @@ export interface PYQ {
     pdfUrl: string;
     thumbnailUrl?: string;
 }
+
