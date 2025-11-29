@@ -36,6 +36,13 @@ const truncateEmail = (email: string | null | undefined) => {
     return `${name.substring(0, 2)}*****${domain}`;
 };
 
+const truncateUid = (uid: string | null | undefined) => {
+    if (!uid) return null;
+    if (uid.length <= 8) return uid;
+    return `${uid.substring(0, 4)}...${uid.substring(uid.length - 4)}`;
+};
+
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -210,7 +217,7 @@ export default function ProfilePage() {
                 <span className="truncate">{user.displayName || 'Unnamed User'}</span>
                 {isAdmin && <Badge variant="success" className="flex-shrink-0"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
                 </CardTitle>
-                <CardDescription className="truncate">UID: {user.uid}</CardDescription>
+                <CardDescription className="truncate">UID: {truncateUid(user.uid)}</CardDescription>
             </div>
           </div>
           <Button asChild variant="outline" className="w-full sm:w-auto flex-shrink-0">
