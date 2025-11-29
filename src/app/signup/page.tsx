@@ -28,7 +28,7 @@ import { useFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, writeBatch, collection } from 'firebase/firestore';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),

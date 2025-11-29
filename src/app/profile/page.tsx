@@ -53,6 +53,13 @@ export default function ProfilePage() {
     [user, firestore]
   );
   const { data: enrollments } = useCollection(enrollmentsQuery);
+  
+  const referralsQuery = useMemoFirebase(
+      () => user ? query(collection(firestore, 'referrals'), where('referrerId', '==', user.uid)) : null,
+      [user, firestore]
+    );
+  const { data: referrals, isLoading: referralsLoading } = useCollection(referralsQuery);
+
 
   const calculateProgress = useCallback(() => {
     if (!user || !enrollments || !allCourses || !allEbooks || !allPyqs || !allTests) {
@@ -77,10 +84,21 @@ export default function ProfilePage() {
   }, [calculateProgress]);
 
   useEffect(() => {
+      if (!referralsLoading && referrals) {
+          const count = referrals.length;
+          const points = count * 10;
+          setReferralData({ count, points });
+      }
+      if(!referralsLoading){
+        setIsReferralLoading(false);
+      }
+  }, [referrals, referralsLoading]);
+
+
+  useEffect(() => {
     if (!user || !firestore) {
       if (!isUserLoading) {
         setIsAdminLoading(false);
-        setIsReferralLoading(false);
       }
       return;
     }
@@ -113,24 +131,10 @@ export default function ProfilePage() {
       }
     });
 
-    // Fetch Referral Data
-    const referralsRef = collection(firestore, 'referrals');
-    const referralsQuery = query(referralsRef, where('referrerId', '==', user.uid));
-    const unsubReferrals = onSnapshot(referralsQuery, (snapshot) => {
-        const count = snapshot.size;
-        const points = count * 10;
-        setReferralData({ count, points });
-        setIsReferralLoading(false);
-    }, (error) => {
-        console.error("Error fetching referrals:", error);
-        setIsReferralLoading(false);
-    });
-    
     checkAdminStatus();
 
     return () => {
         unsubUser();
-        unsubReferrals();
     };
 }, [user, firestore, isUserLoading]);
 
@@ -194,8 +198,8 @@ export default function ProfilePage() {
             </Avatar>
             <div className="min-w-0">
                 <CardTitle className="flex items-center gap-2 text-xl truncate">
-                {user.displayName || 'Unnamed User'}
-                {isAdmin && <Badge variant="success"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
+                <span className="truncate">{user.displayName || 'Unnamed User'}</span>
+                {isAdmin && <Badge variant="success" className="flex-shrink-0"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
                 </CardTitle>
                 <CardDescription className="truncate">{user.email}</CardDescription>
             </div>

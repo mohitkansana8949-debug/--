@@ -3,8 +3,8 @@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trophy, Gift, Users, Share2, Loader, Copy } from 'lucide-react';
-import { useUser, useFirebase, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirebase, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { doc, collection, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 
@@ -18,6 +18,13 @@ export default function ReferAndEarnPage() {
     const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
     const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
+    const referralsQuery = useMemoFirebase(
+      () => user ? query(collection(firestore, 'referrals'), where('referrerId', '==', user.uid)) : null,
+      [user, firestore]
+    );
+    const { data: referrals, isLoading: referralsLoading } = useCollection(referralsQuery);
+
+
     useEffect(() => {
         if (appSettings?.appUrl) {
             setAppUrl(appSettings.appUrl);
@@ -28,6 +35,9 @@ export default function ReferAndEarnPage() {
     }, [appSettings]);
     
     const referralLink = user ? `${appUrl}/signup?ref=${user.uid}` : '';
+    const referralCount = referrals?.length || 0;
+    const pointsEarned = referralCount * 10;
+
 
     const handleShare = async () => {
         if (!referralLink) {
@@ -86,11 +96,11 @@ export default function ReferAndEarnPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4 text-center">
                      <div className="p-4 bg-card rounded-lg">
-                        <p className="text-3xl font-bold">0</p>
+                        {referralsLoading ? <Loader className="mx-auto animate-spin" /> : <p className="text-3xl font-bold">{referralCount}</p>}
                         <p className="text-sm text-muted-foreground">Friends Joined</p>
                     </div>
                     <div className="p-4 bg-card rounded-lg">
-                        <p className="text-3xl font-bold">0</p>
+                        {referralsLoading ? <Loader className="mx-auto animate-spin" /> : <p className="text-3xl font-bold">{pointsEarned}</p>}
                         <p className="text-sm text-muted-foreground">Points Earned</p>
                     </div>
                 </CardContent>
