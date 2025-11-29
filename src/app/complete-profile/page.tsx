@@ -24,7 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirebase, useUser } from '@/firebase';
-import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, serverTimestamp, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
@@ -108,7 +108,7 @@ export default function CompleteProfilePage() {
       };
 
       // Check if this is a new user document
-      const userDoc = await onSnapshot(userRef, () => {}).then(() => getDoc(userRef));
+      const userDoc = await getDoc(userRef);
       if (!userDoc.exists()) {
           profileData.signUpDate = serverTimestamp();
       }
