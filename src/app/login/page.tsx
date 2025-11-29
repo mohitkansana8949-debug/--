@@ -62,10 +62,17 @@ export default function LoginPage() {
       });
       // The AuthGate will handle redirection
     } catch (error) {
-      console.error(error);
       let description = 'एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।';
       if (error instanceof FirebaseError) {
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        // Consolidate common auth errors into one user-friendly message
+        const commonErrorCodes = [
+            'auth/user-not-found', 
+            'auth/wrong-password', 
+            'auth/invalid-credential',
+            'auth/invalid-email',
+            'auth/user-disabled'
+        ];
+        if (commonErrorCodes.includes(error.code)) {
           description = 'अमान्य ईमेल या पासवर्ड। कृपया पुनः प्रयास करें।';
         } else {
           description = error.message;

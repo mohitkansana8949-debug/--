@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,8 @@ import {
   Book as EbookIcon,
   FileQuestion,
   Youtube,
-  BarChart
+  BarChart,
+  Clapperboard,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection } from 'firebase/firestore';
@@ -30,14 +30,14 @@ import { useEffect, useState } from 'react';
 
 const featureCards = [
   { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
+  { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
   { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
   { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
   { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
-  { title: 'यूट्यूब', href: '/youtube', icon: Youtube, color: 'bg-red-600' },
+  { title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' },
   { title: 'My Progress', href: '/profile', icon: BarChart, color: 'bg-green-500' },
-  { title: 'शॉप', href: '/shop', icon: ShoppingBag, color: 'bg-indigo-500' },
 ];
 
 const footerItems = [

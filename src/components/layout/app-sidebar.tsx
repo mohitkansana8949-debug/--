@@ -1,9 +1,8 @@
-
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy, Youtube } from "lucide-react";
+import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy, Youtube, Gift } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -18,6 +17,7 @@ import { useUser, useAuth } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
+import { Separator } from "../ui/separator";
 
 export function AppSidebar() {
   const pathname = usePathname();
@@ -122,6 +122,15 @@ export function AppSidebar() {
         </SidebarMenu>
       </SidebarContent>
        <SidebarFooter>
+        <div className="p-2">
+          <Link href="/refer" onClick={handleLinkClick} className="block w-full p-3 text-center rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-300 border border-yellow-500/50 hover:bg-yellow-400/30">
+            <div className="flex items-center justify-center gap-2">
+              <Gift className="h-5 w-5"/>
+              <span className="font-bold">Refer & Earn</span>
+            </div>
+          </Link>
+        </div>
+        <Separator className="my-1" />
         <SidebarMenu>
             <SidebarMenuItem>
                 <SidebarMenuButton
@@ -169,3 +178,4 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
   }
 
     
+

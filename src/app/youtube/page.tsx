@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -7,9 +6,10 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader, Search, Video, Youtube } from 'lucide-react';
+import { Loader, Search, Video, Youtube, Tv } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 type SavedChannel = {
   channelId: string;
@@ -26,58 +26,39 @@ const DEFAULT_CHANNELS: SavedChannel[] = [
 ];
 
 export default function YouTubeExplorerPage() {
-  const searchParams = useSearchParams();
-  const initialQuery = searchParams.get('query') || '';
-  const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchOutput['channels'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', DEFAULT_CHANNELS);
+  const { toast } = useToast();
 
-  const fetchVideosFromSavedChannels = useCallback(async (query: string = '') => {
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+        setSearchResults(null); // Clear search results if query is empty
+        return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-        let allVideos: SearchOutput['videos'] = [];
-
-        // To search in all channels, we can't just pass channel IDs to the search API.
-        // We need to construct a query that is likely to return results from our channels.
-        // A simple way is to search for the query within each channel's context.
-        // For default view, we'll just search for a generic term within the main channel.
-        const effectiveQuery = query || 'UPSC GS'; // A generic but relevant default query
-        
-        const results = await youtubeSearchFlow({ query: effectiveQuery });
-
+        const results = await youtubeSearchFlow({ query: searchQuery, channelId: null });
         const savedChannelIds = new Set(savedChannels.map(c => c.channelId));
-        
-        // Filter videos to only include those from saved channels
-        const filteredVideos = results.videos.filter(video => savedChannelIds.has(video.channelId));
-        
-        setSearchResults({ channels: [], videos: filteredVideos });
-
+        // Filter search results to only include channels that are already saved
+        const filteredChannels = results.channels.filter(channel => savedChannelIds.has(channel.channelId));
+        setSearchResults(filteredChannels);
+        if (filteredChannels.length === 0) {
+            toast({ variant: 'default', title: 'No saved channels found for your search.'});
+        }
     } catch (err: any) {
-        setError(err.message || 'An error occurred while fetching videos.');
+        setError(err.message || 'An error occurred while searching.');
+        toast({ variant: 'destructive', title: 'Search Error', description: err.message });
     } finally {
         setIsLoading(false);
     }
-  }, [savedChannels]);
-
-
-  useEffect(() => {
-    // Initial load: Fetch videos from saved channels with a default term
-    fetchVideosFromSavedChannels();
-  }, [fetchVideosFromSavedChannels]);
-
-  const handleSearch = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    if (!searchQuery.trim()) {
-        // If search is cleared, fetch default videos again
-        fetchVideosFromSavedChannels();
-        return;
-    };
-    // When searching, use the user's query
-    fetchVideosFromSavedChannels(searchQuery);
   };
+  
+  const displayedChannels = searchResults !== null ? searchResults : savedChannels;
 
 
   return (
@@ -85,10 +66,10 @@ export default function YouTubeExplorerPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center">
             <Youtube className="mr-3 h-8 w-8 text-red-500" />
-            YouTube Videos
+            YouTube Channels
         </h1>
         <p className="text-muted-foreground">
-          Watch videos from our selected channels.
+          Browse videos from our selected channels.
         </p>
       </div>
 
@@ -97,7 +78,7 @@ export default function YouTubeExplorerPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search for videos from our channels..."
+          placeholder="Search within saved channels..."
           className="flex-grow"
         />
         <Button type="submit" disabled={isLoading}>
@@ -106,45 +87,37 @@ export default function YouTubeExplorerPage() {
       </form>
       
       {error && <p className="text-destructive text-center">{error}</p>}
-
-      {isLoading && (
-        <div className="flex justify-center mt-8">
+      
+      {isLoading && !searchResults && (
+         <div className="flex justify-center mt-8">
           <Loader className="animate-spin h-10 w-10" />
         </div>
       )}
 
-      {searchResults && (
-        <div className="space-y-8">
-            {searchResults.videos && searchResults.videos.length > 0 ? (
-                <div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {searchResults.videos.map(video => (
-                            <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
-                                <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full">
-                                    <div className="relative w-full aspect-video">
-                                         <Image 
-                                            src={video.thumbnailUrl} 
-                                            alt={video.title} 
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
-                                    <CardHeader>
-                                        <CardTitle className="text-base line-clamp-2 h-12">{video.title}</CardTitle>
-                                        <CardDescription className="line-clamp-1 text-xs">{video.channelTitle}</CardDescription>
-                                    </CardHeader>
-                                </Card>
-                             </Link>
-                        ))}
-                    </div>
-                </div>
-            ) : !isLoading && (
-                 <div className="text-center text-muted-foreground mt-16">
-                    <p>No videos found. Try a different search.</p>
-                </div>
-            )}
+      {displayedChannels.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {displayedChannels.map(channel => (
+                 <Link href={`/youtube/${channel.channelId}`} key={channel.channelId}>
+                    <Card className="h-full group transition-shadow hover:shadow-lg">
+                        <CardContent className="p-4 flex flex-col items-center text-center gap-4">
+                            <Image src={channel.thumbnailUrl} alt={channel.title} width={88} height={88} className="rounded-full border-2 border-transparent group-hover:border-primary transition-all" />
+                            <div>
+                                <p className="font-bold group-hover:text-primary">{channel.title}</p>
+                                {channel.subscriberCount && <p className="text-xs text-muted-foreground">{parseInt(channel.subscriberCount).toLocaleString()} subscribers</p>}
+                            </div>
+                        </CardContent>
+                    </Card>
+                 </Link>
+            ))}
+        </div>
+      ) : !isLoading && (
+        <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
+            <Tv className="mx-auto h-12 w-12" />
+            <h3 className="mt-4 text-lg font-semibold">No Channels Found</h3>
+            <p>Your search did not match any saved channels. Try a different search or clear it to see all saved channels.</p>
         </div>
       )}
+
     </div>
   );
 }

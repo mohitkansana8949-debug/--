@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,37 +26,20 @@ const DEFAULT_CHANNELS: SavedChannel[] = [
 
 export default function ManageYoutubePage() {
     const [savedChannels, setSavedChannels] = useLocalStorage<SavedChannel[]>('saved-yt-channels', DEFAULT_CHANNELS);
-    const [channelUrl, setChannelUrl] = useState('');
+    const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    const extractChannelIdFromUrl = (url: string) => {
-        try {
-            const path = new URL(url).pathname;
-            const parts = path.split('/');
-            if (parts.length >= 2 && (parts[1].startsWith('@') || parts[1] === 'channel' || parts[1] === 'c')) {
-                // For vanity URLs like /@QuicklyStudy or /c/ChannelName
-                // Or standard URLs like /channel/UC...
-                 // We can't get ID directly, so we will search for it
-                 return parts[1];
-            }
-        } catch (e) {
-            // Ignore invalid URLs
-        }
-        return null;
-    }
-
     const handleAddChannel = async (e: React.FormEvent) => {
         e.preventDefault();
-        const searchTerm = extractChannelIdFromUrl(channelUrl) || channelUrl;
-        if (!searchTerm.trim()) {
-            toast({ variant: 'destructive', title: 'Invalid URL or ID' });
+        if (!searchQuery.trim()) {
+            toast({ variant: 'destructive', title: 'Invalid URL or Name' });
             return;
         }
 
         setIsLoading(true);
         try {
-            const results = await youtubeSearchFlow({ query: searchTerm });
+            const results = await youtubeSearchFlow({ query: searchQuery, channelId: null });
             if (results.channels && results.channels.length > 0) {
                 const channelToAdd = results.channels[0];
                 if (savedChannels.some(c => c.channelId === channelToAdd.channelId)) {
@@ -65,7 +47,7 @@ export default function ManageYoutubePage() {
                 } else {
                     setSavedChannels([...savedChannels, channelToAdd]);
                     toast({ title: 'Success', description: `${channelToAdd.title} has been added.` });
-                    setChannelUrl('');
+                    setSearchQuery('');
                 }
             } else {
                 toast({ variant: 'destructive', title: 'Channel Not Found' });
@@ -77,12 +59,8 @@ export default function ManageYoutubePage() {
         }
     };
     
-    const handleRemoveChannel = (channelId: string) => {
-        if (channelId === 'UCY_25Yg1zIX1bVayr4Mh4FA') {
-            toast({ variant: 'destructive', title: 'Cannot Remove Default Channel'});
-            return;
-        }
-        setSavedChannels(savedChannels.filter(c => c.channelId !== channelId));
+    const handleRemoveChannel = (channelIdToRemove: string) => {
+        setSavedChannels(savedChannels.filter(c => c.channelId !== channelIdToRemove));
         toast({ title: 'Channel Removed' });
     }
 
@@ -95,14 +73,14 @@ export default function ManageYoutubePage() {
             <CardContent className="space-y-8">
                  <form onSubmit={handleAddChannel} className="space-y-4">
                     <Input 
-                        placeholder="Paste YouTube channel URL or enter channel name..." 
-                        value={channelUrl} 
-                        onChange={(e) => setChannelUrl(e.target.value)}
+                        placeholder="Enter channel name or URL to search and add..." 
+                        value={searchQuery} 
+                        onChange={(e) => setSearchQuery(e.target.value)}
                         disabled={isLoading}
                     />
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : <PlusCircle className="mr-2 h-4 w-4" />}
-                        Add Channel
+                        Search & Add Channel
                     </Button>
                 </form>
 

@@ -27,11 +27,6 @@ type VideoPlayerProps = {
     title?: string;
 };
 
-const isJioCloudUrl = (url: string | null): boolean => {
-    if (!url) return false;
-    return url.includes('jioaicloud.com');
-}
-
 export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, title }: VideoPlayerProps) {
   const router = useRouter();
 
@@ -48,6 +43,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   const [isMuted, setIsMuted] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showControls, setShowControls] = useState(true);
+  const [errorOccurred, setErrorOccurred] = useState(false);
 
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -97,6 +93,12 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
     event.target.playVideo(); 
     resetControlsTimeout();
   };
+  
+  const onPlayerError = (event: any) => {
+    console.error("YouTube Player Error:", event.data);
+    setErrorOccurred(true);
+  };
+
 
   const onPlayerStateChange = (event: any) => {
     if (event.data === YouTube.PlayerState.PLAYING) { 
@@ -196,12 +198,12 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
   
-  if (!videoUrl) {
+  if (!videoUrl || errorOccurred) {
     return (
        <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
           <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
-          <h2 className="text-2xl font-bold">Invalid Video Link</h2>
-          <p className="text-muted-foreground">The video for this content is not available.</p>
+          <h2 className="text-2xl font-bold">Could Not Load Video</h2>
+          <p className="text-muted-foreground">{!videoUrl ? 'The video link is missing.' : 'The video may be private, removed, or unavailable.'}</p>
           <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
              <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
           </Button>
@@ -224,6 +226,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
             opts={{ height: '100%', width: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, showinfo: 0, modestbranding: 1, fs: 0, iv_load_policy: 3, hl: 'hi' }}}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
+            onError={onPlayerError}
             className="w-full h-full"
             />
         ) : isExternalVideo ? (
@@ -235,13 +238,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
                 allowFullScreen
                 title="External Video"
             ></iframe>
-        ) : (
-             <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
-                <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
-                <h2 className="text-2xl font-bold">Unsupported Video Source</h2>
-                <p className="text-muted-foreground">The provided video link could not be played.</p>
-             </div>
-        )}
+        ) : null}
       </div>
 
      {(isYoutubeVideo) && (

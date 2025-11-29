@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -15,6 +14,7 @@ import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function AppSettingsPage() {
@@ -30,19 +30,20 @@ export default function AppSettingsPage() {
     const [appLogoUrl, setAppLogoUrl] = useState('');
     const [isAppSubmitting, setIsAppSubmitting] = useState(false);
     
+    // Refer & Earn settings
+    const [referralMessage, setReferralMessage] = useState('');
+    const [isReferralSubmitting, setIsReferralSubmitting] = useState(false);
+
     // Firestore refs
-    const paymentSettingsDocRef = useMemoFirebase(
-      () => (firestore ? doc(firestore, 'settings', 'payment') : null),
-      [firestore]
-    );
-     const appSettingsDocRef = useMemoFirebase(
-      () => (firestore ? doc(firestore, 'settings', 'app') : null),
-      [firestore]
-    );
+    const paymentSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'payment') : null), [firestore]);
+    const appSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
+    const referralSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'referral') : null), [firestore]);
 
     // Data hooks
     const {data: paymentSettings, isLoading: paymentSettingsLoading} = useDoc(paymentSettingsDocRef);
     const {data: appSettings, isLoading: appSettingsLoading} = useDoc(appSettingsDocRef);
+    const {data: referralSettings, isLoading: referralSettingsLoading} = useDoc(referralSettingsDocRef);
+
 
     // Effects to populate state from Firestore
     useEffect(() => {
@@ -57,6 +58,12 @@ export default function AppSettingsPage() {
             setAppLogoUrl(appSettings.logoUrl || '');
         }
     }, [appSettings]);
+
+    useEffect(() => {
+        if (referralSettings) {
+            setReferralMessage(referralSettings.message || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}');
+        }
+    }, [referralSettings]);
 
 
     const handlePaymentSettingsUpdate = async () => {
@@ -88,12 +95,29 @@ export default function AppSettingsPage() {
             errorEmitter.emit('permission-error', contextualError);
         }).finally(() => setIsAppSubmitting(false));
     }
+    
+    const handleReferralSettingsUpdate = async () => {
+        if (!firestore || !referralSettingsDocRef) return;
+        setIsReferralSubmitting(true);
+        const settingsUpdate = { message: referralMessage };
+        
+        setDoc(referralSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
+            toast({ title: 'सफलता!', description: 'Referral message updated.'});
+        }).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'update', path: referralSettingsDocRef.path, requestResourceData: settingsUpdate,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        }).finally(() => setIsReferralSubmitting(false));
+    }
+
 
     return (
         <Tabs defaultValue="app" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="app">ऐप सेटिंग्स</TabsTrigger>
                 <TabsTrigger value="payment">पेमेंट सेटिंग्स</TabsTrigger>
+                <TabsTrigger value="referral">Referral</TabsTrigger>
             </TabsList>
             <TabsContent value="app">
                  <Card>
@@ -150,6 +174,28 @@ export default function AppSettingsPage() {
                         )}
                         <Button onClick={handlePaymentSettingsUpdate} disabled={isPaymentSubmitting || paymentSettingsLoading}>
                             {isPaymentSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> अपडेट हो रहा है...</> : 'पेमेंट सेटिंग्स अपडेट करें'}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="referral">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Refer & Earn Settings</CardTitle>
+                        <CardDescription>Customize the message sent to users when they refer someone.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        {referralSettingsLoading ? <SettingsSkeleton /> : (
+                            <>
+                                <div className="space-y-4">
+                                    <Label htmlFor="referral-message">WhatsApp Referral Message</Label>
+                                    <Textarea id="referral-message" value={referralMessage} onChange={(e) => setReferralMessage(e.target.value)} rows={5} />
+                                    <p className="text-sm text-muted-foreground">Use {'{link}'} as a placeholder for the unique referral link. It will be replaced automatically.</p>
+                                </div>
+                            </>
+                        )}
+                        <Button onClick={handleReferralSettingsUpdate} disabled={isReferralSubmitting || referralSettingsLoading}>
+                            {isReferralSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Referral Message'}
                         </Button>
                     </CardContent>
                 </Card>

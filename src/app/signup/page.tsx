@@ -79,7 +79,7 @@ export default function SignupPage() {
           description =
             'यह ईमेल पहले से उपयोग में है। कृपया दूसरा प्रयास करें।';
         } else {
-          description = error.message;
+          description = 'साइन अप करने में विफल। कृपया अपनी जानकारी जांचें।';
         }
       }
       toast({

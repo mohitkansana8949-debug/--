@@ -1,4 +1,3 @@
-
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -18,6 +17,8 @@ import {
   Newspaper,
   PlusCircle,
   Palette,
+  Youtube,
+  Clapperboard,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -39,6 +40,7 @@ const creationNavItems = [
     { href: '/admin/create-ebook', label: 'Add E-book', icon: PlusCircle },
     { href: '/admin/create-pyq', label: 'Add PYQ', icon: PlusCircle },
     { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
+    { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
 ]
 
 export default function AdminLayout({
@@ -49,7 +51,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   // These paths will not use the admin layout and will be rendered as full pages
-  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test'];
+  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;
