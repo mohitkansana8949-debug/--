@@ -233,12 +233,12 @@ export default function ReferAndEarnPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Share Your Link</CardTitle>
-                    <CardDescription className="block">Share your unique link with friends. You get 10 points and they get 5 points when they join!</CardDescription>
+                    <CardDescription className="block">Share your unique link. You get 10 points and they get 5 when they join!</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {referralLink ? (
                       <div className="flex items-center gap-2 p-3 border rounded-md bg-muted overflow-hidden">
-                          <p className="text-sm font-mono text-muted-foreground flex-1 truncate">{referralLink}</p>
+                          <p className="text-sm font-mono text-muted-foreground flex-1">Link...</p>
                           <Button variant="ghost" size="icon" onClick={copyToClipboard} className="shrink-0"><Copy className="h-4 w-4" /></Button>
                       </div>
                     ) : (

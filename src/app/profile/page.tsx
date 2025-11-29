@@ -27,6 +27,15 @@ const getColorForId = (id: string) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+const truncateEmail = (email: string | null | undefined) => {
+    if (!email) return null;
+    const atIndex = email.indexOf('@');
+    if (atIndex < 3) return email;
+    const name = email.substring(0, atIndex);
+    const domain = email.substring(atIndex);
+    return `${name.substring(0, 2)}*****${domain}`;
+};
+
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -213,7 +222,7 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 w-full mt-4">
-            <ProfileInfoItem icon={<Mail size={18} />} label="Email" value={user.email} />
+            <ProfileInfoItem icon={<Mail size={18} />} label="Email" value={truncateEmail(user.email)} />
             <ProfileInfoItem icon={<Phone size={18} />} label="Mobile" value={userData?.mobile} />
             <ProfileInfoItem icon={<UserIcon size={18} />} label="Category" value={userData?.category} />
             <ProfileInfoItem icon={<MapPin size={18} />} label="State" value={userData?.state} />
