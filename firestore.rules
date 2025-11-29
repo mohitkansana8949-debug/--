@@ -2,9 +2,60 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Entire Firestore full open access (including real-time useCollection)
-    match /{path=**} {
-      allow read, write, list, get: if true;
+    // Default allow writes for admins, reads for authenticated users.
+    match /{document=**} {
+      allow read, list: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Public collections readable by anyone
+    match /courses/{courseId} {
+      allow read, list: if true;
+    }
+    match /ebooks/{ebookId} {
+      allow read, list: if true;
+    }
+    match /pyqs/{pyqId} {
+      allow read, list: if true;
+    }
+    match /tests/{testId} {
+      allow read, list: if true;
+    }
+     match /educators/{educatorId} {
+      allow read, list: if true;
+    }
+
+
+    // User-specific data
+    match /users/{userId}/{path=**} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    
+    // Enrollments can be created by any authenticated user, but only read by the user themselves or an admin
+    match /enrollments/{enrollmentId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Chat messages can be read and written by any authenticated user
+    match /chats/{chatId}/{message=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Referral data can be created by any user, points can be read by anyone
+    match /referrals/{referralId} {
+        allow create: if request.auth != null;
+    }
+    match /referralPoints/{userId} {
+        allow read: if true;
+        allow write: if request.auth.uid == userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Settings can be read by anyone, but only written by admins
+    match /settings/{settingId} {
+        allow read: if true;
+        allow write: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }
