@@ -26,7 +26,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'video': return <Video className="h-5 w-5 shrink-0" />;
             case 'pdf': return <FileText className="h-5 w-5 shrink-0" />;
             case 'pyq': return <Newspaper className="h-5 w-5 shrink-0" />;
-            case 'test': return <ClipboardCheck className="h-5 w-5 shrink-0" />;
             default: return <Book className="h-5 w-5 shrink-0" />;
         }
     };
@@ -50,10 +49,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
                 path = `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
                 openInNewTab = true;
                 break;
-            case 'test':
-                 path = `/courses/test/${item.id}?courseId=${courseId}`;
-                 openInNewTab = true; // Open tests in a new tab to avoid disrupting the main app flow
-                 break;
         }
 
         if (path !== '#') {
@@ -73,8 +68,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'pdf':
             case 'pyq':
                 return 'View PDF';
-            case 'test':
-                return 'Start Test';
             default:
                 return 'View';
         }
@@ -88,8 +81,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
             case 'pdf':
             case 'pyq':
                 return <Eye className="h-4 w-4" />;
-            case 'test':
-                return <PlayCircle className="h-4 w-4" />;
             default:
                 return <Eye className="h-4 w-4" />;
         }
@@ -137,8 +128,7 @@ export default function WatchCoursePage() {
   const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube' || item.type === 'video'), [courseContent]);
   const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf'), [courseContent]);
   const pyqs = useMemo(() => courseContent.filter(item => item.type === 'pyq'), [courseContent]);
-  const tests = useMemo(() => courseContent.filter(item => item.type === 'test'), [courseContent]);
-
+  
   if (courseLoading) {
     return <div className="fixed inset-0 bg-background flex items-center justify-center"><Loader className="animate-spin" /></div>;
   }
@@ -168,11 +158,10 @@ export default function WatchCoursePage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="videos" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="videos">Videos ({videos.length})</TabsTrigger>
                     <TabsTrigger value="notes">Notes ({documents.length})</TabsTrigger>
                     <TabsTrigger value="pyqs">PYQs ({pyqs.length})</TabsTrigger>
-                    <TabsTrigger value="tests">Tests ({tests.length})</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="videos" className="mt-4 space-y-3">
@@ -191,12 +180,6 @@ export default function WatchCoursePage() {
                     {pyqs.length > 0 ? pyqs.map((item: any) => (
                         <ContentItem key={item.id} item={item} courseId={courseId as string} />
                     )) : <p className="text-center text-muted-foreground p-8">No PYQs in this course.</p>}
-                </TabsContent>
-
-                <TabsContent value="tests" className="mt-4 space-y-3">
-                    {tests.length > 0 ? tests.map((item: any) => (
-                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
-                    )) : <p className="text-center text-muted-foreground p-8">No tests in this course.</p>}
                 </TabsContent>
             </Tabs>
         </CardContent>

@@ -33,7 +33,7 @@ export default function TakeTestPage() {
     
     const score = useMemo(() => {
         if (!isFinished) return 0;
-        return questions.reduce((total, question, index) => {
+        return questions.reduce((total: number, question: any, index: number) => {
             return selectedAnswers[index] === question.answer ? total + 1 : total;
         }, 0);
     }, [isFinished, questions, selectedAnswers]);
@@ -59,7 +59,7 @@ export default function TakeTestPage() {
         setIsSubmitting(true);
         setIsFinished(true); // Show results immediately
 
-        const finalScore = questions.reduce((total, question, index) => {
+        const finalScore = questions.reduce((total: number, question: any, index: number) => {
             return selectedAnswers[index] === question.answer ? total + 1 : total;
         }, 0);
         const percentage = (finalScore / questions.length) * 100;
@@ -135,7 +135,7 @@ export default function TakeTestPage() {
 
                         <div className="space-y-4">
                            <h3 className="font-bold">Review Your Answers</h3>
-                           {questions.map((q, index) => (
+                           {questions.map((q: any, index: number) => (
                                <Card key={index} className={selectedAnswers[index] === q.answer ? 'border-green-500' : 'border-red-500'}>
                                    <CardContent className="p-4 space-y-2">
                                        <p className="font-semibold">{index + 1}. {q.question}</p>
@@ -146,7 +146,7 @@ export default function TakeTestPage() {
                            ))}
                         </div>
                         
-                        <Button asChild className="w-full"><Link href="/test-series">Finish Review</Link></Button>
+                        <Button asChild className="w-full" onClick={() => window.close()}>Finish Review & Close Tab</Button>
                      </CardContent>
                  </Card>
              </div>
@@ -169,7 +169,7 @@ export default function TakeTestPage() {
                         <div>
                             <p className="font-bold text-lg mb-4">{currentQuestionIndex + 1}. {currentQuestion.question}</p>
                              <RadioGroup value={selectedAnswers[currentQuestionIndex]} onValueChange={handleAnswerSelect} className="space-y-2">
-                                {currentQuestion.options.map((option, i) => (
+                                {currentQuestion.options.map((option: string, i: number) => (
                                     <Label key={i} htmlFor={`q${currentQuestionIndex}-o${i}`} className="flex items-center gap-4 p-4 border rounded-md cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground">
                                         <RadioGroupItem value={option} id={`q${currentQuestionIndex}-o${i}`} />
                                         {option}

@@ -2,7 +2,7 @@
 'use client';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,29 +53,58 @@ export default function PaymentPage() {
         }
 
         setIsSubmitting(true);
-        const enrollmentRef = doc(collection(firestore, 'enrollments'));
-        const enrollmentData: Omit<Enrollment, 'id'> = {
-            userId: user.uid,
-            itemId: course.id,
-            itemType: 'course',
-            itemName: course.name, // Denormalized name
-            enrollmentDate: serverTimestamp(),
-            paymentMethod: paymentMethod || 'unknown',
-            paymentTransactionId: paymentMobileNumber, 
-            status: 'approved', // Status is now 'approved' immediately.
-        };
-
+        
         try {
-            await setDoc(enrollmentRef, enrollmentData);
+            const batch = writeBatch(firestore);
+
+            // 1. Create the main course enrollment
+            const courseEnrollmentRef = doc(collection(firestore, 'enrollments'));
+            const courseEnrollmentData: Omit<Enrollment, 'id'> = {
+                userId: user.uid,
+                itemId: course.id,
+                itemType: 'course',
+                itemName: course.name,
+                enrollmentDate: serverTimestamp(),
+                paymentMethod: paymentMethod || 'unknown',
+                paymentTransactionId: paymentMobileNumber, 
+                status: 'approved',
+            };
+            batch.set(courseEnrollmentRef, courseEnrollmentData);
+            
+            // 2. Check for and enroll in bundled test series
+            const testsRef = collection(firestore, 'tests');
+            const q = query(testsRef, where('bundledCourseId', '==', course.id));
+            const bundledTestsSnap = await getDocs(q);
+
+            bundledTestsSnap.forEach(testDoc => {
+                const testData = testDoc.data();
+                const testEnrollmentRef = doc(collection(firestore, 'enrollments'));
+                const testEnrollmentData: Omit<Enrollment, 'id'> = {
+                    userId: user.uid,
+                    itemId: testDoc.id,
+                    itemType: 'test',
+                    itemName: testData.name,
+                    enrollmentDate: serverTimestamp(),
+                    paymentMethod: 'bundled',
+                    paymentTransactionId: `bundled_with_${course.id}`,
+                    status: 'approved',
+                };
+                batch.set(testEnrollmentRef, testEnrollmentData);
+                toast({ title: 'बोनस!', description: `आपको "${testData.name}" टेस्ट सीरीज़ मुफ़्त मिली है!` });
+            });
+            
+            await batch.commit();
 
             toast({ title: 'सफलता!', description: 'आपका एनरोलमेंट सफल हो गया है! आप कोर्स शुरू कर सकते हैं।'});
 
             router.push('/my-library');
+
         } catch (error) {
+            console.error("Enrollment error:", error);
             const contextualError = new FirestorePermissionError({
                 operation: 'create',
-                path: enrollmentRef.path,
-                requestResourceData: enrollmentData,
+                path: 'enrollments',
+                requestResourceData: { courseId: course.id, userId: user.uid },
             });
             errorEmitter.emit('permission-error', contextualError);
             toast({ variant: 'destructive', title: 'त्रुटि', description: 'एनरोलमेंट अनुरोध सबमिट करने में विफल।'});

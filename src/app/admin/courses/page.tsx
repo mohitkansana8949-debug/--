@@ -1,25 +1,37 @@
 
 'use client';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc, updateDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader } from 'lucide-react';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 export default function AdminCoursesPage() {
     const { firestore } = useFirebase();
     const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
     const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
+    
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Manage Courses</CardTitle>
-                <CardDescription>View and manage all courses.</CardDescription>
+                <CardDescription>View and manage all courses and their bundled test series.</CardDescription>
             </CardHeader>
             <CardContent>
                 {coursesLoading ? (

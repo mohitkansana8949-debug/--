@@ -2,7 +2,6 @@
 'use client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, Timer, Newspaper } from 'lucide-react';
@@ -116,7 +115,7 @@ export default function TestSeriesPage() {
                                 <p className='text-sm text-muted-foreground flex items-center'><Timer className="mr-1 h-4 w-4"/>{test.duration} mins</p>
                             </div>
                            {test.isFree || test.isEnrolled ? (
-                                <Button onClick={() => handleActionClick(`/test-series/${test.id}`, true)}>
+                                <Button onClick={() => handleActionClick(`/take-test/${test.id}`, true)}>
                                     टेस्ट दें
                                 </Button>
                             ) : (
