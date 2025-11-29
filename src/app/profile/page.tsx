@@ -6,12 +6,13 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users } from 'lucide-react';
+import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users, Award, ChevronRight } from 'lucide-react';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, onSnapshot, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
+import { format } from 'date-fns';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -76,6 +77,12 @@ export default function ProfilePage() {
       [user, firestore]
     );
   const { data: referrals, isLoading: referralsLoading } = useCollection(referralsQuery);
+  
+  const certificatesQuery = useMemoFirebase(
+    () => user ? query(collection(firestore, `users/${user.uid}/certificates`), orderBy('completionDate', 'desc')) : null,
+    [user, firestore]
+  );
+  const { data: certificates, isLoading: certificatesLoading } = useCollection(certificatesQuery);
 
 
   const calculateProgress = useCallback(() => {
@@ -83,7 +90,7 @@ export default function ProfilePage() {
       setProgress(0);
       return;
     }
-    const totalItems = (allCourses.length || 0) + (allEbooks.length || 0) + (allPyqs.length || 0) + (allTests.length || 0);
+    const totalItems = (allCourses?.length || 0) + (allEbooks?.length || 0) + (allPyqs?.length || 0) + (allTests?.length || 0);
     const approvedEnrollments = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.itemId));
     
     if (totalItems === 0) {
@@ -238,6 +245,40 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center"><Award className="mr-2 h-5 w-5 text-yellow-500"/>Your Certificates</CardTitle>
+            <CardDescription>All certificates you have earned from completing tests and courses.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {certificatesLoading ? (
+                <div className="flex justify-center"><Skeleton className="h-10 w-full" /></div>
+            ) : certificates && certificates.length > 0 ? (
+                <div className="space-y-2">
+                    {certificates.map(cert => (
+                        <Card key={cert.id}>
+                            <CardContent className="p-3 flex items-center justify-between">
+                                <div>
+                                    <p className="font-semibold">{cert.itemName}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        Earned on {format(cert.completionDate.toDate(), 'MMMM d, yyyy')} with a score of {cert.grade}%
+                                    </p>
+                                </div>
+                                <Button asChild variant="ghost" size="icon">
+                                    <Link href={`/certificate/${cert.id}`}>
+                                        <ChevronRight />
+                                    </Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center text-muted-foreground p-4">You haven't earned any certificates yet.</p>
+            )}
+        </CardContent>
+      </Card>
       
         <Card>
           <CardHeader>
@@ -246,7 +287,7 @@ export default function ProfilePage() {
           </CardHeader>
           <CardContent>
             {isReferralLoading ? (
-                <div className="flex justify-center"><Loader className="animate-spin" /></div>
+                <div className="flex justify-center"><Skeleton className="h-20 w-full" /></div>
             ) : (
                 <div className="grid grid-cols-2 gap-4 text-center">
                     <div className="p-4 bg-card rounded-lg border">

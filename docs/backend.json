@@ -343,6 +343,21 @@
         "points": { "type": "number", "description": "Total accumulated points." }
       },
       "required": ["userId", "points"]
+    },
+    "Certificate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Certificate",
+      "type": "object",
+      "description": "Represents a certificate earned by a user.",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who earned the certificate." },
+        "userName": { "type": "string", "description": "The name of the user." },
+        "itemName": { "type": "string", "description": "The name of the test or course completed." },
+        "itemType": { "type": "string", "enum": ["test", "course"] },
+        "completionDate": { "type": "string", "format": "date-time" },
+        "grade": { "type": "number", "description": "The percentage score achieved." }
+      },
+      "required": ["userId", "userName", "itemName", "itemType", "completionDate", "grade"]
     }
   },
   "auth": {
@@ -365,6 +380,26 @@
             {
               "name": "userId",
               "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/certificates/{certificateId}",
+        "definition": {
+          "entityName": "Certificate",
+          "schema": {
+            "$ref": "#/backend/entities/Certificate"
+          },
+          "description": "Stores certificates earned by a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "certificateId",
+              "description": "The unique identifier of the certificate."
             }
           ]
         }

@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import { Loader, AlertTriangle, ArrowLeft, Check, X } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
+import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { Loader, AlertTriangle, ArrowLeft, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -12,14 +12,18 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TakeTestPage() {
     const { testId } = useParams();
     const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
 
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [isFinished, setIsFinished] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const testRef = useMemoFirebase(() => firestore && testId ? doc(firestore, 'tests', testId as string) : null, [firestore, testId]);
     const { data: testData, isLoading } = useDoc(testRef);
@@ -50,8 +54,41 @@ export default function TakeTestPage() {
         }
     };
     
-    const handleSubmit = () => {
-        setIsFinished(true);
+    const handleSubmit = async () => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        setIsFinished(true); // Show results immediately
+
+        const finalScore = questions.reduce((total, question, index) => {
+            return selectedAnswers[index] === question.answer ? total + 1 : total;
+        }, 0);
+        const percentage = (finalScore / questions.length) * 100;
+
+        if (user && firestore && testData && percentage >= 50) {
+            try {
+                const certificatesRef = collection(firestore, `users/${user.uid}/certificates`);
+                await addDoc(certificatesRef, {
+                    userId: user.uid,
+                    userName: user.displayName,
+                    itemName: testData.name,
+                    itemType: 'test',
+                    completionDate: serverTimestamp(),
+                    grade: percentage
+                });
+                toast({
+                    title: "Congratulations!",
+                    description: `You've earned a certificate for completing ${testData.name}.`,
+                });
+            } catch (error) {
+                console.error("Failed to create certificate:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Certificate Error",
+                    description: "Could not save your certificate. Please contact support.",
+                });
+            }
+        }
+        setIsSubmitting(false);
     }
 
     if (isLoading) {
@@ -75,6 +112,7 @@ export default function TakeTestPage() {
     }
     
     if (isFinished) {
+        const percentage = (score / questions.length) * 100;
         return (
              <div className="container mx-auto p-4 max-w-2xl">
                  <Card>
@@ -86,7 +124,13 @@ export default function TakeTestPage() {
                         <div className="text-center space-y-2">
                            <p className="text-muted-foreground">Your Score</p>
                            <p className="text-6xl font-bold">{score} / {questions.length}</p>
-                           <p className="text-2xl font-semibold">{((score / questions.length) * 100).toFixed(2)}%</p>
+                           <p className="text-2xl font-semibold">{percentage.toFixed(2)}%</p>
+                           {percentage >= 50 && (
+                               <div className="flex justify-center items-center gap-2 text-green-500 pt-2">
+                                   <Award className="h-6 w-6" />
+                                   <span className="font-semibold">Certificate Earned!</span>
+                               </div>
+                           )}
                         </div>
 
                         <div className="space-y-4">
@@ -138,7 +182,10 @@ export default function TakeTestPage() {
                 <CardContent className="flex justify-between">
                     <Button variant="outline" onClick={handlePrev} disabled={currentQuestionIndex === 0}>Previous</Button>
                     {currentQuestionIndex === questions.length - 1 ? (
-                        <Button variant="success" onClick={handleSubmit}>Submit Test</Button>
+                        <Button variant="success" onClick={handleSubmit} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader className="animate-spin mr-2" /> : null}
+                            Submit Test
+                        </Button>
                     ) : (
                         <Button onClick={handleNext}>Next</Button>
                     )}
