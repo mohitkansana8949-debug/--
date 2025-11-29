@@ -1,8 +1,7 @@
-
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,24 +24,30 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useFirebase } from '@/firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { Loader } from 'lucide-react';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 
 const signupSchema = z.object({
   name: z.string().min(2, 'कम से कम 2 अक्षर का नाम होना चाहिए।'),
   email: z.string().email('कृपया एक मान्य ईमेल पता दर्ज करें।'),
   password: z.string().min(6, 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।'),
+  referralCode: z.string().optional(),
 });
 
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
-  const auth = useAuth();
+  const searchParams = useSearchParams();
+  const { auth, firestore } = useFirebase();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+
+  const refCode = searchParams.get('ref');
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -50,11 +55,28 @@ export default function SignupPage() {
       name: '',
       email: '',
       password: '',
+      referralCode: refCode || '',
     },
   });
 
+  useEffect(() => {
+    const fetchReferrerName = async () => {
+        if (refCode && firestore) {
+            try {
+                const userDoc = await getDoc(doc(firestore, 'users', refCode));
+                if (userDoc.exists()) {
+                    setReferrerName(userDoc.data().name);
+                }
+            } catch (error) {
+                console.error("Could not fetch referrer name:", error);
+            }
+        }
+    };
+    fetchReferrerName();
+  }, [refCode, firestore]);
+
   const onSubmit = async (data: SignupFormValues) => {
-    if (!auth) return;
+    if (!auth || !firestore) return;
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -66,6 +88,36 @@ export default function SignupPage() {
       await updateProfile(userCredential.user, {
         displayName: data.name,
       });
+
+      // Handle referral logic
+      if (data.referralCode) {
+          const batch = writeBatch(firestore);
+          
+          // 1. Create a referral record
+          const referralRef = doc(collection(firestore, 'referrals'));
+          batch.set(referralRef, {
+              referrerId: data.referralCode,
+              referredId: userCredential.user.uid,
+              referredName: data.name,
+              createdAt: new Date(),
+          });
+
+          // 2. Award points to the referrer
+          const referrerPointsRef = doc(firestore, 'referralPoints', data.referralCode);
+          const pointsDoc = await getDoc(referrerPointsRef);
+
+          if (pointsDoc.exists()) {
+              batch.update(referrerPointsRef, {
+                  points: (pointsDoc.data().points || 0) + 10,
+              });
+          } else {
+              batch.set(referrerPointsRef, {
+                  userId: data.referralCode,
+                  points: 10,
+              });
+          }
+          await batch.commit();
+      }
 
       toast({
         title: 'अकाउंट बन गया',
@@ -106,58 +158,43 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {referrerName && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md text-center text-sm text-blue-800 dark:text-blue-200">
+                  You have been referred by <strong>{referrerName}</strong>.
+              </div>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
+              <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
                     <FormLabel>पूरा नाम</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="जैसे, मोहित कुमार"
-                        {...field}
-                      />
-                    </FormControl>
+                    <FormControl><Input placeholder="जैसे, मोहित कुमार" {...field}/></FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
+              )}/>
+              <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem>
                     <FormLabel>ईमेल</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        {...field}
-                      />
-                    </FormControl>
+                    <FormControl><Input type="email" placeholder="your@email.com" {...field}/></FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
+              )}/>
+              <FormField control={form.control} name="password" render={({ field }) => (
                   <FormItem>
                     <FormLabel>पासवर्ड</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        {...field}
-                      />
-                    </FormControl>
+                    <FormControl><Input type="password" placeholder="••••••••" {...field}/></FormControl>
                     <FormMessage />
                   </FormItem>
-                )}
-              />
+              )}/>
+               {refCode && (
+                  <FormField control={form.control} name="referralCode" render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Referral Code</FormLabel>
+                          <FormControl><Input {...field} disabled /></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                  )}/>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>अकाउंट बन रहा है...</> : 'अकाउंट बनाएं'}
               </Button>

@@ -6,22 +6,32 @@ import { Trophy, Gift, Users, Share2, Loader, Copy } from 'lucide-react';
 import { useUser, useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ReferAndEarnPage() {
     const { user } = useUser();
     const { firestore } = useFirebase();
     const { toast } = useToast();
     const [isSharing, setIsSharing] = useState(false);
+    const [appUrl, setAppUrl] = useState('');
 
-    const referralSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'referral') : null), [firestore]);
-    const { data: referralSettings, isLoading: settingsLoading } = useDoc(referralSettingsRef);
+    const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
+    const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
-    const referralLink = `https://your-app-url.com/signup?ref=${user?.uid || ''}`;
+    useEffect(() => {
+        if (appSettings?.appUrl) {
+            setAppUrl(appSettings.appUrl);
+        } else if (typeof window !== 'undefined') {
+            // Fallback to current window location if not set in admin
+            setAppUrl(window.location.origin);
+        }
+    }, [appSettings]);
+    
+    const referralLink = `${appUrl}/signup?ref=${user?.uid || ''}`;
 
     const handleShare = async () => {
         setIsSharing(true);
-        const messageTemplate = referralSettings?.message || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}';
+        const messageTemplate = appSettings?.referralMessage || 'Check out this cool app! Use my link to join: {link}';
         const message = messageTemplate.replace('{link}', referralLink);
         
         if (navigator.share) {
@@ -33,15 +43,8 @@ export default function ReferAndEarnPage() {
             } catch (error) {
                 console.error('Error sharing:', error);
             }
-        } else if (navigator.clipboard) {
-             try {
-                await navigator.clipboard.writeText(message);
-                toast({ title: 'Copied to Clipboard!', description: 'The referral message has been copied.' });
-             } catch (error) {
-                 toast({ variant: 'destructive', title: 'Error', description: 'Could not copy message.' });
-             }
         } else {
-            // Fallback for browsers that don't support sharing or clipboard API
+            // Fallback for browsers that don't support sharing API (like desktop)
             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
         }
@@ -57,9 +60,9 @@ export default function ReferAndEarnPage() {
     };
 
     return (
-        <div className="container mx-auto p-4 space-y-6">
+        <div className="container mx-auto p-4 space-y-6 max-w-4xl">
             <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2"><Trophy className="h-8 w-8 text-yellow-500" /> Refer & Earn</h1>
+                <h1 className="text-3xl font-bold flex items-center gap-2"><Trophy className="h-8 w-8 text-yellow-500" /> Refer &amp; Earn</h1>
                 <p className="text-muted-foreground">Invite friends and earn rewards!</p>
             </div>
 
@@ -68,7 +71,7 @@ export default function ReferAndEarnPage() {
                     <CardTitle>Your Referral Stats</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4 text-center">
-                    <div className="p-4 bg-card rounded-lg">
+                     <div className="p-4 bg-card rounded-lg">
                         <p className="text-3xl font-bold">0</p>
                         <p className="text-sm text-muted-foreground">Friends Joined</p>
                     </div>
@@ -82,7 +85,7 @@ export default function ReferAndEarnPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Share Your Link</CardTitle>
-                    <CardDescription>Share your unique link with friends. For every friend that joins, you earn points!</CardDescription>
+                    <CardDescription>Share your unique link with friends. For every friend that joins, you earn 10 points!</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center gap-2 p-3 border rounded-md bg-muted">
@@ -91,7 +94,7 @@ export default function ReferAndEarnPage() {
                     </div>
                     <Button onClick={handleShare} className="w-full" disabled={isSharing || settingsLoading}>
                         {isSharing || settingsLoading ? <Loader className="animate-spin" /> : <Share2 className="mr-2" />}
-                        Share via WhatsApp & More
+                        Share via WhatsApp &amp; More
                     </Button>
                 </CardContent>
             </Card>

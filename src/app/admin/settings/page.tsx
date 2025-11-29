@@ -28,6 +28,7 @@ export default function AppSettingsPage() {
 
     // App settings state
     const [appLogoUrl, setAppLogoUrl] = useState('');
+    const [appUrl, setAppUrl] = useState('');
     const [isAppSubmitting, setIsAppSubmitting] = useState(false);
     
     // Refer & Earn settings
@@ -56,6 +57,7 @@ export default function AppSettingsPage() {
     useEffect(() => {
         if (appSettings) {
             setAppLogoUrl(appSettings.logoUrl || '');
+            setAppUrl(appSettings.appUrl || '');
         }
     }, [appSettings]);
 
@@ -84,7 +86,7 @@ export default function AppSettingsPage() {
     const handleAppSettingsUpdate = async () => {
         if (!firestore || !appSettingsDocRef) return;
         setIsAppSubmitting(true);
-        const settingsUpdate = { logoUrl: appLogoUrl };
+        const settingsUpdate = { logoUrl: appLogoUrl, appUrl: appUrl };
         
         setDoc(appSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
             toast({ title: 'सफलता!', description: 'ऐप सेटिंग्स अपडेट हो गई हैं।'});
@@ -136,7 +138,12 @@ export default function AppSettingsPage() {
                                         </div>
                                     )}
                                     <Input id="app-logo-url" type="text" placeholder="https://example.com/logo.png" value={appLogoUrl} onChange={e => setAppLogoUrl(e.target.value)} />
-                                    <p className="text-sm text-muted-foreground">यह लोगो PWA (प्रोग्रेसिव वेब ऐप) के लिए इस्तेमाल होगा। बदलने के बाद ऐप को दोबारा डिप्लॉय करना पड़ सकता है।</p>
+                                    <p className="text-sm text-muted-foreground">यह लोगो PWA (प्रोग्रेसिव वेब ऐप) के लिए इस्तेमाल होगा।</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <Label htmlFor="app-url">App Base URL</Label>
+                                    <Input id="app-url" type="text" placeholder="https://yourapp.com" value={appUrl} onChange={e => setAppUrl(e.target.value)} />
+                                    <p className="text-sm text-muted-foreground">This is used to generate referral links. Do not include a trailing slash.</p>
                                 </div>
                             </>
                         )}
@@ -181,7 +188,7 @@ export default function AppSettingsPage() {
             <TabsContent value="referral">
                  <Card>
                     <CardHeader>
-                        <CardTitle>Refer & Earn Settings</CardTitle>
+                        <CardTitle>Refer &amp; Earn Settings</CardTitle>
                         <CardDescription>Customize the message sent to users when they refer someone.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">

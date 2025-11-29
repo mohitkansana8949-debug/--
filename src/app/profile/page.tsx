@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,15 +5,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Info, Trophy, BarChartHorizontal } from 'lucide-react';
+import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users } from 'lucide-react';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, onSnapshot, collection, query } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
+  if (!id) return 'bg-muted';
   const colors = [
     'bg-red-500', 'bg-green-500', 'bg-blue-500', 'bg-yellow-500', 
     'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-teal-500',
@@ -24,7 +24,7 @@ const getColorForId = (id: string) => {
   for (let i = 0; i < id.length; i++) {
     hash = id.charCodeAt(i) + ((hash << 5) - hash);
   }
-  return colors[hash % colors.length];
+  return colors[Math.abs(hash) % colors.length];
 };
 
 export default function ProfilePage() {
@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [progress, setProgress] = useState(0);
+  const [referralData, setReferralData] =<{ points: number; count: number }>({ points: 0, count: 0 });
+  const [isReferralLoading, setIsReferralLoading] = useState(true);
 
   // Queries for all content types
   const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
@@ -47,38 +49,45 @@ export default function ProfilePage() {
   const { data: allTests } = useCollection(testsQuery);
 
   const enrollmentsQuery = useMemoFirebase(
-    () => user ? query(collection(firestore, 'enrollments')) : null,
+    () => user ? query(collection(firestore, 'enrollments'), where('userId', '==', user.uid)) : null,
     [user, firestore]
   );
   const { data: enrollments } = useCollection(enrollmentsQuery);
 
   const calculateProgress = useCallback(() => {
-    const totalItems = (allCourses?.length || 0) + (allEbooks?.length || 0) + (allPyqs?.length || 0) + (allTests?.length || 0);
-    const enrolledItems = new Set(enrollments?.filter(e => e.userId === user?.uid && e.status === 'approved').map(e => e.itemId));
+    if (!user || !enrollments || !allCourses || !allEbooks || !allPyqs || !allTests) {
+      setProgress(0);
+      return;
+    }
+    const totalItems = (allCourses.length || 0) + (allEbooks.length || 0) + (allPyqs.length || 0) + (allTests.length || 0);
+    const approvedEnrollments = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.itemId));
     
     if (totalItems === 0) {
       setProgress(0);
       return;
     }
     
-    const progressPercentage = (enrolledItems.size / totalItems) * 100;
+    const progressPercentage = (approvedEnrollments.size / totalItems) * 100;
     setProgress(Math.min(100, progressPercentage));
 
   }, [allCourses, allEbooks, allPyqs, allTests, enrollments, user]);
 
   useEffect(() => {
-    if (allCourses && allEbooks && allPyqs && allTests && enrollments && user) {
-        calculateProgress();
-    }
-  }, [allCourses, allEbooks, allPyqs, allTests, enrollments, user, calculateProgress]);
+    calculateProgress();
+  }, [calculateProgress]);
 
   useEffect(() => {
     if (!user || !firestore) {
-      if (!isUserLoading) setIsAdminLoading(false);
+      if (!isUserLoading) {
+        setIsAdminLoading(false);
+        setIsReferralLoading(false);
+      }
       return;
     }
     
+    // Check Admin Status
     const checkAdminStatus = async () => {
+        setIsAdminLoading(true);
         if (user.email === 'Qukly@study.com') {
             setIsAdmin(true);
             setIsAdminLoading(false);
@@ -95,17 +104,34 @@ export default function ProfilePage() {
             setIsAdminLoading(false);
         }
     };
-
+    
+    // Fetch User Data
     const userRef = doc(firestore, 'users', user.uid);
-    const unsub = onSnapshot(userRef, (doc) => {
+    const unsubUser = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
         setUserData(doc.data());
       }
     });
+
+    // Fetch Referral Data
+    const referralsRef = collection(firestore, 'referrals');
+    const referralsQuery = query(referralsRef, where('referrerId', '==', user.uid));
+    const unsubReferrals = onSnapshot(referralsQuery, (snapshot) => {
+        const count = snapshot.size;
+        const points = count * 10;
+        setReferralData({ count, points });
+        setIsReferralLoading(false);
+    }, (error) => {
+        console.error("Error fetching referrals:", error);
+        setIsReferralLoading(false);
+    });
     
     checkAdminStatus();
 
-    return () => unsub();
+    return () => {
+        unsubUser();
+        unsubReferrals();
+    };
 }, [user, firestore, isUserLoading]);
 
   const getInitials = (name: string | null | undefined) => {
@@ -148,7 +174,7 @@ export default function ProfilePage() {
             <div className="text-muted-foreground mt-1">{icon}</div>
             <div>
                 <p className="text-sm text-muted-foreground">{label}</p>
-                <p className="font-medium">{value}</p>
+                <p className="font-medium truncate">{value}</p>
             </div>
         </div>
     ) : null
@@ -161,20 +187,20 @@ export default function ProfilePage() {
         <p className="text-muted-foreground">View and manage your profile information.</p>
        </div>
       <Card>
-        <CardHeader className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div className="flex items-center gap-4">
-             <Avatar className="h-20 w-20 text-3xl">
+        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+             <Avatar className="h-16 w-16 text-2xl flex-shrink-0">
                <AvatarFallback className={`text-white font-bold ${avatarColor}`}>{getInitials(user.displayName)}</AvatarFallback>
             </Avatar>
-            <div>
-                <CardTitle className="flex items-center gap-2 text-2xl">
+            <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2 text-xl truncate">
                 {user.displayName || 'Unnamed User'}
                 {isAdmin && <Badge variant="success"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
                 </CardTitle>
-                <CardDescription>{user.email}</CardDescription>
+                <CardDescription className="truncate">{user.email}</CardDescription>
             </div>
           </div>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
+          <Button asChild variant="outline" className="w-full sm:w-auto flex-shrink-0">
             <Link href="/complete-profile">
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit Profile
@@ -191,6 +217,29 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
       
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center"><Trophy className="mr-2 h-5 w-5 text-yellow-500"/>Referral Stats</CardTitle>
+             <CardDescription>Track your referral earnings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isReferralLoading ? (
+                <div className="flex justify-center"><Loader className="animate-spin" /></div>
+            ) : (
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="p-4 bg-card rounded-lg border">
+                        <p className="text-3xl font-bold">{referralData.count}</p>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Users className="h-4 w-4"/>Friends Joined</p>
+                    </div>
+                    <div className="p-4 bg-card rounded-lg border">
+                        <p className="text-3xl font-bold">{referralData.points}</p>
+                        <p className="text-sm text-muted-foreground">Points Earned</p>
+                    </div>
+                </div>
+            )}
+          </CardContent>
+      </Card>
+
       <Card>
           <CardHeader>
             <CardTitle className="flex items-center"><BarChartHorizontal className="mr-2 h-5 w-5"/>My Progress</CardTitle>

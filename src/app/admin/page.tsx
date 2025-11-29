@@ -1,22 +1,20 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Users,
   BookOpen,
   CreditCard,
-  PlusCircle,
   Loader,
-  Settings,
   Book,
   FileQuestion,
   Newspaper,
+  BarChart,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -26,6 +24,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from 'recharts';
+import { subDays, format, startOfDay } from 'date-fns';
 
 const ADMIN_CODE = "Quickly";
 
@@ -34,6 +35,21 @@ const codeSchema = z.object({
 });
 type CodeFormValues = z.infer<typeof codeSchema>;
 
+const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate') => {
+    const last7Days = Array.from({ length: 7 }, (_, i) => startOfDay(subDays(new Date(), i))).reverse();
+    
+    const dailyCounts = last7Days.map(day => {
+        const dayString = format(day, 'MMM d');
+        const count = items?.filter(item => {
+            if (!item[dateKey]) return false;
+            const itemDate = (item[dateKey] as Timestamp).toDate();
+            return startOfDay(itemDate).getTime() === day.getTime();
+        }).length || 0;
+        return { date: dayString, count };
+    });
+
+    return dailyCounts;
+};
 
 export default function AdminDashboardOverview() {
   const { firestore } = useFirebase();
@@ -55,13 +71,15 @@ export default function AdminDashboardOverview() {
   const pyqsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'pyqs') : null), [firestore, isAdminVerified]);
   const testsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'tests') : null), [firestore, isAdminVerified]);
 
-
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
   const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
   const { data: ebooks, isLoading: ebooksLoading } = useCollection(ebooksQuery);
   const { data: pyqs, isLoading: pyqsLoading } = useCollection(pyqsQuery);
   const { data: tests, isLoading: testsLoading } = useCollection(testsQuery);
+  
+  const newUsersChartData = useMemo(() => processChartData(users, 'signUpDate'), [users]);
+  const newEnrollmentsChartData = useMemo(() => processChartData(enrollments, 'enrollmentDate'), [enrollments]);
 
   const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
 
@@ -74,7 +92,6 @@ export default function AdminDashboardOverview() {
           toast({ variant: 'destructive', title: 'गलत कोड', description: 'प्रदान किया गया एडमिन कोड गलत है।'});
       }
   }
-
 
   const loading = isUserLoading || (isAdminVerified && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading));
 
@@ -131,6 +148,45 @@ export default function AdminDashboardOverview() {
                     <CardContent>{loading ? <Loader className="animate-spin"/> : <div className="text-2xl font-bold">{stat.value}</div>}</CardContent>
                 </Card>
            ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center"><Users className="mr-2" /> New Users (Last 7 Days)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {loading ? <div className="h-64 flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                        <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }} className="h-64">
+                            <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis allowDecimals={false} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                            </RechartsBarChart>
+                        </ChartContainer>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center"><CreditCard className="mr-2" /> New Enrollments (Last 7 Days)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {loading ? <div className="h-64 flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                         <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }} className="h-64">
+                            <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis allowDecimals={false} />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                            </RechartsBarChart>
+                        </ChartContainer>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     </div>
   );
