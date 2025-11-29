@@ -8,7 +8,6 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import Image from 'next/image';
 import { Loader, BookOpen } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type Ebook = {
     id: string;
@@ -24,20 +23,13 @@ type Ebook = {
 export default function EbooksPage() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
     const [ebooks, setEbooks] = useState<Ebook[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const ebooksQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        let q = query(collection(firestore, 'ebooks'), orderBy('createdAt', 'desc'));
-        if (filter === 'free') {
-            q = query(q, where('isFree', '==', true));
-        } else if (filter === 'paid') {
-            q = query(q, where('isFree', '==', false));
-        }
-        return q;
-    }, [firestore, filter]);
+        return query(collection(firestore, 'ebooks'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
 
     const { data: rawEbooks, isLoading: ebooksLoading } = useCollection(ebooksQuery);
 
@@ -142,14 +134,6 @@ export default function EbooksPage() {
                 </p>
             </div>
             
-            <div className="flex justify-center mb-6">
-                 <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
-                    <ToggleGroupItem value="all">All</ToggleGroupItem>
-                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
-                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
-                </ToggleGroup>
-            </div>
-
             {renderEbooks(ebooks, isLoading)}
         </div>
     );

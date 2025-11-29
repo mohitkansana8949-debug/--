@@ -6,7 +6,6 @@ import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebas
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, Timer, Newspaper } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 type TestSeries = {

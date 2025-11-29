@@ -8,7 +8,6 @@ import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { Loader, FileQuestion } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 type PYQ = {
     id: string;
@@ -24,20 +23,13 @@ type PYQ = {
 export default function PYQsPage() {
     const { user } = useUser();
     const firestore = useFirestore();
-    const [filter, setFilter] = useState<'all' | 'free' | 'paid'>('all');
     const [pyqs, setPyqs] = useState<PYQ[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const pyqsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        let q = query(collection(firestore, 'pyqs'), orderBy('createdAt', 'desc'));
-        if (filter === 'free') {
-            q = query(q, where('isFree', '==', true));
-        } else if (filter === 'paid') {
-            q = query(q, where('isFree', '==', false));
-        }
-        return q;
-    }, [firestore, filter]);
+        return query(collection(firestore, 'pyqs'), orderBy('createdAt', 'desc'));
+    }, [firestore]);
 
     const { data: rawPyqs, isLoading: pyqsLoading } = useCollection(pyqsQuery);
 
@@ -140,14 +132,6 @@ export default function PYQsPage() {
                 <p className="text-muted-foreground">
                     पिछले वर्षों के प्रश्न पत्रों के साथ अभ्यास करें।
                 </p>
-            </div>
-            
-            <div className="flex justify-center mb-6">
-                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
-                    <ToggleGroupItem value="all">All</ToggleGroupItem>
-                    <ToggleGroupItem value="paid">Paid</ToggleGroupItem>
-                    <ToggleGroupItem value="free">Free</ToggleGroupItem>
-                </ToggleGroup>
             </div>
             
             {renderItems(pyqs, isLoading)}
