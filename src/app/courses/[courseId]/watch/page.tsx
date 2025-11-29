@@ -1,30 +1,36 @@
 
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, ClipboardCheck, MessageSquare, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Loader, Video, FileText, ClipboardCheck, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import Image from 'next/image';
 import Link from 'next/link';
 import { getYouTubeID } from '@/lib/youtube';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMemo } from 'react';
 
 function ContentItem({ item, courseId }: { item: any, courseId: string }) {
     const getIcon = () => {
         switch(item.type) {
-            case 'youtube': return <Video className="h-5 w-5 shrink-0 text-red-500" />;
+            case 'youtube': return <Youtube className="h-5 w-5 shrink-0 text-red-500" />;
             case 'video': return <Video className="h-5 w-5 shrink-0" />;
             case 'pdf': return <FileText className="h-5 w-5 shrink-0" />;
+            case 'pyq': return <Newspaper className="h-5 w-5 shrink-0" />;
             case 'test': return <ClipboardCheck className="h-5 w-5 shrink-0" />;
-            default: return null;
+            default: return <Book className="h-5 w-5 shrink-0" />;
         }
     };
 
     const getLink = () => {
-        if (item.type === 'pdf') {
+        if (item.type === 'pdf' || item.type === 'pyq') {
             return `/pdf-viewer?url=${encodeURIComponent(item.url)}`;
+        }
+        if (item.type === 'test') {
+            const testId = item.id; // Assuming the test ID is stored in the content item itself
+            return `/test-series/${testId}`;
         }
         const videoId = getYouTubeID(item.url);
         if (videoId) {
@@ -33,9 +39,16 @@ function ContentItem({ item, courseId }: { item: any, courseId: string }) {
         }
         return `/courses/watch/external?url=${encodeURIComponent(item.url)}&live=${item.isLive}&chatId=${courseId}`;
     };
+    
+     const getTarget = () => {
+        if (item.type === 'pdf' || item.type === 'pyq') return '_blank';
+        if (item.type === 'test') return '_blank'; // Open test in new tab
+        return '_self';
+    }
+
 
     return (
-         <Link href={getLink()} target={item.type === 'pdf' ? '_blank' : '_self'}>
+         <Link href={getLink()} target={getTarget()}>
             <Card className="cursor-pointer hover:bg-muted">
                 <CardContent className="p-3 flex gap-3 items-center">
                     {getIcon()}
@@ -67,6 +80,12 @@ export default function WatchCoursePage() {
   );
   const { data: course, isLoading: courseLoading } = useDoc(courseRef);
 
+  const courseContent = useMemo(() => (course?.content && Array.isArray(course.content)) ? course.content : [], [course]);
+
+  const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube' || item.type === 'video'), [courseContent]);
+  const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf' || item.type === 'pyq'), [courseContent]);
+  const tests = useMemo(() => courseContent.filter(item => item.type === 'test'), [courseContent]);
+
   if (courseLoading) {
     return <div className="fixed inset-0 bg-background flex items-center justify-center"><Loader className="animate-spin" /></div>;
   }
@@ -87,8 +106,6 @@ export default function WatchCoursePage() {
       )
   }
   
-  const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
-  
   return (
     <div className="container mx-auto p-4">
       <Card>
@@ -96,14 +113,32 @@ export default function WatchCoursePage() {
           <CardTitle className="text-2xl font-bold">{course.name}</CardTitle>
           <CardDescription>इस कोर्स के सभी कंटेंट नीचे दिए गए हैं।</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-           {courseContent.length > 0 ? courseContent.map((item: any) => (
-             <ContentItem key={item.id} item={item} courseId={courseId as string} />
-           )) : (
-            <div className="text-center text-muted-foreground p-8">
-                <p>इस कोर्स में अभी कोई कंटेंट नहीं है।</p>
-            </div>
-           )}
+        <CardContent>
+            <Tabs defaultValue="videos" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="videos">Videos ({videos.length})</TabsTrigger>
+                    <TabsTrigger value="notes">PDF & Notes ({documents.length})</TabsTrigger>
+                    <TabsTrigger value="tests">Tests ({tests.length})</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="videos" className="mt-4 space-y-3">
+                    {videos.length > 0 ? videos.map((item: any) => (
+                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
+                    )) : <p className="text-center text-muted-foreground p-8">No videos in this course.</p>}
+                </TabsContent>
+
+                <TabsContent value="notes" className="mt-4 space-y-3">
+                    {documents.length > 0 ? documents.map((item: any) => (
+                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
+                    )) : <p className="text-center text-muted-foreground p-8">No documents in this course.</p>}
+                </TabsContent>
+
+                <TabsContent value="tests" className="mt-4 space-y-3">
+                    {tests.length > 0 ? tests.map((item: any) => (
+                        <ContentItem key={item.id} item={item} courseId={courseId as string} />
+                    )) : <p className="text-center text-muted-foreground p-8">No tests in this course.</p>}
+                </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
     </div>

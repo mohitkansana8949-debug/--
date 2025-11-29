@@ -148,6 +148,33 @@
         "content"
       ]
     },
+    "Test": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Test",
+      "type": "object",
+      "description": "Represents a test or quiz.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "number", "description": "Duration of the test in minutes." },
+        "price": { "type": "number" },
+        "isFree": { "type": "boolean" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "answer": { "type": "string" }
+            },
+            "required": ["question", "options", "answer"]
+          }
+        }
+      },
+      "required": ["name", "description", "duration", "price", "isFree", "questions"]
+    },
     "Enrollment": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Enrollment",
@@ -426,6 +453,22 @@
             {
               "name": "pyqId",
               "description": "The unique identifier of the PYQ."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tests/{testId}",
+        "definition": {
+          "entityName": "Test",
+          "schema": {
+            "$ref": "#/backend/entities/Test"
+          },
+          "description": "Stores Test Series information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "testId",
+              "description": "The unique identifier of the test."
             }
           ]
         }
