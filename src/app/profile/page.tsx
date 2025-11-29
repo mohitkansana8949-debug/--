@@ -34,7 +34,7 @@ export default function ProfilePage() {
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [progress, setProgress] = useState(0);
-  const [referralData, setReferralData] =<{ points: number; count: number }>({ points: 0, count: 0 });
+  const [referralData, setReferralData] = useState<{ points: number; count: number }>({ points: 0, count: 0 });
   const [isReferralLoading, setIsReferralLoading] = useState(true);
 
   // Queries for all content types
