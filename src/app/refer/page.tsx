@@ -219,11 +219,11 @@ export default function ReferAndEarnPage() {
                     <CardTitle>Your Referral Stats</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-2 gap-4 text-center">
-                     <div className="p-4 bg-card rounded-lg">
+                     <div className="p-4 bg-card rounded-lg border">
                         {referralsLoading ? <Loader className="mx-auto animate-spin" /> : <p className="text-3xl font-bold">{referralCount}</p>}
                         <p className="text-sm text-muted-foreground">Friends Joined</p>
                     </div>
-                    <div className="p-4 bg-card rounded-lg">
+                    <div className="p-4 bg-card rounded-lg border">
                         {pointsLoading ? <Loader className="mx-auto animate-spin" /> : <p className="text-3xl font-bold">{pointsEarned}</p>}
                         <p className="text-sm text-muted-foreground">Points Earned</p>
                     </div>

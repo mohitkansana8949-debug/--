@@ -201,7 +201,7 @@ export default function ProfilePage() {
                 <span className="truncate">{user.displayName || 'Unnamed User'}</span>
                 {isAdmin && <Badge variant="success" className="flex-shrink-0"><ShieldCheck className="mr-1 h-3 w-3" /> Admin</Badge>}
                 </CardTitle>
-                <CardDescription className="truncate">{user.email}</CardDescription>
+                <CardDescription className="truncate">UID: {user.uid}</CardDescription>
             </div>
           </div>
           <Button asChild variant="outline" className="w-full sm:w-auto flex-shrink-0">
@@ -213,6 +213,7 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 w-full mt-4">
+            <ProfileInfoItem icon={<Mail size={18} />} label="Email" value={user.email} />
             <ProfileInfoItem icon={<Phone size={18} />} label="Mobile" value={userData?.mobile} />
             <ProfileInfoItem icon={<UserIcon size={18} />} label="Category" value={userData?.category} />
             <ProfileInfoItem icon={<MapPin size={18} />} label="State" value={userData?.state} />
