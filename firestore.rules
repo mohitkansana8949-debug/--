@@ -26,7 +26,13 @@ service cloud.firestore {
     }
 
 
-    // User-specific data
+    // User profiles are public to read for referral system, but only owner can write.
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if request.auth.uid == userId;
+    }
+    
+    // User-specific sub-collections remain private
     match /users/{userId}/{path=**} {
       allow read, write: if request.auth.uid == userId;
     }
