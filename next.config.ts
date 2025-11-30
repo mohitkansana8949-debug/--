@@ -71,6 +71,9 @@ const nextConfig: NextConfig = {
   publicRuntimeConfig: {
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
   },
+  serverRuntimeConfig: {
+    YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
+  },
 };
 
 export default withPWA(nextConfig);
