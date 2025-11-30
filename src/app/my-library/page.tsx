@@ -119,11 +119,11 @@ export default function MyLibraryPage() {
     
     const getItemIcon = (type: EnrolledItem['type']) => {
         switch(type) {
-            case 'course': return <BookOpen className="h-16 w-16 text-muted-foreground" />;
-            case 'ebook': return <EbookIcon className="h-16 w-16 text-muted-foreground" />;
-            case 'pyq': return <FileQuestion className="h-16 w-16 text-muted-foreground" />;
-            case 'test': return <Newspaper className="h-16 w-16 text-muted-foreground" />;
-            default: return <BookOpen className="h-16 w-16 text-muted-foreground" />;
+            case 'course': return <BookOpen className="h-12 w-12 text-muted-foreground" />;
+            case 'ebook': return <EbookIcon className="h-12 w-12 text-muted-foreground" />;
+            case 'pyq': return <FileQuestion className="h-12 w-12 text-muted-foreground" />;
+            case 'test': return <Newspaper className="h-12 w-12 text-muted-foreground" />;
+            default: return <BookOpen className="h-12 w-12 text-muted-foreground" />;
         }
     }
 
@@ -137,7 +137,7 @@ export default function MyLibraryPage() {
             </div>
             
             <div className="flex justify-center mb-6">
-                <ToggleGroup type="single" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
+                <ToggleGroup type="single" size="sm" value={filter} onValueChange={(value) => { if (value) setFilter(value as any) }} defaultValue="all">
                     <ToggleGroupItem value="all">All</ToggleGroupItem>
                     <ToggleGroupItem value="course">Courses</ToggleGroupItem>
                     <ToggleGroupItem value="ebook">E-books</ToggleGroupItem>
@@ -174,32 +174,28 @@ export default function MyLibraryPage() {
             )}
 
             {!finalLoading && filteredItems.length > 0 && (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {filteredItems.map(item => (
                         <Card key={`${item.type}-${item.id}`} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                            {item.thumbnailUrl ? (
                              <Image 
                                 src={item.thumbnailUrl} 
                                 alt={item.name} 
-                                width={600}
-                                height={400}
-                                className="rounded-t-lg object-cover w-full h-48"
+                                width={300}
+                                height={200}
+                                className="rounded-t-lg object-cover w-full h-36"
                             />
                            ) : (
-                            <div className="h-48 w-full bg-secondary flex items-center justify-center rounded-t-lg">
+                            <div className="h-36 w-full bg-secondary flex items-center justify-center rounded-t-lg">
                                 {getItemIcon(item.type)}
                             </div>
                            )}
-                            <CardHeader>
-                                <CardTitle>{item.name}</CardTitle>
-                                <CardDescription className="line-clamp-2">{item.description}</CardDescription>
+                            <CardHeader className="p-3">
+                                <CardTitle className="text-base line-clamp-2 h-12">{item.name}</CardTitle>
+                                <CardDescription className="text-xs line-clamp-2 h-8">{item.description}</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex-grow flex justify-between items-end">
-                                <div className="flex items-center gap-2 text-green-500">
-                                    <ShieldCheck className="h-5 w-5" />
-                                    <span className="font-semibold">Enrolled</span>
-                                </div>
-                                <Button asChild>
+                            <CardContent className="p-3 pt-0 flex-grow flex flex-col justify-end">
+                                <Button asChild size="sm" className="w-full">
                                     <Link href={getItemLink(item)}>
                                         {item.type === 'course' ? 'पढ़ाई शुरू करें' : 'देखें'}
                                     </Link>
