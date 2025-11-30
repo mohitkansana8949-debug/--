@@ -14,7 +14,7 @@ import {
   SidebarFooter,
   useSidebar
 } from "@/components/ui/sidebar";
-import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
+import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore, useFirebase } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from 'firebase/firestore';
@@ -46,8 +46,6 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminAuthenticated] = useLocalStorage('isAdminAuthenticated', false);
-
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -96,7 +94,7 @@ export function AppSidebar() {
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
     { href: "/youtube", label: "यूट्यूब", icon: Youtube, tooltip: "YouTube" },
-    ...(isAdmin || isAdminAuthenticated ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
+    ...(isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
@@ -223,5 +221,7 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
       </svg>
     )
   }
+
+    
 
     
