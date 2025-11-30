@@ -44,13 +44,11 @@ async function fetchAllChannelVideos(channelId: string, apiKey: string, pageToke
     
     let videos = data.items || [];
     
-    // Check for nextPageToken to decide if we need to fetch more videos.
-    // This is commented out to prevent excessive API usage.
-    // You can enable this if you need to fetch more than 50 videos.
-    // if (data.nextPageToken) {
-    //     const nextPageVideos = await fetchAllChannelVideos(channelId, apiKey, data.nextPageToken);
-    //     videos = videos.concat(nextPageVideos);
-    // }
+    // Recursively fetch next pages if a nextPageToken exists.
+    if (data.nextPageToken) {
+        const nextPageVideos = await fetchAllChannelVideos(channelId, apiKey, data.nextPageToken);
+        videos = videos.concat(nextPageVideos);
+    }
 
     return videos;
 }
@@ -85,8 +83,7 @@ async function searchAndSyncYouTube({ channelId }: SearchInput): Promise<SearchO
 
 
   // 2. Fetch all videos from the channel's uploads playlist
-  const uploadsPlaylistId = channelDetailsResponse.items[0].contentDetails.relatedPlaylists.uploads;
-  const allVideoItems = await fetchAllChannelVideos(channelId, youtubeApiKey); // Re-using existing function, which searches channel, not playlist.
+  const allVideoItems = await fetchAllChannelVideos(channelId, youtubeApiKey);
   
   const videos: z.infer<typeof VideoSchema>[] = allVideoItems
     .filter((item: any) => item.id.videoId)
@@ -111,3 +108,4 @@ export const youtubeSyncFlow = ai.defineFlow(
   },
   searchAndSyncYouTube
 );
+

@@ -14,7 +14,7 @@ import {
   SidebarFooter,
   useSidebar
 } from "@/components/ui/sidebar";
-import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore, useFirebase } from "@/firebase";
+import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { doc, getDoc } from 'firebase/firestore';
@@ -60,7 +60,7 @@ function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
-  const { firestore } = useFirebase();
+  const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -114,7 +114,7 @@ export function AppSidebar() {
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
-    ...(isAdminAuthenticated ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
+    ...(isAdminAuthenticated && isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   

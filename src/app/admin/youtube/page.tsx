@@ -36,11 +36,13 @@ export default function ManageYoutubePage() {
         try {
             const result = await youtubeSyncFlow({ channelId });
 
+            // The document ID will be the channel ID for easy retrieval
             const channelDocRef = doc(firestore, 'youtubeChannels', result.channel.id);
 
+            // Save all channel info and video metadata to a single document
             await setDoc(channelDocRef, {
                 ...result.channel,
-                videos: result.videos,
+                videos: result.videos, // Array of all video objects
                 lastSynced: serverTimestamp(),
             });
 
@@ -60,7 +62,7 @@ export default function ManageYoutubePage() {
                 <CardTitle>Manage YouTube Content</CardTitle>
                 <CardDescription>
                     Sync all videos from a YouTube channel to Firestore. This allows the app to display videos
-                    without using API quota on every page load.
+                    without using API quota on every page load. This is a one-time operation per update.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -72,7 +74,7 @@ export default function ManageYoutubePage() {
                     {isSyncing ? (
                         <><Loader className="mr-2 h-4 w-4 animate-spin"/> Syncing...</>
                     ) : (
-                        <><RefreshCw className="mr-2 h-4 w-4"/> Sync Channel Videos</>
+                        <><RefreshCw className="mr-2 h-4 w-4"/> Sync All Channel Videos to Firestore</>
                     )}
                 </Button>
                 <Button asChild className="w-full mt-2" variant="secondary">
