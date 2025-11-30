@@ -102,7 +102,7 @@ export default function AiDoubtSolverPage() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Wand2 className="text-primary h-6 w-6"/>
-                        AI Doubt Solver
+                        Quickly Study Doubt Solver
                     </CardTitle>
                     <CardDescription>
                         Ask any question by typing or uploading an image. Our AI will help you out.

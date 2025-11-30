@@ -47,7 +47,7 @@ function AiDoubtSolverCard() {
             <div className="relative p-4 rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient-xy">
                 <div className="text-white text-center">
                     <Wand2 className="mx-auto h-8 w-8 mb-2" />
-                    <h2 className="text-xl font-bold mb-1">AI Doubt Solver</h2>
+                    <h2 className="text-xl font-bold mb-1">Quickly Study Doubt Solver</h2>
                      <Button variant="secondary" size="sm" className="mt-1">Start Now</Button>
                 </div>
             </div>
