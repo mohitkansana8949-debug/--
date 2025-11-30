@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -56,24 +56,39 @@ const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollme
 
 export default function AdminDashboardOverview() {
   const { firestore } = useFirebase();
-  const { isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   
-  const [isAdminVerified, setIsAdminVerified] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
   useEffect(() => {
-    if (sessionStorage.getItem('admin-verified') === 'true') {
-        setIsAdminVerified(true);
+    const checkAdminStatus = async () => {
+        if (user && firestore) {
+            try {
+                const adminRef = doc(firestore, 'roles_admin', user.uid);
+                const adminDoc = await getDoc(adminRef);
+                setIsAdmin(adminDoc.exists());
+            } catch (error) {
+                console.error("Error checking admin status:", error);
+                setIsAdmin(false);
+            }
+        }
+        setIsAdminLoading(false);
+    };
+
+    if (!isUserLoading) {
+        checkAdminStatus();
     }
-  }, []);
+  }, [user, firestore, isUserLoading]);
   
-  const usersQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'users') : null), [firestore, isAdminVerified]);
-  const coursesQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'courses') : null), [firestore, isAdminVerified]);
-  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'enrollments') : null), [firestore, isAdminVerified]);
-  const ebooksQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'ebooks') : null), [firestore, isAdminVerified]);
-  const pyqsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'pyqs') : null), [firestore, isAdminVerified]);
-  const testsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'tests') : null), [firestore, isAdminVerified]);
-  const bookOrdersQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'bookOrders') : null), [firestore, isAdminVerified]);
+  const usersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
+  const coursesQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'courses') : null), [firestore, isAdmin]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'enrollments') : null), [firestore, isAdmin]);
+  const ebooksQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'ebooks') : null), [firestore, isAdmin]);
+  const pyqsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'pyqs') : null), [firestore, isAdmin]);
+  const testsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'tests') : null), [firestore, isAdmin]);
+  const bookOrdersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'bookOrders') : null), [firestore, isAdmin]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
@@ -90,17 +105,7 @@ export default function AdminDashboardOverview() {
 
   const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
 
-  const handleCodeSubmit = (values: CodeFormValues) => {
-      if (values.code === ADMIN_CODE) {
-          toast({ title: 'सफलता!', description: 'एडमिन एक्सेस प्रदान किया गया।'});
-          sessionStorage.setItem('admin-verified', 'true');
-          setIsAdminVerified(true);
-      } else {
-          toast({ variant: 'destructive', title: 'गलत कोड', description: 'प्रदान किया गया एडमिन कोड गलत है।'});
-      }
-  }
-
-  const loading = isUserLoading || (isAdminVerified && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
+  const loading = isUserLoading || isAdminLoading || (isAdmin && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
 
   const stats = [
       { title: 'यूज़र्स', icon: Users, value: users?.length ?? 0 },
@@ -112,34 +117,18 @@ export default function AdminDashboardOverview() {
       { title: 'Book Orders', icon: ShoppingBag, value: bookOrders?.length ?? 0 },
   ];
 
-  if (isUserLoading) {
+  if (isUserLoading || isAdminLoading) {
       return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>
   }
 
-  if (!isAdminVerified) {
+  if (!isAdmin) {
       return (
-          <Dialog open={true} onOpenChange={() => {}}>
-              <DialogContent>
-                  <DialogHeader>
-                      <DialogTitle>एडमिन एक्सेस</DialogTitle>
-                      <DialogDescription>
-                          एडमिन डैशबोर्ड तक पहुंचने के लिए कृपया एडमिन कोड दर्ज करें।
-                      </DialogDescription>
-                  </DialogHeader>
-                   <Form {...codeForm}>
-                        <form onSubmit={codeForm.handleSubmit(handleCodeSubmit)} className="space-y-4">
-                            <FormField control={codeForm.control} name="code" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>एडमिन कोड</FormLabel>
-                                    <FormControl><Input type="password" placeholder="••••••" {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}/>
-                            <Button type="submit" className="w-full">एक्सेस करें</Button>
-                        </form>
-                    </Form>
-              </DialogContent>
-          </Dialog>
+          <Card>
+              <CardHeader>
+                  <CardTitle>Access Denied</CardTitle>
+                  <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
+              </CardHeader>
+          </Card>
       )
   }
 
