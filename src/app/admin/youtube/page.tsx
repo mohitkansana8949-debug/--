@@ -4,25 +4,82 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Loader, RefreshCw, Youtube } from 'lucide-react';
+import { youtubeSyncFlow } from '@/ai/flows/youtube-search-flow';
+import { useFirebase } from '@/firebase';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+
+const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
 
 export default function ManageYoutubePage() {
+    const { firestore } = useFirebase();
+    const { toast } = useToast();
+    const [channelId, setChannelId] = useState(QUICKLY_STUDY_CHANNEL_ID);
+    const [isSyncing, setIsSyncing] = useState(false);
+    
+    const handleSync = async () => {
+        if (!channelId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please enter a YouTube Channel ID.'});
+            return;
+        }
+        if (!firestore) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Firestore is not available.'});
+            return;
+        }
+
+        setIsSyncing(true);
+
+        try {
+            const result = await youtubeSyncFlow({ channelId });
+
+            const channelDocRef = doc(firestore, 'youtubeChannels', result.channel.id);
+
+            await setDoc(channelDocRef, {
+                ...result.channel,
+                videos: result.videos,
+                lastSynced: serverTimestamp(),
+            });
+
+            toast({ title: 'Sync Successful!', description: `Synced ${result.videos.length} videos from "${result.channel.title}".`});
+
+        } catch (error: any) {
+            console.error("YouTube Sync Error:", error);
+            toast({ variant: 'destructive', title: 'Sync Failed', description: error.message || 'An unknown error occurred.'});
+        } finally {
+            setIsSyncing(false);
+        }
+    }
     
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Manage YouTube</CardTitle>
+                <CardTitle>Manage YouTube Content</CardTitle>
                 <CardDescription>
-                    The YouTube feature has been simplified to only show your channel's content to save API costs.
-                    No further configuration is needed here.
+                    Sync all videos from a YouTube channel to Firestore. This allows the app to display videos
+                    without using API quota on every page load.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <p className="text-muted-foreground">
-                    All videos are now being pulled directly from the "Quickly Study" YouTube channel. The public-facing
-                    YouTube page now acts as a showcase for your channel.
-                </p>
-                 <Button asChild className="mt-4">
-                    <Link href="/youtube">Go to YouTube Page</Link>
+            <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="channelId">YouTube Channel ID</Label>
+                    <Input id="channelId" value={channelId} onChange={(e) => setChannelId(e.target.value)} />
+                </div>
+                 <Button onClick={handleSync} disabled={isSyncing} className="w-full">
+                    {isSyncing ? (
+                        <><Loader className="mr-2 h-4 w-4 animate-spin"/> Syncing...</>
+                    ) : (
+                        <><RefreshCw className="mr-2 h-4 w-4"/> Sync Channel Videos</>
+                    )}
+                </Button>
+                <Button asChild className="w-full mt-2" variant="secondary">
+                    <Link href="/youtube" target="_blank">
+                        <Youtube className="mr-2 h-4 w-4"/>
+                        View YouTube Page
+                    </Link>
                 </Button>
             </CardContent>
         </Card>

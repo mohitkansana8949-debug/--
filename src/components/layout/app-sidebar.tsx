@@ -37,6 +37,26 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 
+function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
+    return (
+      <svg
+        {...props}
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c0 1.66 4 3 10 3s10-1.34 10-3v-5" />
+      </svg>
+    )
+  }
+
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
@@ -46,11 +66,12 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminAuthenticated] = useLocalStorage('isAdminAuthenticated', false);
 
   useEffect(() => {
     const checkAdmin = async () => {
       if (user && firestore) {
-        if (user.email === 'qukly@study.com') {
+        if (user.email && user.email.toLowerCase() === 'qukly@study.com') {
           setIsAdmin(true);
           return;
         }
@@ -93,15 +114,14 @@ export function AppSidebar() {
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
-    { href: "/youtube", label: "यूट्यूब", icon: Youtube, tooltip: "YouTube" },
-    ...(isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
+    ...(isAdminAuthenticated ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
   const socialLinks = [
     { href: "https://whatsapp.com/channel/0029Vai66i2Jpe8cngwmG11R", label: "WhatsApp", icon: WhatsAppIcon },
     { href: "https://www.instagram.com/ashokraj__62?utm_source=qr", label: "Instagram", icon: Instagram },
-    { href: "https://youtube.com/@quicklystudy01?si=smW5n5d72HYt8__U", label: "YouTube", icon: Youtube },
+    { href: "https://youtube.com/@quicklystudy01?si=hPvk5WvWvajNXTMS", label: "YouTube", icon: Youtube },
     { href: "https://t.me/Quicklystudy", label: "Telegram", icon: Send },
     { href: "https://www.facebook.com/share/1CEwFx3NuX/", label: "Facebook", icon: Facebook },
   ];
@@ -201,27 +221,3 @@ export function AppSidebar() {
     </Sidebar>
   );
 }
-
-function GraduationCap(props: React.SVGProps<SVGSVGElement>) {
-    return (
-      <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c0 1.66 4 3 10 3s10-1.34 10-3v-5" />
-      </svg>
-    )
-  }
-
-    
-
-    

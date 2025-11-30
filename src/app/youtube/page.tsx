@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,29 +8,42 @@ import { Loader, Search, Youtube, Tv } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useDebounce } from '@/hooks/use-debounce';
-import { allYoutubeVideos, VideoCategory } from '@/lib/youtube-videos';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
-const QUICKLY_STUDY_CHANNEL = {
-  id: 'UCF2s8P3t1-x9-g_X0d-jC-g',
-  title: 'Quickly Study',
-  description: 'The quickest way to study for competitive exams.',
-  thumbnailUrl: 'https://yt3.ggpht.com/g-qu-yW38j2J9_Z8zMOPx3DF3nE3zMvA_a2zKbC1A9h3J8JCaR8E3g_D-MvJz_c_hJzYQ5g=s176-c-k-c0x00ffffff-no-rj',
-};
+const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
 
-const categories: VideoCategory[] = ["Sainik School", "Military School", "Maths", "GK"];
+const categories = ["Sainik School", "Military School", "Maths", "GK"];
 
 export default function YouTubeExplorerPage() {
+  const firestore = useFirestore();
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearchQuery = useDebounce(searchQuery, 300).toLowerCase();
 
-  const searchResults = debouncedSearchQuery
-    ? allYoutubeVideos.filter(video => video.title.toLowerCase().includes(debouncedSearchQuery))
-    : [];
+  const channelsQuery = useMemoFirebase(() => (
+    firestore ? collection(firestore, 'youtubeChannels') : null
+  ), [firestore]);
+
+  const { data: channels, isLoading: channelsLoading } = useCollection(channelsQuery);
+  const quicklyStudyChannel = useMemo(() => channels?.find(c => c.id === QUICKLY_STUDY_CHANNEL_ID), [channels]);
+  const allVideos = useMemo(() => quicklyStudyChannel?.videos || [], [quicklyStudyChannel]);
+
+
+  const searchResults = useMemo(() => 
+    debouncedSearchQuery
+      ? allVideos.filter((video: any) => video.title.toLowerCase().includes(debouncedSearchQuery))
+      : [],
+    [debouncedSearchQuery, allVideos]
+  );
     
-  const categorizedVideos = categories.map(category => ({
+  const categorizedVideos = useMemo(() => 
+    categories.map(category => ({
       category,
-      videos: allYoutubeVideos.filter(video => video.category === category).slice(0, 4) // Show 4 videos per category
-  }));
+      videos: allVideos.filter((video: any) => video.title.toLowerCase().includes(category.toLowerCase())).slice(0, 4)
+    })), [allVideos]
+  );
+
+  const isLoading = channelsLoading && !quicklyStudyChannel;
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -44,24 +57,26 @@ export default function YouTubeExplorerPage() {
         </p>
       </div>
       
-      <Card className="overflow-hidden bg-muted/50">
-        <div className="flex flex-col md:flex-row items-center gap-4 p-4">
-            <Image
-              src={QUICKLY_STUDY_CHANNEL.thumbnailUrl}
-              alt={QUICKLY_STUDY_CHANNEL.title}
-              width={88}
-              height={88}
-              className="rounded-full border-4 border-background"
-            />
-            <div className="text-center md:text-left">
-              <CardTitle>{QUICKLY_STUDY_CHANNEL.title}</CardTitle>
-              <CardDescription className="mt-1">{QUICKLY_STUDY_CHANNEL.description}</CardDescription>
+      {isLoading ? <div className="flex h-32 items-center justify-center"><Loader className="animate-spin" /></div> : quicklyStudyChannel && (
+          <Card className="overflow-hidden bg-muted/50">
+            <div className="flex flex-col md:flex-row items-center gap-4 p-4">
+                <Image
+                src={quicklyStudyChannel.thumbnailUrl}
+                alt={quicklyStudyChannel.title}
+                width={88}
+                height={88}
+                className="rounded-full border-4 border-background"
+                />
+                <div className="text-center md:text-left">
+                <CardTitle>{quicklyStudyChannel.title}</CardTitle>
+                <CardDescription className="mt-1">{quicklyStudyChannel.description}</CardDescription>
+                </div>
+                <a href={`https://www.youtube.com/channel/${quicklyStudyChannel.id}`} target="_blank" rel="noopener noreferrer" className="md:ml-auto">
+                    <Button>View Channel</Button>
+                </a>
             </div>
-            <a href={`https://www.youtube.com/channel/${QUICKLY_STUDY_CHANNEL.id}`} target="_blank" rel="noopener noreferrer" className="md:ml-auto">
-                 <Button>View Channel</Button>
-            </a>
-        </div>
-      </Card>
+          </Card>
+      )}
 
 
       <div className="relative w-full">
@@ -82,8 +97,8 @@ export default function YouTubeExplorerPage() {
             <h2 className="text-2xl font-bold mb-4">Search Results for "{debouncedSearchQuery}"</h2>
             {searchResults.length > 0 ? (
                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {searchResults.map(video => (
-                        <Link href={`/courses/watch/${video.videoId}?chatId=${QUICKLY_STUDY_CHANNEL.id}`} key={video.videoId}>
+                    {searchResults.map((video: any) => (
+                        <Link href={`/courses/watch/${video.videoId}?chatId=${QUICKLY_STUDY_CHANNEL_ID}`} key={video.videoId}>
                          <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
                             <div className="relative w-full aspect-video">
                                 <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover" />
@@ -111,8 +126,8 @@ export default function YouTubeExplorerPage() {
                 <div key={category}>
                   <h2 className="text-2xl font-bold mb-4">{category}</h2>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {videos.map(video => (
-                        <Link href={`/courses/watch/${video.videoId}?chatId=${QUICKLY_STUDY_CHANNEL.id}`} key={video.videoId}>
+                    {videos.map((video: any) => (
+                        <Link href={`/courses/watch/${video.videoId}?chatId=${QUICKLY_STUDY_CHANNEL_ID}`} key={video.videoId}>
                          <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
                             <div className="relative w-full aspect-video">
                                 <Image src={video.thumbnailUrl} alt={video.title} fill className="object-cover" />

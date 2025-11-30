@@ -78,19 +78,26 @@ export default function AdminLayout({
   useEffect(() => {
     // This effect runs on the client side
     if (!isUserLoading) {
-        if (!isAdminAuthenticated) {
-            router.replace('/admin-auth');
-        } else {
-            setIsCheckingAuth(false);
-        }
+      if (user && !isAdminAuthenticated) {
+        // If user is logged in but hasn't passed the code check, force it.
+        router.replace('/admin-auth');
+      } else if (!user) {
+        // If no user is logged in at all, go to the main login.
+        router.replace('/login');
+      }
+      else {
+        setIsCheckingAuth(false);
+      }
     }
-  }, [isAdminAuthenticated, isUserLoading, router]);
+  }, [isAdminAuthenticated, user, isUserLoading, router]);
 
   if (isUserLoading || isCheckingAuth) {
     return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
   }
   
-  if (!isAdminAuthenticated) {
+  if (!user || 
+      !isAdminAuthenticated
+    ) {
     // This will be shown briefly before the redirect happens, or if redirect fails.
     return null;
   }
