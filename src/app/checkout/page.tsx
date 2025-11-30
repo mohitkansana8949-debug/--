@@ -7,11 +7,11 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
 import { addDoc, collection, serverTimestamp, query, where, getDocs, doc, writeBatch, documentId, getDoc } from "firebase/firestore";
 import { Loader } from "lucide-react";
@@ -31,7 +31,6 @@ export default function CheckoutPage() {
     const { user } = useUser();
     const { firestore } = useFirebase();
     const router = useRouter();
-    const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -54,7 +53,7 @@ export default function CheckoutPage() {
             toast({ title: "Your cart is empty", description: "Redirecting to bookshala..." });
             router.replace('/bookshala');
         }
-    }, [cart, router, toast]);
+    }, [cart, router]);
     
     const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
     const total = subtotal - discount;
@@ -217,7 +216,7 @@ export default function CheckoutPage() {
                         <CardContent className="space-y-4 divide-y">
                             {cart.map(item => (
                                 <div key={item.id} className="flex items-center gap-4 pt-4 first:pt-0">
-                                    <Image src={item.imageUrl} alt={item.name} width={60} height={75} className="rounded-md object-cover" />
+                                    <img src={item.imageUrl} alt={item.name} width={60} height={75} className="rounded-md object-cover" />
                                     <div className="flex-1">
                                         <p className="font-medium line-clamp-1">{item.name}</p>
                                         <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
