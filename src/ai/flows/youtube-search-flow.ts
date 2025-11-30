@@ -5,8 +5,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import getConfig from 'next/config';
 
-const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
-const youtubeApiKey = serverRuntimeConfig.YOUTUBE_API_KEY || publicRuntimeConfig.YOUTUBE_API_KEY;
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig() || {};
+const youtubeApiKey = serverRuntimeConfig?.YOUTUBE_API_KEY || publicRuntimeConfig?.YOUTUBE_API_KEY;
 
 const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
 
@@ -40,12 +40,10 @@ async function searchYouTube(query: string) {
   
   let searchUrl = '';
   if (isQuicklyStudySearch) {
-    // Search specifically within the Quickly Study channel
-    searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}`;
-    if (query.trim().toLowerCase() !== 'quickly study') {
-      // If there's more to the query, use it
-      searchUrl += `&q=${encodeURIComponent(query)}`;
-    }
+    // Search specifically within the Quickly Study channel. If the query is just "quickly study", it returns all videos.
+    // If it's more specific, it searches within the channel.
+    const searchQuery = query.trim().toLowerCase() === 'quickly study' ? '' : encodeURIComponent(query);
+    searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${searchQuery}`;
   } else {
     // General search across YouTube
     searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
