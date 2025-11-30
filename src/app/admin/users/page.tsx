@@ -22,7 +22,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function AdminUsersPage() {
     const { firestore } = useFirebase();
@@ -41,25 +42,36 @@ export default function AdminUsersPage() {
         
         const adminDocRef = doc(firestore, 'roles_admin', userId);
         
-        try {
-            if (currentIsAdmin) {
-                // Revoke admin: delete the document
-                await deleteDoc(adminDocRef);
-                toast({ title: 'Admin Revoked', description: 'User is no longer an admin.' });
-            } else {
-                // Grant admin: create the document
-                await setDoc(adminDocRef, { role: 'admin' });
-                toast({ title: 'Admin Granted', description: 'User is now an admin.' });
-            }
-        } catch (error) {
-            console.error("Error updating admin status:", error);
-            const contextualError = new FirestorePermissionError({
-                operation: 'write',
-                path: adminDocRef.path,
-                requestResourceData: { role: 'admin' }
-            });
-            errorEmitter.emit('permission-error', contextualError);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update admin status.' });
+        if (currentIsAdmin) {
+            // Revoke admin: delete the document
+            deleteDoc(adminDocRef)
+                .then(() => {
+                    toast({ title: 'Admin Revoked', description: 'User is no longer an admin.' });
+                })
+                .catch((error) => {
+                    console.error("Error revoking admin status:", error);
+                    const contextualError = new FirestorePermissionError({
+                        operation: 'delete',
+                        path: adminDocRef.path
+                    });
+                    errorEmitter.emit('permission-error', contextualError);
+                });
+        } else {
+            // Grant admin: create the document
+            const roleData = { role: 'admin' };
+            setDoc(adminDocRef, roleData)
+                .then(() => {
+                    toast({ title: 'Admin Granted', description: 'User is now an admin.' });
+                })
+                .catch((error) => {
+                    console.error("Error granting admin status:", error);
+                    const contextualError = new FirestorePermissionError({
+                        operation: 'create',
+                        path: adminDocRef.path,
+                        requestResourceData: roleData
+                    });
+                    errorEmitter.emit('permission-error', contextualError);
+                });
         }
     };
 

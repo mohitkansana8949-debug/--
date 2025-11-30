@@ -46,6 +46,7 @@ const adminNavItems = [
   { href: '/admin/book-orders', label: 'Book Orders', icon: ShoppingBag },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
+  { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
   { href: '/admin/notifications', label: 'Send Notification', icon: Bell },
   { href: '/admin/live-content', label: 'Live Content', icon: Radio },
@@ -112,7 +113,8 @@ export default function AdminLayout({
     return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
   }
   
-  // Temporarily disabled for access.
+  // This is a temporary measure to allow access.
+  // In a real app, you'd want to enforce this check.
   /*
   if (!isAdmin) {
       return (

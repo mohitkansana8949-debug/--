@@ -2,9 +2,9 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Loader, Search, Youtube, Tv } from 'lucide-react';
+import { Loader, Search, Youtube, Tv, UserSquare2 } from 'lucide-react';
 import { youtubeSearchFlow, getHomePageVideos } from '@/ai/flows/youtube-search-flow';
 import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
@@ -13,11 +13,11 @@ import Link from 'next/link';
 export default function YouTubeExplorerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
+  const [channels, setChannels] = useState<SearchOutput['channels']>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initially load a mix of videos
     handleInitialLoad();
   }, []);
 
@@ -26,9 +26,9 @@ export default function YouTubeExplorerPage() {
     setError(null);
     try {
       const results = await getHomePageVideos({});
-      // Combine videos, with Quickly Study videos first
       const combinedVideos = [...results.quicklyStudyVideos, ...results.otherVideos];
       setVideos(combinedVideos);
+      setChannels([]);
     } catch (err: any) {
       setError(err.message || "Failed to fetch initial videos.");
       console.error(err);
@@ -40,7 +40,6 @@ export default function YouTubeExplorerPage() {
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!searchQuery.trim()) {
-      // If search is empty, reload the initial set of videos
       handleInitialLoad();
       return;
     }
@@ -50,8 +49,10 @@ export default function YouTubeExplorerPage() {
     try {
       const results = await youtubeSearchFlow({ 
         query: searchQuery,
+        channelId: null
       });
       setVideos(results.videos);
+      setChannels(results.channels);
     } catch (err: any) {
       setError(err.message || "Failed to fetch videos.");
       console.error(err);
@@ -95,25 +96,51 @@ export default function YouTubeExplorerPage() {
         </div>
       ) : error ? (
         <p className="text-destructive text-center">{error}</p>
-      ) : videos.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {videos.map(video => (
-            <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
-              <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
-                <div className="relative w-full aspect-video">
-                  <Image
-                    src={video.thumbnailUrl}
-                    alt={video.title}
-                    fill
-                    className="object-cover"
-                  />
+      ) : (videos.length > 0 || channels.length > 0) ? (
+        <div className="space-y-6">
+            {channels.length > 0 && (
+                 <div>
+                    <h2 className="text-xl font-bold mb-4 flex items-center"><UserSquare2 className="mr-2"/> Channels</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        {channels.map(channel => (
+                            <Link href={`/youtube/${channel.channelId}`} key={channel.channelId}>
+                                <Card className="p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors">
+                                    <Image src={channel.thumbnailUrl} alt={channel.title} width={60} height={60} className="rounded-full" />
+                                    <div className="flex-1">
+                                        <p className="font-semibold">{channel.title}</p>
+                                        <p className="text-xs text-muted-foreground line-clamp-2">{channel.description}</p>
+                                    </div>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
-                <CardHeader>
-                  <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{video.title}</CardTitle>
-                </CardHeader>
-              </Card>
-            </Link>
-          ))}
+            )}
+            {videos.length > 0 && (
+                <div>
+                     <h2 className="text-xl font-bold mb-4 flex items-center"><Tv className="mr-2"/> Videos</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      {videos.map(video => (
+                        <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
+                          <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
+                            <div className="relative w-full aspect-video">
+                              <Image
+                                src={video.thumbnailUrl}
+                                alt={video.title}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <CardHeader>
+                              <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{video.title}</CardTitle>
+                              <CardDescription className="text-xs">{video.channelTitle}</CardDescription>
+                            </CardHeader>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                </div>
+            )}
         </div>
       ) : (
         <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
