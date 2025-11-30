@@ -12,6 +12,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
+import { FirebaseError } from 'firebase/app';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -71,7 +72,11 @@ export default function AiDoubtSolverPage() {
                 imageUrl = await getDownloadURL(uploadResult.ref);
             } catch (error) {
                  console.error("Image upload error:", error);
-                 toast({ variant: 'destructive', title: 'Upload Error', description: 'Failed to upload image.' });
+                 let description = 'Failed to upload image. Please check your network and try again.';
+                 if (error instanceof FirebaseError) {
+                     description = `Storage Error: ${error.message}`;
+                 }
+                 toast({ variant: 'destructive', title: 'Upload Error', description });
                  setAnswer("Sorry, I couldn't upload your image. Please try again.");
                  setIsLoading(false);
                  return;
