@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader, Search, Youtube, Tv, UserSquare2 } from 'lucide-react';
-import { youtubeSearchFlow, getChannelDetails, QUICKLY_STUDY_CHANNEL } from '@/ai/flows/youtube-search-flow';
+import { youtubeSearchFlow, getChannelDetails } from '@/ai/flows/youtube-search-flow';
 import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -26,7 +26,7 @@ export default function YouTubeExplorerPage() {
         setIsLoading(true);
         setError(null);
         try {
-            const channelDetails = await getChannelDetails({ channelId: QUICKLY_STUDY_CHANNEL.ID });
+            const channelDetails = await getChannelDetails({ channelId: 'QUICKLY_STUDY' });
             setQuicklyStudyChannel(channelDetails);
         } catch (err: any) {
             setError(err.message || "Failed to fetch channel details.");

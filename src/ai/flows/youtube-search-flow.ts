@@ -117,6 +117,10 @@ export const getChannelDetails = ai.defineFlow(
             throw new Error('The YouTube API key is not configured.');
         }
 
+        if (channelId === 'QUICKLY_STUDY') {
+            channelId = QUICKLY_STUDY_CHANNEL_ID;
+        }
+
         const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${youtubeApiKey}`;
         const response = await fetch(channelDetailsUrl);
         const data = await response.json();
@@ -139,7 +143,3 @@ export const getChannelDetails = ai.defineFlow(
         return null;
     }
 );
-
-export const QUICKLY_STUDY_CHANNEL = {
-    ID: QUICKLY_STUDY_CHANNEL_ID
-};
