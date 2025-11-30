@@ -98,3 +98,30 @@ export interface PYQ {
     thumbnailUrl?: string;
 }
 
+export interface Post {
+    id: string;
+    userId: string;
+    userName: string;
+    userImage?: string;
+    text: string;
+    imageUrl?: string;
+    createdAt: Timestamp;
+    likeCount: number;
+    commentCount: number;
+}
+
+export interface Like {
+    id: string;
+    userId: string;
+    postId: string;
+}
+
+export interface Comment {
+    id: string;
+    userId: string;
+    userName: string;
+    userImage?: string;
+    postId: string;
+    text: string;
+    createdAt: Timestamp;
+}

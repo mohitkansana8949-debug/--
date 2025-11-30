@@ -10,8 +10,7 @@ import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, T
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, onSnapshot, collection, query, where, getDocs, Timestamp, orderBy } from 'firebase/firestore';
-import { Progress } from '@/components/ui/progress';
+import { doc, getDoc, onSnapshot, collection, query, orderBy, Timestamp } from 'firebase/firestore';
 import { format } from 'date-fns';
 
 // Helper function to get a color based on user ID
@@ -51,27 +50,9 @@ export default function ProfilePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
-  const [progress, setProgress] = useState(0);
   const [referralData, setReferralData] = useState<{ points: number; count: number }>({ points: 0, count: 0 });
   const [isReferralLoading, setIsReferralLoading] = useState(true);
 
-  // Queries for all content types
-  const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
-  const ebooksQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'ebooks') : null), [firestore]);
-  const pyqsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'pyqs') : null), [firestore]);
-  const testsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'tests') : null), [firestore]);
-
-  const { data: allCourses } = useCollection(coursesQuery);
-  const { data: allEbooks } = useCollection(ebooksQuery);
-  const { data: allPyqs } = useCollection(pyqsQuery);
-  const { data: allTests } = useCollection(testsQuery);
-
-  const enrollmentsQuery = useMemoFirebase(
-    () => user ? query(collection(firestore, 'enrollments'), where('userId', '==', user.uid)) : null,
-    [user, firestore]
-  );
-  const { data: enrollments } = useCollection(enrollmentsQuery);
-  
   const referralsQuery = useMemoFirebase(
       () => user ? query(collection(firestore, 'referrals'), where('referrerId', '==', user.uid)) : null,
       [user, firestore]
@@ -83,29 +64,6 @@ export default function ProfilePage() {
     [user, firestore]
   );
   const { data: certificates, isLoading: certificatesLoading } = useCollection(certificatesQuery);
-
-
-  const calculateProgress = useCallback(() => {
-    if (!user || !enrollments || !allCourses || !allEbooks || !allPyqs || !allTests) {
-      setProgress(0);
-      return;
-    }
-    const totalItems = (allCourses?.length || 0) + (allEbooks?.length || 0) + (allPyqs?.length || 0) + (allTests?.length || 0);
-    const approvedEnrollments = new Set(enrollments.filter(e => e.status === 'approved').map(e => e.itemId));
-    
-    if (totalItems === 0) {
-      setProgress(0);
-      return;
-    }
-    
-    const progressPercentage = (approvedEnrollments.size / totalItems) * 100;
-    setProgress(Math.min(100, progressPercentage));
-
-  }, [allCourses, allEbooks, allPyqs, allTests, enrollments, user]);
-
-  useEffect(() => {
-    calculateProgress();
-  }, [calculateProgress]);
 
   useEffect(() => {
       if (!referralsLoading && referrals) {
@@ -245,6 +203,30 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+      
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center"><Trophy className="mr-2 h-5 w-5 text-yellow-500"/>Referral Stats</CardTitle>
+             <CardDescription>Track your referral earnings and rewards.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isReferralLoading ? (
+                <div className="flex justify-center"><Skeleton className="h-20 w-full" /></div>
+            ) : (
+                <div className="grid grid-cols-2 gap-4 text-center">
+                    <div className="p-4 bg-card rounded-lg border">
+                        <p className="text-3xl font-bold">{referralData.count}</p>
+                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Users className="h-4 w-4"/>Friends Joined</p>
+                    </div>
+                    <div className="p-4 bg-card rounded-lg border">
+                        <p className="text-3xl font-bold">{referralData.points}</p>
+                        <p className="text-sm text-muted-foreground">Points Earned</p>
+                    </div>
+                </div>
+            )}
+             <Button asChild className="w-full mt-4"><Link href="/refer">View Refer & Earn</Link></Button>
+          </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -279,29 +261,6 @@ export default function ProfilePage() {
             )}
         </CardContent>
       </Card>
-      
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center"><Trophy className="mr-2 h-5 w-5 text-yellow-500"/>Referral Stats</CardTitle>
-             <CardDescription>Track your referral earnings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isReferralLoading ? (
-                <div className="flex justify-center"><Skeleton className="h-20 w-full" /></div>
-            ) : (
-                <div className="grid grid-cols-2 gap-4 text-center">
-                    <div className="p-4 bg-card rounded-lg border">
-                        <p className="text-3xl font-bold">{referralData.count}</p>
-                        <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Users className="h-4 w-4"/>Friends Joined</p>
-                    </div>
-                    <div className="p-4 bg-card rounded-lg border">
-                        <p className="text-3xl font-bold">{referralData.points}</p>
-                        <p className="text-sm text-muted-foreground">Points Earned</p>
-                    </div>
-                </div>
-            )}
-          </CardContent>
-      </Card>
 
       <Card>
           <CardHeader>
@@ -309,18 +268,7 @@ export default function ProfilePage() {
             <CardDescription>Track your learning journey through all our content.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-                <div className="flex justify-between items-center mb-1">
-                    <span className="text-muted-foreground">Completion</span>
-                    <span className="font-bold text-primary">{Math.round(progress)}%</span>
-                </div>
-                <Progress value={progress} />
-                 <div className="text-center text-sm text-muted-foreground p-4 mt-2 rounded-lg border bg-card">
-                    <Trophy className="mx-auto h-8 w-8 text-yellow-500 mb-2"/>
-                    <p className="font-semibold">Complete 100% and get a ₹20 reward!</p>
-                    <p>Finish all courses, e-books, and tests to claim your prize.</p>
-                </div>
-            </div>
+            <Button asChild className="w-full"><Link href="/my-progress">View Full Progress</Link></Button>
           </CardContent>
       </Card>
 

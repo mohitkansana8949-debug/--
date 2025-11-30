@@ -1,14 +1,25 @@
 
 'use client';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader, PackagePlus } from 'lucide-react';
+import { Loader, PackagePlus, Newspaper, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogClose,
@@ -113,12 +124,24 @@ function AddTestToCourseDialog({ testId, testName }: { testId: string, testName:
 
 export default function AdminTestSeriesPage() {
     const { firestore } = useFirebase();
+    const { toast } = useToast();
     const testsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'tests') : null), [firestore]);
     const { data: tests, isLoading: testsLoading } = useCollection(testsQuery);
     
     const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
     const { data: courses } = useCollection(coursesQuery);
     const coursesMap = new Map(courses?.map(c => [c.id, c.name]));
+
+    const handleDelete = async (id: string) => {
+        if (!firestore) return;
+        try {
+            await deleteDoc(doc(firestore, 'tests', id));
+            toast({ title: "Success", description: "Test Series deleted successfully." });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "Failed to delete test series." });
+            console.error("Error deleting test series:", error);
+        }
+    };
 
     return (
         <Card>
@@ -149,16 +172,32 @@ export default function AdminTestSeriesPage() {
                                     <TableCell>{test.bundledCourseId ? coursesMap.get(test.bundledCourseId) : 'None'}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button asChild size="sm" variant="outline">
-                                            <Link href={`/take-test/${test.id}`} target="_blank">View Test</Link>
+                                            <Link href={`/take-test/${test.id}`}>View Test</Link>
                                         </Button>
                                         <AddTestToCourseDialog testId={test.id} testName={test.name} />
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="icon" variant="destructive"><Trash2 className="h-4 w-4"/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>This action cannot be undone. This will permanently delete this test series.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(test.id)}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}
                             {!testsLoading && tests?.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground">
-                                        No tests found.
+                                    <TableCell colSpan={5} className="text-center text-muted-foreground p-8">
+                                       <Newspaper className="mx-auto h-12 w-12" />
+                                       <p className="mt-4">No tests found.</p>
                                     </TableCell>
                                 </TableRow>
                             )}

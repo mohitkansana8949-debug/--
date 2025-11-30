@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -25,7 +26,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer } from 'recharts';
 import { subDays, format, startOfDay } from 'date-fns';
 
 const ADMIN_CODE = "Quickly";
@@ -156,17 +157,19 @@ export default function AdminDashboardOverview() {
                     <CardTitle className="flex items-center"><Users className="mr-2" /> New Users (Last 7 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {loading ? <div className="h-64 flex justify-center items-center"><Loader className="animate-spin" /></div> : (
-                        <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }} className="h-64">
-                            <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis allowDecimals={false} />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" fill="var(--color-count)" radius={4} />
-                            </RechartsBarChart>
-                        </ChartContainer>
-                    )}
+                   <ResponsiveContainer width="100%" height={250}>
+                        {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                            <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }}>
+                                <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                                </RechartsBarChart>
+                            </ChartContainer>
+                        )}
+                   </ResponsiveContainer>
                 </CardContent>
             </Card>
             <Card>
@@ -174,17 +177,19 @@ export default function AdminDashboardOverview() {
                     <CardTitle className="flex items-center"><CreditCard className="mr-2" /> New Enrollments (Last 7 Days)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {loading ? <div className="h-64 flex justify-center items-center"><Loader className="animate-spin" /></div> : (
-                         <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }} className="h-64">
-                            <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
-                                <YAxis allowDecimals={false} />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <Bar dataKey="count" fill="var(--color-count)" radius={4} />
-                            </RechartsBarChart>
-                        </ChartContainer>
-                    )}
+                    <ResponsiveContainer width="100%" height={250}>
+                        {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                            <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }}>
+                                <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                    <YAxis allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                                </RechartsBarChart>
+                            </ChartContainer>
+                        )}
+                   </ResponsiveContainer>
                 </CardContent>
             </Card>
         </div>

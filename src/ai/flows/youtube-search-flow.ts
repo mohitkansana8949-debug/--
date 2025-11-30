@@ -1,3 +1,4 @@
+
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -44,10 +45,9 @@ async function searchYouTube(query: string, channelId: string | null) {
   let channels: z.infer<typeof ChannelSchema>[] = [];
   let videos: z.infer<typeof VideoSchema>[] = [];
 
-  // If a channelId is provided, we fetch all videos from that channel's uploads playlist.
+  // If a channelId is provided, we fetch all videos from that channel.
   if (channelId) {
-     // First, get the channel's uploads playlist ID
-     const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&id=${channelId}&key=${youtubeApiKey}`;
+     const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelId}&key=${youtubeApiKey}`;
      const channelDetailsResponse = await fetch(channelDetailsUrl);
      const channelDetailsData = await channelDetailsResponse.json();
 
@@ -56,35 +56,26 @@ async function searchYouTube(query: string, channelId: string | null) {
         throw new Error(channelDetailsData.error?.message || 'Could not find channel details.');
      }
      
+     const channelSnippet = channelDetailsData.items[0].snippet;
      const uploadsPlaylistId = channelDetailsData.items[0].contentDetails.relatedPlaylists.uploads;
-     const channelTitle = channelDetailsData.items[0].snippet.title;
 
-     // Now, fetch all videos from that playlist
-     let allVideos: any[] = [];
-     let nextPageToken = '';
-     do {
-        const playlistItemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&pageToken=${nextPageToken}&key=${youtubeApiKey}`;
-        const playlistItemsResponse = await fetch(playlistItemsUrl);
-        const playlistItemsData = await playlistItemsResponse.json();
-        
-        if (playlistItemsData.error) {
-           console.error('YouTube PlaylistItems API Error:', playlistItemsData.error);
-           throw new Error(playlistItemsData.error.message);
-        }
-        
-        allVideos = allVideos.concat(playlistItemsData.items);
-        nextPageToken = playlistItemsData.nextPageToken;
+     // Fetch videos from the uploads playlist
+     const searchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${youtubeApiKey}`;
+     const searchResponse = await fetch(searchUrl);
+     const searchData = await searchResponse.json();
+     
+     if (searchData.error) {
+       console.error('YouTube API Error:', searchData.error);
+       throw new Error(searchData.error.message);
+     }
 
-     } while (nextPageToken);
-
-
-     videos = allVideos.map((item: any) => ({
-        videoId: item.snippet.resourceId.videoId,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-        channelTitle: channelTitle, // Use the fetched channel title
-        channelId: item.snippet.channelId,
+     videos = searchData.items.map((item: any) => ({
+       videoId: item.snippet.resourceId.videoId,
+       title: item.snippet.title,
+       description: item.snippet.description,
+       thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+       channelTitle: channelSnippet.title,
+       channelId: item.snippet.channelId,
      }));
 
   } else {

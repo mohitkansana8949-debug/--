@@ -119,11 +119,11 @@ export default function MyLibraryPage() {
     
     const getItemIcon = (type: EnrolledItem['type']) => {
         switch(type) {
-            case 'course': return <BookOpen className="h-5 w-5" />;
-            case 'ebook': return <EbookIcon className="h-5 w-5" />;
-            case 'pyq': return <FileQuestion className="h-5 w-5" />;
-            case 'test': return <Newspaper className="h-5 w-5" />;
-            default: return <BookOpen className="h-5 w-5" />;
+            case 'course': return <BookOpen className="h-16 w-16 text-muted-foreground" />;
+            case 'ebook': return <EbookIcon className="h-16 w-16 text-muted-foreground" />;
+            case 'pyq': return <FileQuestion className="h-16 w-16 text-muted-foreground" />;
+            case 'test': return <Newspaper className="h-16 w-16 text-muted-foreground" />;
+            default: return <BookOpen className="h-16 w-16 text-muted-foreground" />;
         }
     }
 
@@ -174,7 +174,7 @@ export default function MyLibraryPage() {
             )}
 
             {!finalLoading && filteredItems.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                     {filteredItems.map(item => (
                         <Card key={`${item.type}-${item.id}`} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                            {item.thumbnailUrl ? (

@@ -24,6 +24,24 @@ service cloud.firestore {
      match /educators/{educatorId} {
       allow read, list: if true;
     }
+    match /posts/{postId} {
+      allow read, list: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Comments can be read by anyone, but only created/deleted by the owner.
+    match /posts/{postId}/comments/{commentId} {
+      allow read, list: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // Likes can be created/deleted by the owner. Read access is not needed for querying existence.
+    match /posts/{postId}/likes/{likeId} {
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
 
 
     // User profiles are public to read for referral system, but only owner can write.

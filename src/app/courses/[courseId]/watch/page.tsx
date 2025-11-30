@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye } from 'lucide-react';
+import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -19,7 +19,6 @@ type ContentItemProps = {
 
 function ContentItem({ item, courseId }: ContentItemProps) {
     const router = useRouter();
-    const [showActions, setShowActions] = useState(false);
 
     const getIcon = () => {
         switch(item.type) {
@@ -33,14 +32,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
     };
     
     const handleItemClick = () => {
-        if(item.type === 'youtube' || item.type === 'video') {
-            handleActionClick();
-        } else {
-            setShowActions(!showActions);
-        }
-    }
-
-    const handleActionClick = () => {
          let path = '#';
          switch (item.type) {
             case 'youtube':
@@ -63,15 +54,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
         router.push(path);
     }
 
-    const getActionText = () => {
-        switch (item.type) {
-            case 'youtube': case 'video': return 'Play Video';
-            case 'pdf': case 'pyq': return 'View PDF';
-            case 'test': return 'Start Test';
-            default: return 'View';
-        }
-    };
-
     return (
          <Card onClick={handleItemClick} className="cursor-pointer hover:bg-muted/50">
             <CardContent className="p-3">
@@ -91,17 +73,8 @@ function ContentItem({ item, courseId }: ContentItemProps) {
                             )}
                         </div>
                     </div>
-                     {(item.type === 'youtube' || item.type === 'video') && (
-                        <PlayCircle className="h-6 w-6 text-muted-foreground" />
-                    )}
+                     <PlayCircle className="h-6 w-6 text-muted-foreground" />
                 </div>
-                {showActions && (
-                    <div className="mt-3 text-right">
-                        <Button onClick={handleActionClick} size="sm">
-                            {getActionText()}
-                        </Button>
-                    </div>
-                )}
             </CardContent>
         </Card>
     );

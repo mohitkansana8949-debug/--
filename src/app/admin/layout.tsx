@@ -1,3 +1,4 @@
+
 'use client';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -19,6 +20,7 @@ import {
   Palette,
   Youtube,
   Clapperboard,
+  MessageSquare,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -28,6 +30,7 @@ const adminNavItems = [
   { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },
   { href: '/admin/pyqs', label: 'Manage PYQs', icon: FileQuestion },
   { href: '/admin/test-series', label: 'Manage Tests', icon: Newspaper },
+  { href: '/admin/posts', label: 'Manage Posts', icon: MessageSquare },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },

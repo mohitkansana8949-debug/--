@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -37,15 +38,14 @@ const featureCards = [
   { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
   { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
   { title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' },
-  { title: 'My Progress', href: '/profile', icon: BarChart, color: 'bg-green-500' },
+  { title: 'My Progress', href: '/my-progress', icon: BarChart, color: 'bg-green-500' },
 ];
 
 const footerItems = [
     { name: 'Home', icon: Home, href: '/' },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Orders', icon: ClipboardList, href: '/orders' },
     { name: 'Feed', icon: Rss, href: '/feed' },
-    { name: 'Alerts', icon: Bell, href: '/alerts' },
+    { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
 function InstallPWA() {
@@ -158,7 +158,10 @@ export default function HomePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {educators.map(educator => (
                 <Card key={educator.id} className="text-center overflow-hidden transition-transform hover:scale-105">
-                  {educator.imageUrl && <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>}
+                  {educator.imageUrl ? 
+                    <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>
+                    : <div className="w-full h-32 bg-secondary flex items-center justify-center"><Users className="h-12 w-12 text-muted-foreground"/></div>
+                  }
                   <CardHeader className="p-2">
                       <CardTitle className="text-sm font-semibold truncate">{educator.name}</CardTitle>
                   </CardHeader>
