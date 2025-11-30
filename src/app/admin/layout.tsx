@@ -31,6 +31,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
@@ -69,38 +70,68 @@ export default function AdminLayout({
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
   const { firestore } = useFirestore();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
-  const adminRef = useMemoFirebase(() => (
-    user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
-  ), [user, firestore]);
-  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
+  useEffect(() => {
+    const checkAdmin = async () => {
+        if (!user || !firestore) {
+            setIsAdmin(false);
+            setIsAdminLoading(false);
+            return;
+        }
 
-  const isSuperAdmin = user?.email === 'Qukly@study.com';
-  const isAdmin = isSuperAdmin || !!adminDoc;
+        if (user.email === 'Qukly@study.com') {
+            setIsAdmin(true);
+            setIsAdminLoading(false);
+            return;
+        }
+        
+        try {
+            const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
+            setIsAdmin(adminDoc.exists());
+        } catch (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+        } finally {
+            setIsAdminLoading(false);
+        }
+    };
+    if (!isUserLoading) {
+        checkAdmin();
+    }
+  }, [user, firestore, isUserLoading]);
+
 
   // These paths will be rendered as full pages outside the main admin layout
   const fullPagePaths = ['/admin/create-course', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications'];
+  const isFullPagePath = fullPagePaths.some(p => pathname.startsWith(p)) || pathname.startsWith('/admin/users/');
 
-  if (fullPagePaths.some(p => pathname.startsWith(p))) {
-    return <>{children}</>;
-  }
 
-  if (isUserLoading || isAdminLoading) {
+  const isLoading = isUserLoading || isAdminLoading;
+
+  if (isLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
   }
   
   if (!isAdmin) {
       return (
-          <Card className="m-8">
-              <CardHeader>
-                  <CardTitle>Access Denied</CardTitle>
-                  <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
-              </CardHeader>
-               <CardContent>
-                  <Button asChild><Link href="/">Go to Home</Link></Button>
-              </CardContent>
-          </Card>
+          <div className="flex h-screen items-center justify-center">
+            <Card className="m-8 max-w-md">
+                <CardHeader>
+                    <CardTitle>Access Denied</CardTitle>
+                    <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Button asChild><Link href="/">Go to Home</Link></Button>
+                </CardContent>
+            </Card>
+          </div>
       )
+  }
+
+  if (isFullPagePath) {
+    return <>{children}</>;
   }
 
   return (
@@ -113,10 +144,7 @@ export default function AdminLayout({
           <nav className="flex flex-col gap-2">
             <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => {
-              // The new logic to keep most pages inside the layout
-              const isFullPage = ['/admin/notifications', '/admin/users/'].some(p => item.href.startsWith(p));
-              const shouldRenderInLayout = !isFullPage || pathname === item.href;
-
+              const isFullPage = fullPagePaths.some(p => item.href.startsWith(p));
               return (
                 <Button
                   key={item.href}
@@ -124,7 +152,7 @@ export default function AdminLayout({
                   variant={pathname === item.href ? 'secondary' : 'ghost'}
                   className="justify-start"
                 >
-                  <Link href={item.href} target={shouldRenderInLayout ? '_self' : '_blank'}>
+                  <Link href={item.href}>
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.label}
                   </Link>

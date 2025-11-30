@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -94,7 +95,6 @@ export default function SignupPage() {
         const referredId = userCredential.user.uid;
         const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
         
-        // If there's a referral, perform the read operation first.
         let referrerPointsRef;
         let referrerPointsDoc;
         if (data.referralCode) {
@@ -102,20 +102,15 @@ export default function SignupPage() {
             referrerPointsRef = doc(firestore, 'referralPoints', referrerId);
             referrerPointsDoc = await transaction.get(referrerPointsRef);
         }
-
-        // Now, perform all write operations.
         
-        // 1. Give the new user 5 points for signing up
         transaction.set(newUserPointsRef, {
           userId: referredId,
           points: 5,
         });
         
-        // 2. If there was a referral, handle the referrer's points and record the referral
         if (data.referralCode && referrerPointsRef && referrerPointsDoc) {
             const referrerId = data.referralCode;
             
-            // Create a referral record
             const referralRef = doc(collection(firestore, 'referrals'));
             transaction.set(referralRef, {
                 referrerId: referrerId,
@@ -124,7 +119,6 @@ export default function SignupPage() {
                 createdAt: new Date(),
             });
 
-            // Award points to the referrer
             if (referrerPointsDoc.exists()) {
                 const currentPoints = referrerPointsDoc.data().points || 0;
                 transaction.update(referrerPointsRef, {
@@ -150,7 +144,7 @@ export default function SignupPage() {
       if (error instanceof FirebaseError) {
         if (error.code === 'auth/email-already-in-use') {
           description =
-            'यह ईमेल पहले से उपयोग में है। कृपया दूसरा प्रयास करें।';
+            'यह ईमेल पहले से उपयोग में है। कृपया दूसरा प्रयास करें या लॉग इन करें।';
         } else {
           description = 'साइन अप करने में विफल। कृपया अपनी जानकारी जांचें।';
         }

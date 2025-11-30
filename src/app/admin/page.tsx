@@ -64,16 +64,13 @@ export default function AdminDashboardOverview() {
   });
   const [isDataLoading, setIsDataLoading] = useState(true);
 
-  // This is a more reliable way to check admin status before fetching data
-  const canFetchAdminData = !isUserLoading && !isAdminLoading && isAdmin;
-
   useEffect(() => {
     const checkAdminStatus = async () => {
+        setIsAdminLoading(true);
         if (user && firestore) {
             try {
                 if (user.email === 'Qukly@study.com') {
                     setIsAdmin(true);
-                    setIsAdminLoading(false);
                     return;
                 }
                 const adminRef = doc(firestore, 'roles_admin', user.uid);
@@ -93,6 +90,8 @@ export default function AdminDashboardOverview() {
         checkAdminStatus();
     }
   }, [user, firestore, isUserLoading]);
+  
+  const canFetchAdminData = !isUserLoading && !isAdminLoading && isAdmin;
   
   useEffect(() => {
       const fetchAdminData = async () => {
@@ -162,7 +161,7 @@ export default function AdminDashboardOverview() {
 
   const loading = isUserLoading || isAdminLoading || isDataLoading;
 
-  if (isUserLoading || isAdminLoading) {
+  if (loading) {
       return <div className="flex h-full items-center justify-center"><Loader className="animate-spin" /></div>
   }
 

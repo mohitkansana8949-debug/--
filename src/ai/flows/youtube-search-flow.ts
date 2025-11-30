@@ -6,7 +6,7 @@ import { z } from 'zod';
 import {config} from 'dotenv';
 config();
 
-const youtubeApiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEY;
+const youtubeApiKey = process.env.YOUTUBE_API_KEY;
 
 const SearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube'),
@@ -30,7 +30,7 @@ export type SearchOutput = z.infer<typeof SearchOutputSchema>;
 async function searchYouTube(query: string) {
   if (!youtubeApiKey) {
     console.error('YOUTUBE_API_KEY is not set in the environment variables.');
-    throw new Error('YOUTUBE_API_KEY is not set in the environment variables.');
+    throw new Error('The YouTube API key is not configured. Please contact the administrator.');
   }
 
   const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
