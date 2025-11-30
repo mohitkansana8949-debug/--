@@ -16,6 +16,7 @@ import {
   FileQuestion,
   Newspaper,
   BarChart,
+  ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -108,6 +109,7 @@ export default function AdminDashboardOverview() {
       { title: 'PYQs', icon: FileQuestion, value: pyqs?.length ?? 0 },
       { title: 'Tests', icon: Newspaper, value: tests?.length ?? 0 },
       { title: 'एनरोलमेंट्स', icon: CreditCard, value: enrollments?.length ?? 0 },
+      { title: 'Book Orders', icon: ShoppingBag, value: bookOrders?.length ?? 0 },
   ];
 
   if (isUserLoading) {
@@ -161,8 +163,8 @@ export default function AdminDashboardOverview() {
                 <CardHeader>
                     <CardTitle className="flex items-center"><Users className="mr-2" /> New Users (Last 7 Days)</CardTitle>
                 </CardHeader>
-                <CardContent className="pl-2">
-                   <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="pl-2 h-[250px]">
+                   <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }}>
                                 <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
@@ -181,8 +183,8 @@ export default function AdminDashboardOverview() {
                 <CardHeader>
                     <CardTitle className="flex items-center"><CreditCard className="mr-2" /> New Enrollments (Last 7 Days)</CardTitle>
                 </CardHeader>
-                <CardContent className="pl-2">
-                    <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="pl-2 h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }}>
                                 <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
@@ -199,10 +201,10 @@ export default function AdminDashboardOverview() {
             </Card>
              <Card className="xl:col-span-2">
                 <CardHeader>
-                    <CardTitle className="flex items-center"><Book className="mr-2" /> New Book Orders (Last 7 Days)</CardTitle>
+                    <CardTitle className="flex items-center"><ShoppingBag className="mr-2" /> New Book Orders (Last 7 Days)</CardTitle>
                 </CardHeader>
-                <CardContent className="pl-2">
-                    <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="pl-2 h-[250px]">
+                    <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Orders", color: "hsl(var(--chart-3))" } }}>
                                 <RechartsBarChart data={newBookOrdersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>

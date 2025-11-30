@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,20 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, UserPlus } from 'lucide-react';
+import { Loader, UserPlus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const educatorSchema = z.object({
     name: z.string().min(1, 'नाम आवश्यक है'),
@@ -65,6 +76,18 @@ export default function AdminEducatorsPage() {
         });
     };
 
+    const handleDeleteEducator = async (educatorId: string) => {
+      if (!firestore) return;
+
+      try {
+        await deleteDoc(doc(firestore, 'educators', educatorId));
+        toast({ title: "Success", description: "Educator has been deleted." });
+      } catch (error) {
+        toast({ variant: "destructive", title: "Error", description: "Failed to delete educator." });
+        console.error("Error deleting educator:", error);
+      }
+    };
+
     return (
         <Card>
             <CardHeader className="flex flex-row justify-between items-center">
@@ -85,7 +108,24 @@ export default function AdminEducatorsPage() {
                     </DialogContent>
                 </Dialog>
             </CardHeader>
-             <CardContent>{educatorsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center">{educator.imageUrl && <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/>}<CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent></Card>))}</div>}</CardContent>
+             <CardContent>{educatorsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> : <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{educators?.map(educator => (<Card key={educator.id} className="text-center group relative">{educator.imageUrl && <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-40 object-cover rounded-t-lg"/>}<CardHeader className="p-4"><CardTitle className="text-base">{educator.name}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><p className="text-sm text-muted-foreground">{educator.experience}</p></CardContent>
+             <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="h-4 w-4" /></Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently delete the educator "{educator.name}".</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDeleteEducator(educator.id)}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+             
+             </Card>))}</div>}</CardContent>
         </Card>
     );
 }

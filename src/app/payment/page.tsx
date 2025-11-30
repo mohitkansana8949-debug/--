@@ -89,13 +89,13 @@ function PaymentComponent() {
             enrollmentDate: serverTimestamp(),
             paymentMethod: paymentMethod || 'unknown',
             paymentTransactionId: paymentMobileNumber, 
-            status: 'approved', // Status is now 'approved' immediately.
+            status: 'pending', // Status is 'pending' for manual verification
         };
 
         try {
             await setDoc(enrollmentRef, enrollmentData);
 
-            toast({ title: 'सफलता!', description: 'आपका एनरोलमेंट सफल हो गया है! आप अब इसे अपनी लाइब्रेरी में देख सकते हैं।'});
+            toast({ title: 'सफलता!', description: 'आपका अनुरोध सबमिट हो गया है। एडमिन द्वारा पुष्टि के बाद एनरोलमेंट आपकी लाइब्रेरी में दिखाई देगा।'});
 
             router.push('/my-library');
         } catch (error) {
@@ -183,7 +183,7 @@ function PaymentComponent() {
                             <div className="rounded-lg border bg-amber-50 p-4 text-amber-900 dark:bg-amber-950 dark:text-amber-100 text-center animate-in fade-in-50">
                                 <h4 className="font-bold">महत्वपूर्ण निर्देश</h4>
                                 <p className="text-sm">कृपया ₹{itemData.price} का पेमेंट करें। पेमेंट करने के बाद, जिस नंबर से आपने पेमेंट किया है, वह नीचे दर्ज करें और सबमिट करें।</p>
-                                <p className="text-xs mt-2">सही पेमेंट होने पर आपका एनरोलमेंट तुरंत अप्रूव हो जाएगा।</p>
+                                <p className="text-xs mt-2">एडमिन द्वारा पुष्टि के बाद आपका एनरोलमेंट अप्रूव हो जाएगा।</p>
                             </div>
 
                              <div>

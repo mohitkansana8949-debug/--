@@ -2,7 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { useCollection, useMemoFirebase, useFirebase, useUser } from '@/firebase';
-import { collection, doc, updateDoc, increment, deleteDoc, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, doc, updateDoc, increment, deleteDoc, addDoc, serverTimestamp, query, orderBy, getDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader, MessageSquare, ThumbsUp, Share2 } from 'lucide-react';
@@ -10,10 +10,13 @@ import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { hi } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function FeedPage() {
     const { firestore } = useFirebase();
     const { user } = useUser();
+    const { toast } = useToast();
 
     const postsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'posts'), orderBy('createdAt', 'desc')) : null), [firestore]);
     const { data: posts, isLoading: postsLoading } = useCollection(postsQuery);
@@ -29,17 +32,39 @@ export default function FeedPage() {
         const likeRef = doc(collection(firestore, 'posts', postId, 'likes'), user.uid);
 
         try {
+            const likeDoc = await getDoc(likeRef);
+            if (likeDoc.exists()) {
+                 toast({ variant: "default", title: "You have already liked this post."});
+                 return; // Already liked
+            }
             await updateDoc(postRef, { likeCount: increment(1) });
-            await addDoc(collection(firestore, 'posts', postId, 'likes'), { userId: user.uid, postId });
+            await setDoc(likeRef, { userId: user.uid });
         } catch (error) {
             console.error("Error liking post:", error);
+        }
+    };
+    
+     const handleShare = async (postText: string) => {
+        const message = `Check out this post from Quickly Study:\n\n"${postText}"`;
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Post from Quickly Study',
+                    text: message,
+                });
+            } catch (error) {
+                console.error('Error sharing:', error);
+            }
+        } else {
+             const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+             window.open(whatsappUrl, '_blank');
         }
     };
 
 
     return (
-        <div className="container mx-auto max-w-2xl p-4 space-y-6">
-             <div className="mb-8">
+        <div className="container mx-auto max-w-lg p-2 sm:p-4 space-y-4">
+             <div className="mb-6">
                 <h1 className="text-3xl font-bold">Feed</h1>
                 <p className="text-muted-foreground">
                     Latest updates and posts.
@@ -48,8 +73,8 @@ export default function FeedPage() {
             {postsLoading ? <div className="flex justify-center p-8"><Loader className="animate-spin"/></div> :
             posts && posts.length > 0 ? (
                 posts.map(post => (
-                    <Card key={post.id}>
-                        <CardHeader className="flex flex-row items-center gap-3">
+                    <Card key={post.id} className="overflow-hidden">
+                        <CardHeader className="flex flex-row items-center gap-3 p-3">
                              <Avatar className="h-10 w-10">
                                <AvatarImage src={post.userImage} alt={post.userName} />
                                <AvatarFallback>{getInitials(post.userName)}</AvatarFallback>
@@ -61,23 +86,23 @@ export default function FeedPage() {
                                 </p>
                             </div>
                         </CardHeader>
-                        <CardContent>
-                            <p className="whitespace-pre-wrap">{post.text}</p>
+                        <CardContent className="p-3 pt-0">
+                            <p className="whitespace-pre-wrap text-sm">{post.text}</p>
                             {post.imageUrl && (
-                                <div className="mt-4 w-full aspect-video relative">
+                                <div className="mt-3 w-full aspect-video relative">
                                     <Image src={post.imageUrl} alt="Post image" fill className="rounded-md object-cover" />
                                 </div>
                             )}
                         </CardContent>
-                        <CardFooter className="flex justify-between border-t pt-2">
-                             <Button variant="ghost" onClick={() => handleLike(post.id)}>
-                                <ThumbsUp className="mr-2"/> {post.likeCount || 0} Likes
+                        <CardFooter className="flex justify-between border-t p-1">
+                             <Button variant="ghost" className="w-full text-xs" onClick={() => handleLike(post.id)}>
+                                <ThumbsUp className="mr-2 h-4 w-4"/> {post.likeCount || 0}
                              </Button>
-                             <Button variant="ghost">
-                                <MessageSquare className="mr-2"/> {post.commentCount || 0} Comments
+                             <Button variant="ghost" className="w-full text-xs">
+                                <MessageSquare className="mr-2 h-4 w-4"/> {post.commentCount || 0}
                              </Button>
-                             <Button variant="ghost">
-                                <Share2 className="mr-2"/> Share
+                             <Button variant="ghost" className="w-full text-xs" onClick={() => handleShare(post.text)}>
+                                <Share2 className="mr-2 h-4 w-4"/> Share
                              </Button>
                         </CardFooter>
                     </Card>
@@ -91,4 +116,3 @@ export default function FeedPage() {
         </div>
     );
 }
-
