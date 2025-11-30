@@ -17,9 +17,10 @@ import {
 import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { doc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
+import { useState, useEffect } from "react";
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -44,13 +45,37 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   
-  const adminRef = useMemoFirebase(() => (
-    user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
-  ), [user, firestore]);
-  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
-  const isSuperAdmin = user?.email === 'Qukly@study.com';
-  const isAdmin = isSuperAdmin || !!adminDoc;
+  useEffect(() => {
+    const checkAdmin = async () => {
+        if (!user || !firestore) {
+            setIsAdmin(false);
+            setIsAdminLoading(false);
+            return;
+        }
+
+        if (user.email === 'Qukly@study.com') {
+            setIsAdmin(true);
+            setIsAdminLoading(false);
+            return;
+        }
+        
+        try {
+            const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
+            setIsAdmin(adminDoc.exists());
+        } catch (error) {
+            console.error("Error checking admin status:", error);
+            setIsAdmin(false);
+        } finally {
+            setIsAdminLoading(false);
+        }
+    };
+    if (!isUserLoading) {
+        checkAdmin();
+    }
+  }, [user, firestore, isUserLoading]);
 
   const handleLogout = async () => {
     try {

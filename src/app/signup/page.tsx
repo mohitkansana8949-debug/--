@@ -95,6 +95,7 @@ export default function SignupPage() {
         const referredId = userCredential.user.uid;
         const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
         
+        // Always read first
         let referrerPointsRef;
         let referrerPointsDoc;
         if (data.referralCode) {
@@ -103,6 +104,7 @@ export default function SignupPage() {
             referrerPointsDoc = await transaction.get(referrerPointsRef);
         }
         
+        // Now perform all writes
         transaction.set(newUserPointsRef, {
           userId: referredId,
           points: 5,
