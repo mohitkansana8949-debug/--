@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader, Search, Youtube, Tv } from 'lucide-react';
-import { youtubeSearchFlow, SearchOutput } from '@/ai/flows/youtube-search-flow';
+import { youtubeSearchFlow } from '@/ai/flows/youtube-search-flow';
+import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
 

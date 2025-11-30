@@ -77,7 +77,14 @@ export default function SignupPage() {
   }, [refCode, firestore]);
 
   const onSubmit = async (data: SignupFormValues) => {
-    if (!auth || !firestore) return;
+    if (!auth || !firestore) {
+        toast({
+            variant: 'destructive',
+            title: 'Authentication Error',
+            description: 'Could not connect to authentication service.',
+        });
+        return;
+    };
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
@@ -93,9 +100,7 @@ export default function SignupPage() {
       // Handle referral and initial points logic in a transaction
       await runTransaction(firestore, async (transaction) => {
         const referredId = userCredential.user.uid;
-        const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
         
-        // Always read first
         let referrerPointsRef;
         let referrerPointsDoc;
         if (data.referralCode) {
@@ -104,7 +109,7 @@ export default function SignupPage() {
             referrerPointsDoc = await transaction.get(referrerPointsRef);
         }
         
-        // Now perform all writes
+        const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
         transaction.set(newUserPointsRef, {
           userId: referredId,
           points: 5,
@@ -151,7 +156,6 @@ export default function SignupPage() {
           description = 'साइन अप करने में विफल। कृपया अपनी जानकारी जांचें।';
         }
       }
-      console.error("Signup Error: ", error);
       toast({
         variant: 'destructive',
         title: 'साइन अप विफल',

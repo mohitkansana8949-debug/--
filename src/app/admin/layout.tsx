@@ -103,9 +103,7 @@ export default function AdminLayout({
   }, [user, firestore, isUserLoading]);
 
 
-  // These paths will be rendered as full pages outside the main admin layout
-  const fullPagePaths = ['/admin/create-course', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications'];
-  const isFullPagePath = fullPagePaths.some(p => pathname.startsWith(p)) || pathname.startsWith('/admin/users/');
+  const isFullPage = adminNavItems.some(item => pathname === item.href) && pathname !== '/admin';
 
 
   const isLoading = isUserLoading || isAdminLoading;
@@ -130,8 +128,8 @@ export default function AdminLayout({
       )
   }
 
-  if (isFullPagePath) {
-    return <>{children}</>;
+  if (isFullPage) {
+     return <>{children}</>;
   }
 
   return (
@@ -144,7 +142,7 @@ export default function AdminLayout({
           <nav className="flex flex-col gap-2">
             <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => {
-              const isFullPage = fullPagePaths.some(p => item.href.startsWith(p));
+              const isFullPageItem = item.href !== '/admin';
               return (
                 <Button
                   key={item.href}
@@ -152,7 +150,7 @@ export default function AdminLayout({
                   variant={pathname === item.href ? 'secondary' : 'ghost'}
                   className="justify-start"
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} target={isFullPageItem ? '_blank' : '_self'}>
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.label}
                   </Link>
@@ -167,7 +165,7 @@ export default function AdminLayout({
                 variant={pathname === item.href ? 'default' : 'outline'}
                 className="justify-start"
               >
-                <Link href={item.href}>
+                <Link href={item.href} target="_blank">
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.label}
                 </Link>

@@ -3,8 +3,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import {config} from 'dotenv';
-config();
 
 const youtubeApiKey = process.env.YOUTUBE_API_KEY;
 
@@ -56,13 +54,7 @@ async function searchYouTube(query: string) {
   return { videos };
 }
 
-export const youtubeSearchFlow = ai.defineFlow(
-  {
-    name: 'youtubeSearchFlow',
-    inputSchema: SearchInputSchema,
-    outputSchema: SearchOutputSchema,
-  },
-  async ({ query }) => {
-    return await searchYouTube(query);
-  }
-);
+export async function youtubeSearchFlow(input: SearchInput): Promise<SearchOutput> {
+  const { query } = input;
+  return await searchYouTube(query);
+}
