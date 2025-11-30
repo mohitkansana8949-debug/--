@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
@@ -13,7 +12,7 @@ import { NotificationHandler } from '@/components/notification-handler';
 
 const PUBLIC_PATHS = ['/login', '/signup'];
 const NO_LAYOUT_PATHS = ['/login', '/signup', '/complete-profile'];
-const FULL_SCREEN_PATHS = ['/courses/watch/', '/live-lectures', '/pdf-viewer', '/youtube/'];
+const FULL_SCREEN_PATHS = ['/courses/watch/', '/live-lectures', '/pdf-viewer', '/youtube/', '/certificate/'];
 const PROFILE_COMPLETE_PATH = '/complete-profile';
 
 const shouldShowLayout = (pathname: string) => {
@@ -33,9 +32,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
 
   useEffect(() => {
-    if (isUserLoading || !firestore) return;
+    if (isUserLoading) return;
       
-    if (!user) {
+    if (!user || !firestore) {
         setIsProfileComplete(false);
         setIsCheckingProfile(false);
         return;
