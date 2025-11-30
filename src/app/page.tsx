@@ -1,6 +1,6 @@
 
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,22 +25,11 @@ import {
   BarChart,
   Clapperboard,
   Package,
+  Wand2,
 } from 'lucide-react';
 import Image from 'next/image';
-import { collection } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-
-const featureCards = [
-  { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
-  { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
-  { title: 'Bookshala', href: '/bookshala', icon: Package, color: 'bg-indigo-500' },
-  { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
-  { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
-  { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
-  { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
-  { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
-  { title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' },
-];
+import { collection, doc } from 'firebase/firestore';
+import { useEffect, useState, useMemo } from 'react';
 
 const footerItems = [
     { name: 'Home', icon: Home, href: '/' },
@@ -111,16 +100,50 @@ function InstallPWA() {
     );
 }
 
+function AiDoubtSolverCard() {
+    return (
+        <Link href="/ai-doubt-solver" className="block">
+            <div className="relative p-4 rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient-xy">
+                <div className="text-white text-center">
+                    <Wand2 className="mx-auto h-8 w-8 mb-2" />
+                    <h2 className="text-xl font-bold mb-1">AI Doubt Solver</h2>
+                    <p className="text-sm">Get instant answers to all your questions.</p>
+                </div>
+            </div>
+        </Link>
+    );
+}
+
+
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
 
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
-
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
 
+  const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
+  const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
-  if (isUserLoading) {
+  const showYoutubeFeature = useMemo(() => appSettings?.youtubeFeatureEnabled !== false, [appSettings]);
+  const showAiDoubtSolver = useMemo(() => appSettings?.aiDoubtSolverEnabled === true, [appSettings]);
+  
+  const featureCards = useMemo(() => [
+      { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
+      { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
+      { title: 'Bookshala', href: '/bookshala', icon: Package, color: 'bg-indigo-500' },
+      { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
+      { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
+      { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
+      { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
+      { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
+      showYoutubeFeature 
+        ? { title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' }
+        : { title: 'My Orders', href: '/my-orders', icon: ShoppingBag, color: 'bg-rose-600' }
+  ], [showYoutubeFeature]);
+
+
+  if (isUserLoading || settingsLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader className="animate-spin" />
@@ -154,6 +177,8 @@ export default function HomePage() {
         ))}
       </div>
       
+      {showAiDoubtSolver && <AiDoubtSolverCard />}
+
        <div>
         <h2 className="text-2xl font-bold mb-4 flex items-center"><Users className="mr-2 h-6 w-6" /> हमारे एजुकेटर्स</h2>
          {educatorsLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (educators && educators.length > 0) ? (

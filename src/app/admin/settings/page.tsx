@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 
 export default function AppSettingsPage() {
@@ -29,6 +30,8 @@ export default function AppSettingsPage() {
     // App settings state
     const [appLogoUrl, setAppLogoUrl] = useState('');
     const [appUrl, setAppUrl] = useState('');
+    const [youtubeFeatureEnabled, setYoutubeFeatureEnabled] = useState(true);
+    const [aiDoubtSolverEnabled, setAiDoubtSolverEnabled] = useState(false);
     const [isAppSubmitting, setIsAppSubmitting] = useState(false);
     
     // Refer & Earn settings
@@ -58,6 +61,8 @@ export default function AppSettingsPage() {
         if (appSettings) {
             setAppLogoUrl(appSettings.logoUrl || '');
             setAppUrl(appSettings.appUrl || '');
+            setYoutubeFeatureEnabled(appSettings.youtubeFeatureEnabled !== false);
+            setAiDoubtSolverEnabled(appSettings.aiDoubtSolverEnabled === true);
         }
     }, [appSettings]);
 
@@ -86,7 +91,12 @@ export default function AppSettingsPage() {
     const handleAppSettingsUpdate = async () => {
         if (!firestore || !appSettingsDocRef) return;
         setIsAppSubmitting(true);
-        const settingsUpdate = { logoUrl: appLogoUrl, appUrl: appUrl };
+        const settingsUpdate = { 
+            logoUrl: appLogoUrl, 
+            appUrl: appUrl,
+            youtubeFeatureEnabled: youtubeFeatureEnabled,
+            aiDoubtSolverEnabled: aiDoubtSolverEnabled,
+        };
         
         setDoc(appSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
             toast({ title: 'सफलता!', description: 'ऐप सेटिंग्स अपडेट हो गई हैं।'});
@@ -125,7 +135,7 @@ export default function AppSettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>ऐप सेटिंग्स</CardTitle>
-                        <CardDescription>ऐप का लोगो और अन्य जानकारी मैनेज करें।</CardDescription>
+                        <CardDescription>ऐप का लोगो, फ़ीचर और अन्य जानकारी मैनेज करें।</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         {appSettingsLoading ? <SettingsSkeleton /> : (
@@ -144,6 +154,23 @@ export default function AppSettingsPage() {
                                     <Label htmlFor="app-url">App Base URL</Label>
                                     <Input id="app-url" type="text" placeholder="https://yourapp.com" value={appUrl} onChange={e => setAppUrl(e.target.value)} />
                                     <p className="text-sm text-muted-foreground">This is used to generate referral links. Do not include a trailing slash.</p>
+                                </div>
+                                 <div className="space-y-4 rounded-lg border p-4">
+                                    <h4 className="font-medium">Feature Flags</h4>
+                                    <div className="flex flex-row items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label>YouTube Feature</Label>
+                                            <p className="text-xs text-muted-foreground">Enable or disable the YouTube section on the home page.</p>
+                                        </div>
+                                        <Switch checked={youtubeFeatureEnabled} onCheckedChange={setYoutubeFeatureEnabled} />
+                                    </div>
+                                    <div className="flex flex-row items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label>AI Doubt Solver</Label>
+                                            <p className="text-xs text-muted-foreground">Show or hide the AI Doubt Solver card on the home page.</p>
+                                        </div>
+                                        <Switch checked={aiDoubtSolverEnabled} onCheckedChange={setAiDoubtSolverEnabled} />
+                                    </div>
                                 </div>
                             </>
                         )}

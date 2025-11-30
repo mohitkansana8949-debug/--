@@ -1,4 +1,3 @@
-
 import { Timestamp } from "firebase/firestore";
 
 export type Flashcard = {
@@ -59,6 +58,10 @@ export interface Enrollment {
   paymentMethod: string;
   paymentTransactionId: string;
   status: 'pending' | 'approved' | 'rejected';
+  appliedCoupon?: {
+    code: string;
+    discountAmount: number;
+  };
 }
 
 export type TestQuestion = {
@@ -157,6 +160,8 @@ export interface BookOrder {
     id: string;
     userId: string;
     items: CartItem[];
+    subtotal: number;
+    discount: number;
     total: number;
     address: Address;
     createdAt: Timestamp;
@@ -165,4 +170,19 @@ export interface BookOrder {
     paymentId: string;
     trackingId?: string;
     trackingUrl?: string;
+    appliedCoupon?: {
+        code: string;
+        discountAmount: number;
+    };
+}
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  expiresAt?: Timestamp;
+  maxUses?: number;
+  uses?: number;
+  createdAt: Timestamp;
 }
