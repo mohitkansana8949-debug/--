@@ -96,7 +96,6 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   };
   
   const onPlayerError = (event: any) => {
-    console.error("YouTube Player Error:", event.data);
     let errorMessage = "The video may be private, removed, or unavailable.";
     switch (event.data) {
         case 101:
