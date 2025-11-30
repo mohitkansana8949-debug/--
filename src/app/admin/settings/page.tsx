@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -38,15 +39,22 @@ export default function AppSettingsPage() {
     const [referralMessage, setReferralMessage] = useState('');
     const [isReferralSubmitting, setIsReferralSubmitting] = useState(false);
 
+    // Support Settings state
+    const [supportEmail, setSupportEmail] = useState('');
+    const [supportWhatsapp, setSupportWhatsapp] = useState('');
+    const [isSupportSubmitting, setIsSupportSubmitting] = useState(false);
+
     // Firestore refs
     const paymentSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'payment') : null), [firestore]);
     const appSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
     const referralSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'referral') : null), [firestore]);
+    const supportSettingsDocRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'support') : null), [firestore]);
 
     // Data hooks
     const {data: paymentSettings, isLoading: paymentSettingsLoading} = useDoc(paymentSettingsDocRef);
     const {data: appSettings, isLoading: appSettingsLoading} = useDoc(appSettingsDocRef);
     const {data: referralSettings, isLoading: referralSettingsLoading} = useDoc(referralSettingsDocRef);
+    const {data: supportSettings, isLoading: supportSettingsLoading} = useDoc(supportSettingsDocRef);
 
 
     // Effects to populate state from Firestore
@@ -71,6 +79,13 @@ export default function AppSettingsPage() {
             setReferralMessage(referralSettings.message || 'Check out Quickly Study, the best app for learning! Use my link to join: {link}');
         }
     }, [referralSettings]);
+    
+    useEffect(() => {
+        if (supportSettings) {
+            setSupportEmail(supportSettings.email || '');
+            setSupportWhatsapp(supportSettings.whatsappNumber || '');
+        }
+    }, [supportSettings]);
 
 
     const handlePaymentSettingsUpdate = async () => {
@@ -123,13 +138,29 @@ export default function AppSettingsPage() {
         }).finally(() => setIsReferralSubmitting(false));
     }
 
+    const handleSupportSettingsUpdate = async () => {
+        if (!firestore || !supportSettingsDocRef) return;
+        setIsSupportSubmitting(true);
+        const settingsUpdate = { email: supportEmail, whatsappNumber: supportWhatsapp };
+        
+        setDoc(supportSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
+            toast({ title: 'सफलता!', description: 'Support settings have been updated.'});
+        }).catch(error => {
+            const contextualError = new FirestorePermissionError({
+                operation: 'update', path: supportSettingsDocRef.path, requestResourceData: settingsUpdate,
+            });
+            errorEmitter.emit('permission-error', contextualError);
+        }).finally(() => setIsSupportSubmitting(false));
+    }
+
 
     return (
         <Tabs defaultValue="app" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="app">ऐप सेटिंग्स</TabsTrigger>
                 <TabsTrigger value="payment">पेमेंट सेटिंग्स</TabsTrigger>
                 <TabsTrigger value="referral">Referral</TabsTrigger>
+                <TabsTrigger value="support">Support</TabsTrigger>
             </TabsList>
             <TabsContent value="app">
                  <Card>
@@ -234,6 +265,31 @@ export default function AppSettingsPage() {
                     </CardContent>
                 </Card>
             </TabsContent>
+             <TabsContent value="support">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Support Settings</CardTitle>
+                        <CardDescription>Manage the contact details for user support.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        {supportSettingsLoading ? <SettingsSkeleton /> : (
+                            <>
+                                <div className="space-y-2">
+                                    <Label htmlFor="support-email">Support Email</Label>
+                                    <Input id="support-email" type="email" placeholder="support@example.com" value={supportEmail} onChange={(e) => setSupportEmail(e.target.value)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="support-whatsapp">Support WhatsApp Number</Label>
+                                    <Input id="support-whatsapp" type="tel" placeholder="919876543210" value={supportWhatsapp} onChange={(e) => setSupportWhatsapp(e.target.value)} />
+                                </div>
+                            </>
+                        )}
+                        <Button onClick={handleSupportSettingsUpdate} disabled={isSupportSubmitting || supportSettingsLoading}>
+                            {isSupportSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Support Settings'}
+                        </Button>
+                    </CardContent>
+                </Card>
+            </TabsContent>
         </Tabs>
     );
 }
@@ -253,3 +309,5 @@ function SettingsSkeleton() {
         </div>
     )
 }
+
+    
