@@ -12,7 +12,6 @@ const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
 
 const SearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube'),
-  channelId: z.string().nullable().describe('Optional: A specific channel ID to search within'),
 });
 export type SearchInput = z.infer<typeof SearchInputSchema>;
 
@@ -25,54 +24,25 @@ const VideoSchema = z.object({
   channelId: z.string(),
 });
 
-const ChannelSchema = z.object({
-  channelId: z.string(),
-  title: z.string(),
-  description: z.string(),
-  thumbnailUrl: z.string(),
-});
-
 const SearchOutputSchema = z.object({
   videos: z.array(VideoSchema),
-  channels: z.array(ChannelSchema),
 });
 export type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
-async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchOutput> {
+async function searchYouTube({ query }: SearchInput): Promise<SearchOutput> {
   if (!youtubeApiKey) {
     console.error('YOUTUBE_API_KEY is not set in the environment variables.');
     throw new Error('The YouTube API key is not configured. Please contact the administrator.');
   }
+
+  // Always search within the Quickly Study channel
+  const videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}&type=video`;
+
+  const videoData = await fetch(videoSearchUrl).then(res => res.json());
   
-  const isQuicklyStudySearch = /quickly\s*study/i.test(query);
-
-  let videoSearchUrl = '';
-  let channelSearchUrl = '';
-  
-  if (channelId) {
-     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}&type=video`;
-  } else if (isQuicklyStudySearch) {
-    const searchQuery = query.replace(/quickly\s*study/i, '').trim();
-    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(searchQuery)}&type=video`;
-    channelSearchUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${QUICKLY_STUDY_CHANNEL_ID}&key=${youtubeApiKey}`;
-  } else {
-    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
-    channelSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=5&key=${youtubeApiKey}`;
-  }
-
-
-  const videoPromise = videoSearchUrl ? fetch(videoSearchUrl).then(res => res.json()) : Promise.resolve({ items: [] });
-  const channelPromise = channelSearchUrl ? fetch(channelSearchUrl).then(res => res.json()) : Promise.resolve({ items: [] });
-  
-  const [videoData, channelData] = await Promise.all([videoPromise, channelPromise]);
-
   if (videoData.error) {
     console.error('YouTube API Error (Videos):', videoData.error.message);
     throw new Error(videoData.error.message);
-  }
-  if (channelData.error) {
-    console.error('YouTube API Error (Channels):', channelData.error.message);
-    // Do not throw for channel error, video search might have succeeded
   }
 
   const videos: z.infer<typeof VideoSchema>[] = videoData.items
@@ -86,15 +56,7 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
       }))
     : [];
 
-  const channels: z.infer<typeof ChannelSchema>[] = channelData.items
-    ? channelData.items.map((item: any) => ({
-        channelId: item.id.channelId || item.id,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-    })) : [];
-
-  return { videos, channels };
+  return { videos };
 }
 
 export const youtubeSearchFlow = ai.defineFlow(
