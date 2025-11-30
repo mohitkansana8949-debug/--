@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -13,6 +12,7 @@ export default function MyPurchasesPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
+    // Secure query: Only fetch orders where userId matches the current user's UID
     const ordersQuery = useMemoFirebase(() => (
         user && firestore ? query(
             collection(firestore, 'bookOrders'),
@@ -56,14 +56,16 @@ export default function MyPurchasesPage() {
                                 <CardContent className="p-4 flex items-center justify-between">
                                     <div className="flex-1 space-y-1">
                                         <p className="text-sm text-muted-foreground">Order #{order.id.substring(0, 6)}</p>
-                                        <p className="font-semibold">Placed on {format(order.createdAt.toDate(), 'MMMM d, yyyy')}</p>
+                                        <p className="font-semibold">Placed on {order.createdAt ? format(order.createdAt.toDate(), 'MMMM d, yyyy') : ''}</p>
                                         <p className="font-bold text-lg">₹{order.total.toFixed(2)}</p>
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
-                                        <Button variant="outline" size="sm">
-                                            Track Your Order
-                                            <ChevronRight className="h-4 w-4 ml-2" />
+                                        <Button variant="outline" size="sm" asChild>
+                                            <div className="flex items-center">
+                                                Track Order
+                                                <ChevronRight className="h-4 w-4 ml-2" />
+                                            </div>
                                         </Button>
                                     </div>
                                 </CardContent>
