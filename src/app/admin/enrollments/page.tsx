@@ -2,16 +2,17 @@
 'use client';
 
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, updateDoc, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader, CheckCircle, XCircle, Clock, TicketPercent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useState, useEffect, useCallback } from 'react';
+import { format } from 'date-fns';
 
 type EnrichedEnrollment = {
   id: string;
@@ -20,6 +21,11 @@ type EnrichedEnrollment = {
   itemType: string;
   status: 'approved' | 'pending' | 'rejected';
   paymentTransactionId: string;
+  enrollmentDate: any;
+  appliedCoupon?: {
+    code: string;
+    discountAmount: number;
+  }
 };
 
 export default function AdminEnrollmentsPage() {
@@ -27,7 +33,7 @@ export default function AdminEnrollmentsPage() {
   const { toast } = useToast();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
-  const enrollmentsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'enrollments') : null), [firestore]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore ? query(collection(firestore, 'enrollments'), orderBy('enrollmentDate', 'desc')) : null), [firestore]);
   const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
 
   const [enrichedEnrollments, setEnrichedEnrollments] = useState<EnrichedEnrollment[]>([]);
@@ -42,34 +48,20 @@ export default function AdminEnrollmentsPage() {
     
     try {
       const userIds = [...new Set(enrollments.map(e => e.userId).filter(Boolean))];
-      const courseIds = [...new Set(enrollments.filter(e => e.itemType === 'course').map(e => e.itemId))];
-      const ebookIds = [...new Set(enrollments.filter(e => e.itemType === 'ebook').map(e => e.itemId))];
-      const pyqIds = [...new Set(enrollments.filter(e => e.itemType === 'pyq').map(e => e.itemId))];
-      const testIds = [...new Set(enrollments.filter(e => e.itemType === 'test').map(e => e.itemId))];
       
-      const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap] = await Promise.all([
-        userIds.length > 0 ? getDocs(query(collection(firestore, 'users'), where('__name__', 'in', userIds))) : Promise.resolve({ docs: [] }),
-        courseIds.length > 0 ? getDocs(query(collection(firestore, 'courses'), where('__name__', 'in', courseIds))) : Promise.resolve({ docs: [] }),
-        ebookIds.length > 0 ? getDocs(query(collection(firestore, 'ebooks'), where('__name__', 'in', ebookIds))) : Promise.resolve({ docs: [] }),
-        pyqIds.length > 0 ? getDocs(query(collection(firestore, 'pyqs'), where('__name__', 'in', pyqIds))) : Promise.resolve({ docs: [] }),
-        testIds.length > 0 ? getDocs(query(collection(firestore, 'tests'), where('__name__', 'in', testIds))) : Promise.resolve({ docs: [] }),
-      ]);
+      const usersSnap = userIds.length > 0 ? await getDocs(query(collection(firestore, 'users'), where('__name__', 'in', userIds))) : { docs: [] };
 
       const usersMap = new Map(usersSnap.docs.map(d => [d.id, d.data().name || 'Unknown User']));
-      const itemsMap = new Map([
-          ...coursesSnap.docs.map(d => [d.id, d.data().name || 'Unknown Course']),
-          ...ebooksSnap.docs.map(d => [d.id, d.data().name || 'Unknown E-book']),
-          ...pyqsSnap.docs.map(d => [d.id, d.data().name || 'Unknown PYQ']),
-          ...testsSnap.docs.map(d => [d.id, d.data().name || 'Unknown Test']),
-      ]);
 
       const enriched = enrollments.map(e => ({
         id: e.id,
-        userName: usersMap.get(e.userId) || e.userId,
-        itemName: itemsMap.get(e.itemId) || e.itemId,
+        userName: usersMap.get(e.userId) || e.userId.substring(0, 6),
+        itemName: e.itemName || 'Unknown Item',
         itemType: e.itemType || 'N/A',
         status: e.status,
         paymentTransactionId: e.paymentTransactionId,
+        enrollmentDate: e.enrollmentDate,
+        appliedCoupon: e.appliedCoupon
       }));
 
       setEnrichedEnrollments(enriched);
@@ -122,32 +114,47 @@ export default function AdminEnrollmentsPage() {
 
   return (
     <Card>
-        <CardHeader><CardTitle>सभी एनरोलमेंट्स</CardTitle></CardHeader>
+        <CardHeader>
+            <CardTitle>सभी एनरोलमेंट्स</CardTitle>
+            <CardDescription>View and approve all pending enrollments for courses, e-books, etc.</CardDescription>
+        </CardHeader>
         <CardContent>
             <Table>
-                <TableHeader><TableRow><TableHead>User</TableHead><TableHead>Item</TableHead><TableHead>Type</TableHead><TableHead>Payment No.</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>User</TableHead><TableHead>Item</TableHead><TableHead>Payment No.</TableHead><TableHead>Coupon</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead></TableRow></TableHeader>
                 <TableBody>
-                    {finalLoading && <TableRow><TableCell colSpan={6} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
+                    {finalLoading && <TableRow><TableCell colSpan={7} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
                     {enrichedEnrollments.map(enrollment => (
                         <TableRow key={enrollment.id}>
+                            <TableCell className="text-xs">{enrollment.enrollmentDate ? format(enrollment.enrollmentDate.toDate(), 'dd MMM, HH:mm') : 'N/A'}</TableCell>
                             <TableCell className="font-medium">{enrollment.userName}</TableCell>
                             <TableCell>{enrollment.itemName}</TableCell>
-                            <TableCell><Badge variant="outline">{enrollment.itemType}</Badge></TableCell>
                             <TableCell>{enrollment.paymentTransactionId}</TableCell>
+                            <TableCell>
+                                {enrollment.appliedCoupon ? (
+                                    <Badge variant="outline" className="flex items-center gap-1">
+                                        <TicketPercent className="h-3 w-3"/>
+                                        {enrollment.appliedCoupon.code}
+                                    </Badge>
+                                ) : 'N/A'}
+                            </TableCell>
                             <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
                             <TableCell className="space-x-2">
-                                <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id || enrollment.status === 'approved'}>
-                                    {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Approve'}
-                                </Button>
-                                <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')} disabled={updatingId === enrollment.id || enrollment.status === 'rejected'}>
-                                     {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Reject'}
-                                </Button>
+                                {enrollment.status === 'pending' && (
+                                    <>
+                                     <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id}>
+                                        {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Approve'}
+                                    </Button>
+                                    <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')} disabled={updatingId === enrollment.id}>
+                                        {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Reject'}
+                                    </Button>
+                                    </>
+                                )}
                             </TableCell>
                         </TableRow>
                     ))}
                      {!finalLoading && enrichedEnrollments.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={6} className="text-center text-muted-foreground">
+                            <TableCell colSpan={7} className="text-center text-muted-foreground p-8">
                                 कोई एनरोलमेंट नहीं मिला।
                             </TableCell>
                         </TableRow>

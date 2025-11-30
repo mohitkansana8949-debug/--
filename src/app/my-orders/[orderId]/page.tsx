@@ -134,7 +134,8 @@ export default function OrderDetailsPage() {
                          <div>
                              <h3 className="font-semibold mb-2">Order Summary</h3>
                              <div className="text-sm space-y-1">
-                                <div className="flex justify-between"><span>Subtotal:</span><span>₹{order.total.toFixed(2)}</span></div>
+                                <div className="flex justify-between"><span>Subtotal:</span><span>₹{order.subtotal.toFixed(2)}</span></div>
+                                {order.discount > 0 && <div className="flex justify-between text-green-500"><span>Discount ({order.appliedCoupon?.code}):</span><span>- ₹{order.discount.toFixed(2)}</span></div>}
                                 <div className="flex justify-between"><span>Shipping:</span><span>Free</span></div>
                                 <div className="flex justify-between font-bold text-base border-t pt-1 mt-1"><span>Total:</span><span>₹{order.total.toFixed(2)}</span></div>
                              </div>

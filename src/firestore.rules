@@ -24,7 +24,24 @@ service cloud.firestore {
      match /educators/{educatorId} {
       allow read, list: if true;
     }
+    match /posts/{postId} {
+      allow read, list: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+      allow update, delete: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Comments can be read by anyone, but only created/deleted by the owner.
+    match /posts/{postId}/comments/{commentId} {
+      allow read, list: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
 
+    // Likes can be created/deleted by the owner. Read access is not needed for querying existence.
+    match /posts/{postId}/likes/{likeId} {
+      allow create: if request.auth.uid == request.resource.data.userId;
+      allow delete: if request.auth.uid == resource.data.userId;
+    }
 
     // User profiles are public to read for referral system, but only owner can write.
     match /users/{userId} {
@@ -42,6 +59,13 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
       allow update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Book orders can be read by the owner or an admin. Only admins can list/update.
+    match /bookOrders/{orderId} {
+        allow create: if request.auth.uid == request.resource.data.userId;
+        allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+        allow list, update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Chat messages can be read and written by any authenticated user
@@ -62,6 +86,12 @@ service cloud.firestore {
     match /settings/{settingId} {
         allow read: if true;
         allow write: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Coupons can be read by any authenticated user, but only written by admins
+    match /coupons/{couponId} {
+      allow read: if request.auth != null;
+      allow list, create, update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
   }
 }

@@ -2,7 +2,7 @@
 'use client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useUser } from '@/firebase';
-import { doc, setDoc, serverTimestamp, collection, getDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, getDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
-import type { Enrollment } from '@/lib/types';
+import type { Enrollment, Coupon } from '@/lib/types';
 
 
 function PaymentComponent() {
@@ -33,6 +33,10 @@ function PaymentComponent() {
     
     const [itemData, setItemData] = useState<any>(null);
     const [isItemLoading, setIsItemLoading] = useState(true);
+    
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+    const [discount, setDiscount] = useState(0);
 
     const paymentSettingsRef = useMemoFirebase(
         () => (firestore ? doc(firestore, 'settings', 'payment') : null),
@@ -67,7 +71,54 @@ function PaymentComponent() {
         fetchItemData();
     }, [firestore, itemId, itemType, router, toast]);
 
+    const finalPrice = itemData ? itemData.price - discount : 0;
     const isLoading = isItemLoading || isSettingsLoading;
+
+     const handleApplyCoupon = async () => {
+        if (!firestore || !couponCode.trim() || !itemData) {
+            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'Please enter a coupon code.'});
+            return;
+        }
+
+        const q = query(collection(firestore, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'This coupon code does not exist.'});
+            setAppliedCoupon(null);
+            setDiscount(0);
+            return;
+        }
+
+        const coupon = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Coupon;
+
+        // Check expiry
+        if (coupon.expiresAt && coupon.expiresAt.toDate() < new Date()) {
+            toast({ variant: 'destructive', title: 'Coupon Expired', description: 'This coupon has expired.'});
+            return;
+        }
+        
+        // Check usage limit
+        if (coupon.maxUses && (coupon.uses || 0) >= coupon.maxUses) {
+            toast({ variant: 'destructive', title: 'Coupon Limit Reached', description: 'This coupon has reached its usage limit.'});
+            return;
+        }
+        
+        let calculatedDiscount = 0;
+        if (coupon.discountType === 'percentage') {
+            calculatedDiscount = itemData.price * (coupon.discountValue / 100);
+        } else { // fixed
+            calculatedDiscount = coupon.discountValue;
+        }
+
+        if (calculatedDiscount > itemData.price) {
+            calculatedDiscount = itemData.price;
+        }
+        
+        setDiscount(calculatedDiscount);
+        setAppliedCoupon(coupon);
+        toast({ title: 'Coupon Applied!', description: `You saved ₹${calculatedDiscount.toFixed(2)}!`});
+    };
 
     const handleSubmitEnrollment = async () => {
         if (!user || !itemData || !firestore || !itemType) {
@@ -80,6 +131,8 @@ function PaymentComponent() {
         }
 
         setIsSubmitting(true);
+        const batch = writeBatch(firestore);
+
         const enrollmentRef = doc(collection(firestore, 'enrollments'));
         const enrollmentData: Omit<Enrollment, 'id'> = {
             userId: user.uid,
@@ -90,18 +143,30 @@ function PaymentComponent() {
             paymentMethod: paymentMethod || 'unknown',
             paymentTransactionId: paymentMobileNumber, 
             status: 'pending', // Status is 'pending' for manual verification
+            ...(appliedCoupon && {
+                appliedCoupon: {
+                    code: appliedCoupon.code,
+                    discountAmount: discount,
+                }
+            })
         };
+        batch.set(enrollmentRef, enrollmentData);
+        
+        if (appliedCoupon) {
+            const couponRef = doc(firestore, 'coupons', appliedCoupon.id);
+            const couponSnap = await getDoc(couponRef);
+            const currentUses = couponSnap.data()?.uses || 0;
+            batch.update(couponRef, { uses: currentUses + 1 });
+        }
 
         try {
-            await setDoc(enrollmentRef, enrollmentData);
-
+            await batch.commit();
             toast({ title: 'सफलता!', description: 'आपका अनुरोध सबमिट हो गया है। एडमिन द्वारा पुष्टि के बाद एनरोलमेंट आपकी लाइब्रेरी में दिखाई देगा।'});
-
             router.push('/my-library');
         } catch (error) {
             const contextualError = new FirestorePermissionError({
                 operation: 'create',
-                path: enrollmentRef.path,
+                path: 'enrollments',
                 requestResourceData: enrollmentData,
             });
             errorEmitter.emit('permission-error', contextualError);
@@ -129,8 +194,18 @@ function PaymentComponent() {
                 <CardContent className="space-y-6">
                     <div className="flex justify-center">
                         <Button size="lg" disabled>
-                            अभी खरीदें - ₹{itemData.price}
+                           <span>अभी खरीदें -</span>
+                           {discount > 0 && <span className="line-through text-muted-foreground/80 ml-2">₹{itemData.price}</span>}
+                           <span className="ml-2">₹{finalPrice.toFixed(2)}</span>
                         </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Apply Coupon</Label>
+                        <div className="flex gap-2">
+                            <Input placeholder="Enter coupon code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} disabled={!!appliedCoupon} />
+                            <Button onClick={handleApplyCoupon} disabled={!!appliedCoupon}>Apply</Button>
+                        </div>
                     </div>
                     
                     <div className="space-y-2">
@@ -182,7 +257,7 @@ function PaymentComponent() {
                         <>
                             <div className="rounded-lg border bg-amber-50 p-4 text-amber-900 dark:bg-amber-950 dark:text-amber-100 text-center animate-in fade-in-50">
                                 <h4 className="font-bold">महत्वपूर्ण निर्देश</h4>
-                                <p className="text-sm">कृपया ₹{itemData.price} का पेमेंट करें। पेमेंट करने के बाद, जिस नंबर से आपने पेमेंट किया है, वह नीचे दर्ज करें और सबमिट करें।</p>
+                                <p className="text-sm">कृपया ₹{finalPrice.toFixed(2)} का पेमेंट करें। पेमेंट करने के बाद, जिस नंबर से आपने पेमेंट किया है, वह नीचे दर्ज करें और सबमिट करें।</p>
                                 <p className="text-xs mt-2">एडमिन द्वारा पुष्टि के बाद आपका एनरोलमेंट अप्रूव हो जाएगा।</p>
                             </div>
 

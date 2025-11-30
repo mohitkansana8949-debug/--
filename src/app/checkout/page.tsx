@@ -13,9 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp, query, where, getDocs, doc, writeBatch, documentId, getDoc } from "firebase/firestore";
 import { Loader } from "lucide-react";
-import type { Address } from "@/lib/types";
+import type { Address, Coupon } from "@/lib/types";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -33,6 +33,9 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+    const [discount, setDiscount] = useState(0);
 
     const form = useForm<Address>({
         resolver: zodResolver(addressSchema),
@@ -52,8 +55,55 @@ export default function CheckoutPage() {
             router.replace('/bookshala');
         }
     }, [cart, router, toast]);
-
+    
     const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+    const total = subtotal - discount;
+
+    const handleApplyCoupon = async () => {
+        if (!firestore || !couponCode.trim()) {
+            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'Please enter a coupon code.'});
+            return;
+        }
+
+        const q = query(collection(firestore, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'This coupon code does not exist.'});
+            setAppliedCoupon(null);
+            setDiscount(0);
+            return;
+        }
+
+        const coupon = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Coupon;
+
+        // Check expiry
+        if (coupon.expiresAt && coupon.expiresAt.toDate() < new Date()) {
+            toast({ variant: 'destructive', title: 'Coupon Expired', description: 'This coupon has expired.'});
+            return;
+        }
+        
+        // Check usage limit
+        if (coupon.maxUses && (coupon.uses || 0) >= coupon.maxUses) {
+            toast({ variant: 'destructive', title: 'Coupon Limit Reached', description: 'This coupon has reached its usage limit.'});
+            return;
+        }
+
+        let calculatedDiscount = 0;
+        if (coupon.discountType === 'percentage') {
+            calculatedDiscount = subtotal * (coupon.discountValue / 100);
+        } else { // fixed
+            calculatedDiscount = coupon.discountValue;
+        }
+
+        if (calculatedDiscount > subtotal) {
+            calculatedDiscount = subtotal;
+        }
+        
+        setDiscount(calculatedDiscount);
+        setAppliedCoupon(coupon);
+        toast({ title: 'Coupon Applied!', description: `You saved ₹${calculatedDiscount.toFixed(2)}!`});
+    };
 
     const onSubmit = async (data: Address) => {
         if (!user || !firestore) {
@@ -63,23 +113,44 @@ export default function CheckoutPage() {
 
         setIsSubmitting(true);
         try {
+            const batch = writeBatch(firestore);
+
             const orderData = {
                 userId: user.uid,
                 items: cart,
-                total: subtotal,
+                subtotal: subtotal,
+                discount: discount,
+                total: total,
                 address: data,
                 createdAt: serverTimestamp(),
                 status: 'Pending',
                 paymentMethod: 'COD', // Placeholder, can be changed after payment integration
-                paymentId: `cod_${Date.now()}`
+                paymentId: `cod_${Date.now()}`,
+                ...(appliedCoupon && {
+                    appliedCoupon: {
+                        code: appliedCoupon.code,
+                        discountAmount: discount,
+                    }
+                })
             };
 
-            const docRef = await addDoc(collection(firestore, 'bookOrders'), orderData);
+            const orderRef = doc(collection(firestore, 'bookOrders'));
+            batch.set(orderRef, orderData);
+
+            // Increment coupon usage count if a coupon was applied
+            if (appliedCoupon) {
+                const couponRef = doc(firestore, 'coupons', appliedCoupon.id);
+                const couponSnap = await getDoc(couponRef);
+                const currentUses = couponSnap.data()?.uses || 0;
+                batch.update(couponRef, { uses: currentUses + 1 });
+            }
+
+            await batch.commit();
             
             clearCart();
             toast({ title: 'Order Placed!', description: 'Your order has been placed successfully.' });
             
-            router.push(`/my-orders/${docRef.id}`);
+            router.push(`/my-orders/${orderRef.id}`);
 
         } catch (error) {
             console.error("Order submission error:", error);
@@ -127,24 +198,41 @@ export default function CheckoutPage() {
                                 )} />
                                 
                                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>Placing Order...</> : `Place Order (₹${subtotal.toFixed(2)})`}
+                                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>Placing Order...</> : `Place Order (₹${total.toFixed(2)})`}
                                 </Button>
                             </form>
                         </Form>
                     </CardContent>
                 </Card>
                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Your Items</h3>
-                    {cart.map(item => (
-                        <div key={item.id} className="flex items-center gap-4">
-                            <Image src={item.imageUrl} alt={item.name} width={60} height={75} className="rounded-md object-cover" />
-                            <div className="flex-1">
-                                <p className="font-medium line-clamp-1">{item.name}</p>
-                                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
-                            </div>
-                            <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
-                        </div>
-                    ))}
+                    <Card>
+                        <CardHeader><CardTitle>Apply Coupon</CardTitle></CardHeader>
+                        <CardContent className="flex items-center gap-2">
+                            <Input placeholder="Coupon Code" value={couponCode} onChange={e => setCouponCode(e.target.value)} disabled={!!appliedCoupon} />
+                            <Button onClick={handleApplyCoupon} disabled={!!appliedCoupon}>Apply</Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><h3 className="text-lg font-semibold">Your Items</h3></CardHeader>
+                        <CardContent className="space-y-4 divide-y">
+                            {cart.map(item => (
+                                <div key={item.id} className="flex items-center gap-4 pt-4 first:pt-0">
+                                    <Image src={item.imageUrl} alt={item.name} width={60} height={75} className="rounded-md object-cover" />
+                                    <div className="flex-1">
+                                        <p className="font-medium line-clamp-1">{item.name}</p>
+                                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                                    </div>
+                                    <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
+                                </div>
+                            ))}
+                        </CardContent>
+                        <CardFooter className="flex flex-col gap-2 text-sm">
+                            <div className="w-full flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toFixed(2)}</span></div>
+                            {discount > 0 && <div className="w-full flex justify-between text-green-500"><span>Discount:</span><span>- ₹{discount.toFixed(2)}</span></div>}
+                             <div className="w-full flex justify-between"><span>Shipping:</span><span>Free</span></div>
+                            <div className="w-full flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total:</span><span>₹{total.toFixed(2)}</span></div>
+                        </CardFooter>
+                    </Card>
                 </div>
             </div>
         </div>
