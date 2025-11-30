@@ -19,35 +19,21 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '@/hooks/use-toast';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer } from 'recharts';
 import { subDays, format, startOfDay } from 'date-fns';
 
-const ADMIN_CODE = "Quickly";
-
-const codeSchema = z.object({
-    code: z.string().min(1, 'कोड आवश्यक है'),
-});
-type CodeFormValues = z.infer<typeof codeSchema>;
-
 const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate' | 'createdAt') => {
+    if (!items) return [];
     const last7Days = Array.from({ length: 7 }, (_, i) => startOfDay(subDays(new Date(), i))).reverse();
     
     const dailyCounts = last7Days.map(day => {
         const dayString = format(day, 'MMM d');
-        const count = items?.filter(item => {
+        const count = items.filter(item => {
             if (!item[dateKey]) return false;
-            // Handle both Firestore Timestamps and regular Date objects
             const itemDate = item[dateKey] instanceof Timestamp ? item[dateKey].toDate() : new Date(item[dateKey]);
             return startOfDay(itemDate).getTime() === day.getTime();
-        }).length || 0;
+        }).length;
         return { date: dayString, count };
     });
 
@@ -57,10 +43,26 @@ const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollme
 export default function AdminDashboardOverview() {
   const { firestore } = useFirebase();
   const { user, isUserLoading } = useUser();
-  const { toast } = useToast();
   
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(true);
+
+  const [stats, setStats] = useState({
+      users: 0,
+      courses: 0,
+      ebooks: 0,
+      pyqs: 0,
+      tests: 0,
+      enrollments: 0,
+      bookOrders: 0
+  });
+  const [chartData, setChartData] = useState({
+      users: [],
+      enrollments: [],
+      bookOrders: []
+  });
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -82,42 +84,67 @@ export default function AdminDashboardOverview() {
     }
   }, [user, firestore, isUserLoading]);
   
-  const canFetchAdminData = !isAdminLoading && isAdmin;
+  useEffect(() => {
+      const fetchAdminData = async () => {
+          if (!firestore || !isAdmin) {
+              setIsDataLoading(false);
+              return;
+          };
+          setIsDataLoading(true);
 
-  const usersQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'users') : null), [firestore, canFetchAdminData]);
-  const coursesQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'courses') : null), [firestore, canFetchAdminData]);
-  const enrollmentsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'enrollments') : null), [firestore, canFetchAdminData]);
-  const ebooksQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'ebooks') : null), [firestore, canFetchAdminData]);
-  const pyqsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'pyqs') : null), [firestore, canFetchAdminData]);
-  const testsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'tests') : null), [firestore, canFetchAdminData]);
-  const bookOrdersQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'bookOrders') : null), [firestore, canFetchAdminData]);
+          try {
+              const collections = ['users', 'courses', 'ebooks', 'pyqs', 'tests', 'enrollments', 'bookOrders'];
+              const promises = collections.map(col => getDocs(collection(firestore, col)));
+              const snapshots = await Promise.all(promises);
 
-  const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
-  const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
-  const { data: enrollments, isLoading: enrollmentsLoading } = useCollection(enrollmentsQuery);
-  const { data: ebooks, isLoading: ebooksLoading } = useCollection(ebooksQuery);
-  const { data: pyqs, isLoading: pyqsLoading } = useCollection(pyqsQuery);
-  const { data: tests, isLoading: testsLoading } = useCollection(testsQuery);
-  const { data: bookOrders, isLoading: bookOrdersLoading } = useCollection(bookOrdersQuery);
-  
-  const newUsersChartData = useMemo(() => processChartData(users, 'signUpDate'), [users]);
-  const newEnrollmentsChartData = useMemo(() => processChartData(enrollments, 'enrollmentDate'), [enrollments]);
-  const newBookOrdersChartData = useMemo(() => processChartData(bookOrders, 'createdAt'), [bookOrders]);
+              const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap, enrollmentsSnap, bookOrdersSnap] = snapshots;
 
+              const usersData = usersSnap.docs.map(d => d.data());
+              const enrollmentsData = enrollmentsSnap.docs.map(d => d.data());
+              const bookOrdersData = bookOrdersSnap.docs.map(d => d.data());
 
-  const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
+              setStats({
+                  users: usersSnap.size,
+                  courses: coursesSnap.size,
+                  ebooks: ebooksSnap.size,
+                  pyqs: pyqsSnap.size,
+                  tests: testsSnap.size,
+                  enrollments: enrollmentsSnap.size,
+                  bookOrders: bookOrdersSnap.size
+              });
 
-  const loading = isUserLoading || isAdminLoading || (canFetchAdminData && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
+              setChartData({
+                  users: processChartData(usersData, 'signUpDate'),
+                  enrollments: processChartData(enrollmentsData, 'enrollmentDate'),
+                  bookOrders: processChartData(bookOrdersData, 'createdAt')
+              });
 
-  const stats = [
-      { title: 'यूज़र्स', icon: Users, value: users?.length ?? 0 },
-      { title: 'कोर्सेस', icon: BookOpen, value: courses?.length ?? 0 },
-      { title: 'E-books', icon: Book, value: ebooks?.length ?? 0 },
-      { title: 'PYQs', icon: FileQuestion, value: pyqs?.length ?? 0 },
-      { title: 'Tests', icon: Newspaper, value: tests?.length ?? 0 },
-      { title: 'एनरोलमेंट्स', icon: CreditCard, value: enrollments?.length ?? 0 },
-      { title: 'Book Orders', icon: ShoppingBag, value: bookOrders?.length ?? 0 },
+          } catch (error) {
+              console.error("Failed to fetch admin data", error);
+          } finally {
+              setIsDataLoading(false);
+          }
+      };
+
+      if (!isAdminLoading && isAdmin) {
+          fetchAdminData();
+      } else if (!isAdminLoading && !isAdmin) {
+          setIsDataLoading(false);
+      }
+
+  }, [firestore, isAdmin, isAdminLoading]);
+
+  const statCards = [
+      { title: 'यूज़र्स', icon: Users, value: stats.users },
+      { title: 'कोर्सेस', icon: BookOpen, value: stats.courses },
+      { title: 'E-books', icon: Book, value: stats.ebooks },
+      { title: 'PYQs', icon: FileQuestion, value: stats.pyqs },
+      { title: 'Tests', icon: Newspaper, value: stats.tests },
+      { title: 'एनरोलमेंट्स', icon: CreditCard, value: stats.enrollments },
+      { title: 'Book Orders', icon: ShoppingBag, value: stats.bookOrders },
   ];
+
+  const loading = isUserLoading || isAdminLoading || isDataLoading;
 
   if (isUserLoading || isAdminLoading) {
       return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>
@@ -138,7 +165,7 @@ export default function AdminDashboardOverview() {
   return (
     <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           {stats.map(stat => (
+           {statCards.map(stat => (
                 <Card key={stat.title}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
@@ -158,7 +185,7 @@ export default function AdminDashboardOverview() {
                    <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }}>
-                                <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <RechartsBarChart data={chartData.users} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />
@@ -178,7 +205,7 @@ export default function AdminDashboardOverview() {
                     <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }}>
-                                <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <RechartsBarChart data={chartData.enrollments} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />
@@ -198,7 +225,7 @@ export default function AdminDashboardOverview() {
                     <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Orders", color: "hsl(var(--chart-3))" } }}>
-                                <RechartsBarChart data={newBookOrdersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                <RechartsBarChart data={chartData.bookOrders} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />
