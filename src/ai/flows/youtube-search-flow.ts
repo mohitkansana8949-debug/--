@@ -43,12 +43,12 @@ async function searchYouTube({ query, channelId }: SearchInput) {
     console.error('YOUTUBE_API_KEY is not set in the environment variables.');
     throw new Error('The YouTube API key is not configured. Please contact the administrator.');
   }
-
+  
   const isQuicklyStudySearch = /quickly\s*study/i.test(query);
 
   let videoSearchUrl = '';
   let channelSearchUrl = '';
-
+  
   if (channelId) {
      videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}`;
   } else if (isQuicklyStudySearch) {
@@ -58,6 +58,7 @@ async function searchYouTube({ query, channelId }: SearchInput) {
     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
     channelSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=5&key=${youtubeApiKey}`;
   }
+
 
   const videoPromise = fetch(videoSearchUrl).then(res => res.json());
   const channelPromise = channelSearchUrl ? fetch(channelSearchUrl).then(res => res.json()) : Promise.resolve({ items: [] });
@@ -95,53 +96,34 @@ async function searchYouTube({ query, channelId }: SearchInput) {
   return { videos, channels };
 }
 
-export async function youtubeSearchFlow(input: SearchInput): Promise<SearchOutput> {
-  return await searchYouTube(input);
-}
+export const youtubeSearchFlow = ai.defineFlow(
+  {
+    name: 'youtubeSearchFlow',
+    inputSchema: SearchInputSchema,
+    outputSchema: SearchOutputSchema,
+  },
+  searchYouTube
+);
 
-const HomePageVideosSchema = z.object({});
-export type HomePageVideosInput = z.infer<typeof HomePageVideosSchema>;
+export const getHomePageVideos = ai.defineFlow(
+    {
+        name: 'getHomePageVideos',
+        inputSchema: z.object({}),
+        outputSchema: SearchOutputSchema,
+    },
+    async () => {
+         if (!youtubeApiKey) {
+            throw new Error('The YouTube API key is not configured.');
+        }
 
-const HomePageVideosOutputSchema = z.object({
-  quicklyStudyVideos: z.array(VideoSchema),
-  otherVideos: z.array(VideoSchema),
-});
-export type HomePageVideosOutput = z.infer<typeof HomePageVideosOutputSchema>;
+        // Fetch videos from Quickly Study channel
+        const quicklyStudyPromise = searchYouTube({ query: 'Quickly Study', channelId: QUICKLY_STUDY_CHANNEL_ID });
 
-export async function getHomePageVideos(input: HomePageVideosInput): Promise<HomePageVideosOutput> {
-  if (!youtubeApiKey) {
-    throw new Error('The YouTube API key is not configured.');
-  }
+        const [quicklyStudyResult] = await Promise.all([quicklyStudyPromise]);
 
-  // Fetch videos from Quickly Study channel
-  const quicklyStudyUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=3&order=date&type=video&key=${youtubeApiKey}`;
-  const qsResponse = await fetch(quicklyStudyUrl);
-  const qsData = await qsResponse.json();
-  const quicklyStudyVideos = qsData.items?.map((item: any) => ({
-    videoId: item.id.videoId,
-    title: item.snippet.title,
-    description: item.snippet.description,
-    thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-    channelTitle: item.snippet.channelTitle,
-    channelId: item.snippet.channelId,
-  })) || [];
-
-  // Fetch general educational videos
-  const generalQuery = 'Sainik School, Military School, Navodaya Vidyalaya';
-  const generalUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(generalQuery)}&type=video&maxResults=20&key=${youtubeApiKey}`;
-  const generalResponse = await fetch(generalUrl);
-  const generalData = await generalResponse.json();
-  const otherVideos = generalData.items?.map((item: any) => ({
-    videoId: item.id.videoId,
-    title: item.snippet.title,
-    description: item.snippet.description,
-    thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-    channelTitle: item.snippet.channelTitle,
-    channelId: item.snippet.channelId,
-  })) || [];
-
-  return {
-    quicklyStudyVideos,
-    otherVideos,
-  };
-}
+        return {
+            videos: quicklyStudyResult.videos.slice(0, 4), // Limit to 4 videos
+            channels: quicklyStudyResult.channels,
+        };
+    }
+);

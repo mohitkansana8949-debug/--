@@ -27,16 +27,15 @@ export default function YouTubeExplorerPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // This will now fetch a limited number of videos from the main channel
       const results = await getHomePageVideos({});
-      const otherEducationalVideos = results.otherVideos;
+      setVideos(results.videos);
       
-      // Find and set the Quickly Study channel to be featured
       const qsChannelDetails = await youtubeSearchFlow({ query: 'Quickly Study', channelId: null });
       if (qsChannelDetails.channels.length > 0) {
         setQuicklyStudyChannel(qsChannelDetails.channels[0]);
       }
 
-      setVideos(otherEducationalVideos);
       setChannels([]); // Clear channels on initial load
     } catch (err: any) {
       setError(err.message || "Failed to fetch initial videos.");

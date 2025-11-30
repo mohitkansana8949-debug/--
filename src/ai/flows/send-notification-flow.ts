@@ -9,17 +9,22 @@ import { initializeApp, getApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { User } from '@/lib/types';
 
+// This is a simplified check. In a real app, you might have a more robust way
+// to handle service account credentials, e.g., using environment variables.
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
   : null;
 
+let isAdminAppInitialized = false;
 try {
   getApp('firebase-admin');
+  isAdminAppInitialized = true;
 } catch (error) {
   if (serviceAccount) {
     initializeApp({
       credential: cert(serviceAccount),
     }, 'firebase-admin');
+    isAdminAppInitialized = true;
   }
 }
 
@@ -49,8 +54,15 @@ const notificationFlow = ai.defineFlow(
     outputSchema: NotificationOutputSchema,
   },
   async ({ title, body, imageUrl }) => {
-    if (!serviceAccount) {
-        throw new Error("Service account is not configured. Cannot send notifications.");
+    if (!isAdminAppInitialized) {
+        const errorMsg = "Firebase Admin SDK is not initialized. Cannot send notifications. Ensure service account is configured.";
+        console.error(errorMsg);
+        return {
+            success: false,
+            successCount: 0,
+            failureCount: 0,
+            error: errorMsg,
+        };
     }
     const { firestore } = initializeFirebase();
 
@@ -88,7 +100,7 @@ const notificationFlow = ai.defineFlow(
         },
       };
 
-      const response = await getMessaging().sendMulticast(message);
+      const response = await getMessaging().sendEachForMulticast(message);
       
       return {
         success: response.failureCount === 0,
