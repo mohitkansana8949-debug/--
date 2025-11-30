@@ -64,8 +64,8 @@ export default function SendNotificationPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <header className="p-4 border-b flex items-center gap-4">
+    <div className="flex flex-col min-h-screen bg-background">
+      <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background z-10">
         <Button asChild variant="outline">
           <Link href="/admin">
             <ArrowLeft className="mr-2 h-4 w-4" />

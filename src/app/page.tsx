@@ -40,67 +40,6 @@ const footerItems = [
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
-function InstallPWA() {
-    const [installPrompt, setInstallPrompt] = useState<any>(null);
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        const handleBeforeInstallPrompt = (e: Event) => {
-            e.preventDefault();
-            setInstallPrompt(e);
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                setIsVisible(false);
-            } else {
-                setIsVisible(true);
-            }
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-        window.addEventListener('appinstalled', () => {
-            setIsVisible(false);
-            setInstallPrompt(null);
-            console.log('PWA was installed');
-        });
-
-        return () => {
-            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        };
-    }, []);
-
-    const handleInstallClick = async () => {
-        if (installPrompt) {
-            installPrompt.prompt();
-            const { outcome } = await installPrompt.userChoice;
-            if (outcome === 'accepted') {
-                console.log('User accepted the install prompt');
-            } else {
-                console.log('User dismissed the install prompt');
-            }
-        }
-    };
-
-    if (!isVisible) {
-        return null;
-    }
-
-    return (
-        <div className="relative p-4 rounded-lg overflow-hidden bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-gradient-xy">
-            <div className="text-white text-center">
-                <h2 className="text-xl font-bold mb-1">Install App for a Better Experience</h2>
-                <p className="text-sm mb-3">Get the full app experience by installing it on your home screen.</p>
-                <Button 
-                    onClick={handleInstallClick} 
-                    className="bg-white text-primary hover:bg-gray-100 font-bold py-2 px-4 rounded-full shadow-lg transition-transform hover:scale-105"
-                    size="sm"
-                >
-                    <Download className="mr-2 h-4 w-4" />
-                    Install App
-                </Button>
-            </div>
-        </div>
-    );
-}
 
 function AiDoubtSolverCard() {
     return (
@@ -167,7 +106,7 @@ export default function HomePage() {
 
   return (
     <div className="p-4 space-y-8 pb-20 md:pb-8">
-      <InstallPWA />
+      
       <div className="flex justify-between items-center">
         <div className="text-left">
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to Quickly Study</h1>

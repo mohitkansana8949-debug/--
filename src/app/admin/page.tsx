@@ -17,8 +17,8 @@ import {
   Newspaper,
   BarChart,
   ShoppingBag,
+  DollarSign,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer } from 'recharts';
 import { subDays, format, startOfDay } from 'date-fns';
@@ -54,15 +54,18 @@ export default function AdminDashboardOverview() {
       pyqs: 0,
       tests: 0,
       enrollments: 0,
-      bookOrders: 0
+      bookOrders: 0,
+      totalRevenue: 0,
   });
-  const [chartData, setChartData] = useState({
+  const [chartData, setChartData] = useState<{users: any[], enrollments: any[], bookOrders: any[]}>({
       users: [],
       enrollments: [],
       bookOrders: []
   });
   const [isDataLoading, setIsDataLoading] = useState(true);
 
+  // This is a more reliable way to check admin status before fetching data
+  const canFetchAdminData = !isUserLoading && !isAdminLoading && isAdmin;
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -75,6 +78,8 @@ export default function AdminDashboardOverview() {
                 console.error("Error checking admin status:", error);
                 setIsAdmin(false);
             }
+        } else {
+            setIsAdmin(false);
         }
         setIsAdminLoading(false);
     };
@@ -86,10 +91,7 @@ export default function AdminDashboardOverview() {
   
   useEffect(() => {
       const fetchAdminData = async () => {
-          if (!firestore || !isAdmin) {
-              setIsDataLoading(false);
-              return;
-          };
+          if (!firestore) return;
           setIsDataLoading(true);
 
           try {
@@ -103,6 +105,14 @@ export default function AdminDashboardOverview() {
               const enrollmentsData = enrollmentsSnap.docs.map(d => d.data());
               const bookOrdersData = bookOrdersSnap.docs.map(d => d.data());
 
+              const bookRevenue = bookOrdersSnap.docs.reduce((acc, doc) => acc + (doc.data().total || 0), 0);
+              const enrollmentRevenue = enrollmentsSnap.docs.reduce((acc, doc) => {
+                  const itemPrice = doc.data().itemPrice || 0; // Assuming price is stored
+                  return acc + itemPrice;
+              }, 0);
+              const totalRevenue = bookRevenue + enrollmentRevenue;
+
+
               setStats({
                   users: usersSnap.size,
                   courses: coursesSnap.size,
@@ -110,7 +120,8 @@ export default function AdminDashboardOverview() {
                   pyqs: pyqsSnap.size,
                   tests: testsSnap.size,
                   enrollments: enrollmentsSnap.size,
-                  bookOrders: bookOrdersSnap.size
+                  bookOrders: bookOrdersSnap.size,
+                  totalRevenue,
               });
 
               setChartData({
@@ -126,13 +137,13 @@ export default function AdminDashboardOverview() {
           }
       };
 
-      if (!isAdminLoading && isAdmin) {
+      if (canFetchAdminData) {
           fetchAdminData();
-      } else if (!isAdminLoading && !isAdmin) {
-          setIsDataLoading(false);
+      } else if (!isUserLoading && !isAdminLoading && !isAdmin) {
+          setIsDataLoading(false); // Not an admin, so stop loading
       }
 
-  }, [firestore, isAdmin, isAdminLoading]);
+  }, [firestore, canFetchAdminData, isUserLoading, isAdminLoading, isAdmin]);
 
   const statCards = [
       { title: 'यूज़र्स', icon: Users, value: stats.users },
@@ -147,9 +158,10 @@ export default function AdminDashboardOverview() {
   const loading = isUserLoading || isAdminLoading || isDataLoading;
 
   if (isUserLoading || isAdminLoading) {
-      return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>
+      return <div className="flex h-full items-center justify-center"><Loader className="animate-spin" /></div>
   }
 
+  // This check is now safe because loading states are handled.
   if (!isAdmin) {
       return (
           <Card>
@@ -165,6 +177,20 @@ export default function AdminDashboardOverview() {
   return (
     <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">कुल रेवेन्यू</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>{loading ? <Loader className="animate-spin"/> : <div className="text-2xl font-bold">₹{stats.totalRevenue.toFixed(2)}</div>}</CardContent>
+           </Card>
+           <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">आपका हिस्सा (70%)</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground text-green-500" />
+              </CardHeader>
+              <CardContent>{loading ? <Loader className="animate-spin"/> : <div className="text-2xl font-bold text-green-500">₹{(stats.totalRevenue * 0.70).toFixed(2)}</div>}</CardContent>
+           </Card>
            {statCards.map(stat => (
                 <Card key={stat.title}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

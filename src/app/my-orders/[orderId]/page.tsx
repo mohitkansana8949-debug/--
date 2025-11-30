@@ -23,6 +23,13 @@ export default function OrderDetailsPage() {
     ), [user, firestore, orderId]);
 
     const { data: order, isLoading } = useDoc(orderRef);
+    
+    // Admin check
+    const adminRef = useMemoFirebase(() => (
+        user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
+    ), [user, firestore]);
+    const { data: adminDoc } = useDoc(adminRef);
+    const isAdmin = !!adminDoc;
 
     if (isLoading || isUserLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
@@ -32,9 +39,9 @@ export default function OrderDetailsPage() {
         return <div className="flex h-screen items-center justify-center">Order not found.</div>
     }
 
-    // Basic security check
-    if (order.userId !== user?.uid) {
-        router.replace('/my-orders');
+    // Security check: Only the user who placed the order OR an admin can view it.
+    if (order.userId !== user?.uid && !isAdmin) {
+        router.replace('/my-purchases'); // Or a more appropriate page like '/
         return null;
     }
 
@@ -61,7 +68,7 @@ export default function OrderDetailsPage() {
     return (
         <div className="container mx-auto p-4 max-w-4xl">
             <Button asChild variant="outline" className="mb-4">
-                <Link href="/my-orders"><ArrowLeft className="mr-2"/>Back to Orders</Link>
+                <Link href="/my-purchases"><ArrowLeft className="mr-2"/>Back to Orders</Link>
             </Button>
             <Card>
                 <CardHeader>
