@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -358,6 +359,20 @@
         "grade": { "type": "number", "description": "The percentage score achieved." }
       },
       "required": ["userId", "userName", "itemName", "itemType", "completionDate", "grade"]
+    },
+    "Doubt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Doubt",
+      "type": "object",
+      "description": "Represents a doubt asked by a user and the AI's answer.",
+      "properties": {
+        "doubt": { "type": "string", "description": "The question asked by the user." },
+        "userId": { "type": "string", "description": "The UID of the user." },
+        "userName": { "type": "string", "description": "The name of the user." },
+        "answer": { "type": "string", "description": "The answer provided by the AI." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["doubt", "userId", "userName", "answer", "createdAt"]
     }
   },
   "auth": {
@@ -576,6 +591,15 @@
           "schema": { "$ref": "#/backend/entities/ReferralPoints" },
           "description": "Stores the referral point totals for each user.",
           "params": [{ "name": "userId", "description": "The UID of the user." }]
+        }
+      },
+       {
+        "path": "/doubts/{doubtId}",
+        "definition": {
+          "entityName": "Doubt",
+          "schema": { "$ref": "#/backend/entities/Doubt" },
+          "description": "Stores questions asked by users to the AI.",
+          "params": [{ "name": "doubtId", "description": "The unique identifier for the doubt." }]
         }
       }
     ],

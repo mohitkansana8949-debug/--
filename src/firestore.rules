@@ -76,6 +76,11 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
+    // Doubts can be created by any authenticated user
+    match /doubts/{doubtId} {
+      allow create: if request.auth != null;
+    }
+    
     // Referral data can be created by any user, points can be read by anyone
     match /referrals/{referralId} {
         allow create: if request.auth != null;

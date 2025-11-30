@@ -128,7 +128,8 @@ export default function HomePage() {
   const showYoutubeFeature = useMemo(() => appSettings?.youtubeFeatureEnabled !== false, [appSettings]);
   const showAiDoubtSolver = useMemo(() => appSettings?.aiDoubtSolverEnabled === true, [appSettings]);
   
-  const featureCards = useMemo(() => [
+  const featureCards = useMemo(() => {
+    const cards = [
       { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
       { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
       { title: 'Bookshala', href: '/bookshala', icon: Package, color: 'bg-indigo-500' },
@@ -137,10 +138,16 @@ export default function HomePage() {
       { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
       { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
-      showYoutubeFeature 
-        ? { title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' }
-        : { title: 'My Orders', href: '/my-orders', icon: ShoppingBag, color: 'bg-rose-600' }
-  ], [showYoutubeFeature]);
+    ];
+    
+    if (showYoutubeFeature) {
+        cards.push({ title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' });
+    } else {
+        cards.push({ title: 'My Orders', href: '/my-orders', icon: ShoppingBag, color: 'bg-rose-600' });
+    }
+    
+    return cards;
+}, [showYoutubeFeature]);
 
 
   if (isUserLoading || settingsLoading) {

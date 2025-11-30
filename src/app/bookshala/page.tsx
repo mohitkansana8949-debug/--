@@ -24,7 +24,7 @@ export default function BookshalaPage() {
 
     const handleBuyNow = (book: Book) => {
         addToCart(book);
-        router.push('/cart');
+        router.push('/checkout');
     };
 
     return (
@@ -49,10 +49,10 @@ export default function BookshalaPage() {
                     <p className="mt-4">अभी कोई किताब उपलब्ध नहीं है।</p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {books.map(book => (
                         <Card key={book.id} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col group">
-                            <Link href={`/bookshala/${book.id}`} className="block">
+                           <div className="block">
                                 <div className="w-full aspect-[3/4] relative">
                                     <Image 
                                         src={book.imageUrl} 
@@ -62,18 +62,17 @@ export default function BookshalaPage() {
                                     />
                                     {book.offer && <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs font-bold px-2 py-1 rounded">{book.offer}</div>}
                                 </div>
-                            </Link>
-                            <CardHeader>
-                                <CardTitle className="line-clamp-2 h-12">{book.name}</CardTitle>
-                                <CardDescription className="line-clamp-3 h-[60px]">{book.description}</CardDescription>
+                            </div>
+                            <CardHeader className="p-3">
+                                <CardTitle className="line-clamp-2 h-10 text-sm font-semibold">{book.name}</CardTitle>
                             </CardHeader>
-                            <CardFooter className="flex-col items-start gap-4 mt-auto">
-                                <p className="text-xl font-bold">₹{book.price}</p>
+                            <CardFooter className="flex flex-col items-start gap-2 p-3 mt-auto">
+                                <p className="text-lg font-bold">₹{book.price}</p>
                                 <div className="w-full flex flex-col sm:flex-row gap-2">
-                                     <Button className="w-full" onClick={() => addToCart(book)}>
+                                     <Button size="sm" className="w-full" onClick={() => addToCart(book)}>
                                         <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
                                      </Button>
-                                     <Button variant="secondary" className="w-full" onClick={() => handleBuyNow(book)}>Buy Now</Button>
+                                     <Button size="sm" variant="secondary" className="w-full" onClick={() => handleBuyNow(book)}>Buy Now</Button>
                                 </div>
                             </CardFooter>
                         </Card>
