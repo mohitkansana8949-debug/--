@@ -26,6 +26,7 @@ import {
   Clapperboard,
   Package,
   Wand2,
+  LifeBuoy,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
@@ -34,7 +35,7 @@ import { useEffect, useState, useMemo } from 'react';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Purchases', href: '/my-purchases', icon: ShoppingBag },
+    { name: 'Support', href: '/order-support', icon: LifeBuoy },
     { name: 'Feed', icon: Rss, href: '/feed' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -144,7 +145,7 @@ export default function HomePage() {
     if (showYoutubeFeature) {
         cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
     } else {
-        cards.push({ title: 'My Purchases', href: '/my-purchases', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
+        cards.push({ title: 'Order Support', href: '/order-support', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: LifeBuoy });
     }
     
     // Ensure it's always 9 cards for a clean grid
