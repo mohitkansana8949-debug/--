@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, getDocs, Timestamp, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Users,
   BookOpen,
