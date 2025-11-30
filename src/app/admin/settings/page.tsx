@@ -33,6 +33,8 @@ export default function AppSettingsPage() {
     const [appUrl, setAppUrl] = useState('');
     const [youtubeFeatureEnabled, setYoutubeFeatureEnabled] = useState(true);
     const [aiDoubtSolverEnabled, setAiDoubtSolverEnabled] = useState(false);
+    const [vapidKey, setVapidKey] = useState('');
+    const [notificationAccessKey, setNotificationAccessKey] = useState('');
     const [isAppSubmitting, setIsAppSubmitting] = useState(false);
     
     // Refer & Earn settings
@@ -71,6 +73,8 @@ export default function AppSettingsPage() {
             setAppUrl(appSettings.appUrl || '');
             setYoutubeFeatureEnabled(appSettings.youtubeFeatureEnabled !== false);
             setAiDoubtSolverEnabled(appSettings.aiDoubtSolverEnabled === true);
+            setVapidKey(appSettings.vapidKey || '');
+            setNotificationAccessKey(appSettings.notificationAccessKey || '');
         }
     }, [appSettings]);
 
@@ -111,6 +115,8 @@ export default function AppSettingsPage() {
             appUrl: appUrl,
             youtubeFeatureEnabled: youtubeFeatureEnabled,
             aiDoubtSolverEnabled: aiDoubtSolverEnabled,
+            vapidKey: vapidKey,
+            notificationAccessKey: notificationAccessKey,
         };
         
         setDoc(appSettingsDocRef, settingsUpdate, { merge: true }).then(() => {
@@ -201,6 +207,17 @@ export default function AppSettingsPage() {
                                             <p className="text-xs text-muted-foreground">Show or hide the AI Doubt Solver card on the home page.</p>
                                         </div>
                                         <Switch checked={aiDoubtSolverEnabled} onCheckedChange={setAiDoubtSolverEnabled} />
+                                    </div>
+                                </div>
+                                 <div className="space-y-4 rounded-lg border p-4">
+                                    <h4 className="font-medium">Push Notifications</h4>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="vapid-key">VAPID Key</Label>
+                                        <Input id="vapid-key" type="text" placeholder="Your FCM VAPID Key" value={vapidKey} onChange={e => setVapidKey(e.target.value)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="notification-access-key">Notification Access Key</Label>
+                                        <Input id="notification-access-key" type="password" placeholder="A secret key to send notifications" value={notificationAccessKey} onChange={e => setNotificationAccessKey(e.target.value)} />
                                     </div>
                                 </div>
                             </>
@@ -309,5 +326,3 @@ function SettingsSkeleton() {
         </div>
     )
 }
-
-    

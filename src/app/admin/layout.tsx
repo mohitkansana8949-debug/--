@@ -24,6 +24,7 @@ import {
   ShoppingBag,
   Package,
   TicketPercent,
+  Bell,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -40,6 +41,7 @@ const adminNavItems = [
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
+  { href: '/admin/notifications', label: 'Send Notification', icon: Bell },
   { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
    { href: '/admin/live-content', label: 'Live Content', icon: Radio },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
@@ -63,7 +65,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   // These paths will not use the admin layout and will be rendered as full pages
-  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon'];
+  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;
