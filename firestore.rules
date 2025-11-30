@@ -5,8 +5,8 @@ service cloud.firestore {
     
     // Helper function to check for admin role
     function isAdmin() {
-      // Super admin has permanent access
-      return request.auth.token.email == 'Qukly@study.com' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Super admin has permanent access. Check for email in a case-insensitive manner.
+      return request.auth.token.email.lower() == 'qukly@study.com' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     // Default allow writes for admins, reads for authenticated users.

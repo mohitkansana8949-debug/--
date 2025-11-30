@@ -82,7 +82,7 @@ export default function AdminLayout({
             return;
         }
         
-        if (user.email === 'Qukly@study.com') {
+        if (user.email?.toLowerCase() === 'qukly@study.com') {
              setIsAdmin(true);
              setIsAdminLoading(false);
              return;
@@ -113,9 +113,6 @@ export default function AdminLayout({
     return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
   }
   
-  // This is a temporary measure to allow access.
-  // In a real app, you'd want to enforce this check.
-  /*
   if (!isAdmin) {
       return (
           <div className="flex h-screen items-center justify-center">
@@ -131,7 +128,6 @@ export default function AdminLayout({
           </div>
       )
   }
-  */
 
   return (
     <div className="container mx-auto p-4">
