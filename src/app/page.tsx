@@ -34,6 +34,7 @@ import { useEffect, useState, useMemo } from 'react';
 const footerItems = [
     { name: 'Home', icon: Home, href: '/' },
     { name: 'Library', icon: Library, href: '/my-library' },
+    { name: 'Your Orders', icon: ShoppingBag, href: '/my-orders' },
     { name: 'Feed', icon: Rss, href: '/feed' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -130,25 +131,25 @@ export default function HomePage() {
   
   const featureCards = useMemo(() => {
     let cards = [
-      { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
-      { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
-      { title: 'Bookshala', href: '/bookshala', icon: Package, color: 'bg-indigo-500' },
-      { title: 'E-books', href: '/ebooks', icon: EbookIcon, color: 'bg-teal-500' },
-      { title: 'PYQs', href: '/pyqs', icon: FileQuestion, color: 'bg-yellow-500' },
-      { title: 'टेस्ट सीरीज', href: '/test-series', icon: Newspaper, color: 'bg-purple-500' },
-      { title: 'फ्री कोर्सेस', href: '/courses?filter=free', icon: Gift, color: 'bg-orange-500' },
-      { title: 'लाइब्रेरी', href: '/my-library', icon: Library, color: 'bg-cyan-500' },
+      { title: 'कोर्सेस', href: '/courses', gradient: 'bg-gradient-to-br from-blue-500 to-purple-600', icon: BookOpen },
+      { title: 'Live Classes', href: '/live-lectures', gradient: 'bg-gradient-to-br from-red-500 to-orange-500', icon: Clapperboard },
+      { title: 'Bookshala', href: '/bookshala', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: Package },
+      { title: 'E-books', href: '/ebooks', gradient: 'bg-gradient-to-br from-teal-500 to-green-500', icon: EbookIcon },
+      { title: 'PYQs', href: '/pyqs', gradient: 'bg-gradient-to-br from-yellow-500 to-amber-600', icon: FileQuestion },
+      { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
+      { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
+      { title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library },
     ];
     
     if (showYoutubeFeature) {
-        cards.push({ title: 'YouTube', href: '/youtube', icon: Youtube, color: 'bg-rose-600' });
+        cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
     } else {
-        cards.push({ title: 'My Orders', href: '/my-orders', icon: ShoppingBag, color: 'bg-rose-600' });
+        cards.push({ title: 'My Orders', href: '/my-orders', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
     }
     
     // Ensure it's always 9 cards for a clean grid
     while (cards.length < 9) {
-        cards.push({ title: 'Explore', href: '/', icon: Star, color: 'bg-gray-500' });
+        cards.push({ title: 'Explore', href: '/', gradient: 'bg-gradient-to-br from-gray-500 to-gray-600', icon: Star });
     }
     
     return cards.slice(0, 9);
@@ -180,7 +181,7 @@ export default function HomePage() {
         {featureCards.map((card, index) => (
           <Link href={card.href} key={index}>
             <Card
-              className={`flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 ${card.color}`}
+              className={`flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 ${card.gradient} animate-gradient-xy`}
             >
               <card.icon className="mb-2 h-6 w-6 md:h-8 md:w-8" />
               <span className="font-semibold text-xs md:text-sm">{card.title}</span>

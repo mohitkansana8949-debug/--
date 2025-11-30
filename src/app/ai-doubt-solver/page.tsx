@@ -30,7 +30,7 @@ export default function AiDoubtSolverPage() {
     const [doubt, setDoubt] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [language, setLanguage] = useState<'english' | 'hindi'>('english');
+    const [language, setLanguage] = useState<'english' | 'hindi'>('hindi');
     const [messages, setMessages] = useState<Message[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -157,7 +157,7 @@ export default function AiDoubtSolverPage() {
                         <div className="grid grid-cols-2 gap-4">
                              <div>
                                 <Label className="mb-2 block">Language</Label>
-                                <RadioGroup defaultValue="english" value={language} onValueChange={(val: 'english' | 'hindi') => setLanguage(val)} className="flex gap-4">
+                                <RadioGroup defaultValue="hindi" value={language} onValueChange={(val: 'english' | 'hindi') => setLanguage(val)} className="flex gap-4">
                                      <Label htmlFor="lang-en" className="flex items-center gap-2 p-2 border rounded-md cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground flex-1 justify-center">
                                         <RadioGroupItem value="english" id="lang-en" />
                                         English

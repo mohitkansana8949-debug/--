@@ -21,7 +21,7 @@ export default function MyOrdersPage() {
         ) : null
     ), [user, firestore]);
 
-    const { data: orders, isLoading } = useCollection(ordersQuery);
+    const { data: orders, isLoading, error } = useCollection(ordersQuery);
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -35,13 +35,21 @@ export default function MyOrdersPage() {
     if (isLoading || isUserLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
     }
+    
+    if (error) {
+        return (
+            <div className="flex h-screen items-center justify-center text-red-500">
+                <p>Error loading orders: {error.message}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto p-4 max-w-4xl">
              <div className="mb-8">
                 <h1 className="text-3xl font-bold flex items-center gap-2">
                     <ShoppingBag className="h-8 w-8" />
-                    My Book Orders
+                    Your Orders
                 </h1>
                 <p className="text-muted-foreground">
                     Track all your book purchases here.
@@ -61,7 +69,10 @@ export default function MyOrdersPage() {
                                     </div>
                                     <div className="flex items-center gap-4">
                                         <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
-                                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                                        <Button variant="outline" size="sm">
+                                            Track Your Order
+                                            <ChevronRight className="h-4 w-4 ml-2" />
+                                        </Button>
                                     </div>
                                 </CardContent>
                              </Link>
@@ -83,4 +94,3 @@ export default function MyOrdersPage() {
         </div>
     )
 }
-
