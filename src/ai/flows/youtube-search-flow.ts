@@ -52,8 +52,8 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
   if (channelId) {
      videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}&type=video`;
   } else if (isQuicklyStudySearch) {
-    // If "Quickly Study" is searched, prioritize finding the channel and its videos
-    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(query.replace(/quickly\s*study/i, '').trim())}&type=video`;
+    const searchQuery = query.replace(/quickly\s*study/i, '').trim();
+    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(searchQuery)}&type=video`;
     channelSearchUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${QUICKLY_STUDY_CHANNEL_ID}&key=${youtubeApiKey}`;
   } else {
     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
@@ -61,7 +61,7 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
   }
 
 
-  const videoPromise = fetch(videoSearchUrl).then(res => res.json());
+  const videoPromise = videoSearchUrl ? fetch(videoSearchUrl).then(res => res.json()) : Promise.resolve({ items: [] });
   const channelPromise = channelSearchUrl ? fetch(channelSearchUrl).then(res => res.json()) : Promise.resolve({ items: [] });
   
   const [videoData, channelData] = await Promise.all([videoPromise, channelPromise]);
@@ -72,7 +72,7 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
   }
   if (channelData.error) {
     console.error('YouTube API Error (Channels):', channelData.error.message);
-    // Don't throw for channel error, video search might have succeeded
+    // Do not throw for channel error, video search might have succeeded
   }
 
   const videos: z.infer<typeof VideoSchema>[] = videoData.items
@@ -88,7 +88,7 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
 
   const channels: z.infer<typeof ChannelSchema>[] = channelData.items
     ? channelData.items.map((item: any) => ({
-        channelId: item.id.channelId || item.id, // Handles both search and channels list response
+        channelId: item.id.channelId || item.id,
         title: item.snippet.title,
         description: item.snippet.description,
         thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,

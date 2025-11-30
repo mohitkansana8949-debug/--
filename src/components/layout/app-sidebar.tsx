@@ -21,6 +21,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 import { useState, useEffect } from "react";
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -31,7 +32,7 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
     viewBox="0 0 24 24"
     fill="currentColor"
   >
-    <path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.75-.12 1.38-.19.63-.98 1.2-1.7 1.33-.72.13-1.38.07-1.94-.19-.56-.25-1.38-.5-2.63-1.12-1.25-.63-2.25-1.5-3.06-2.63-.81-1.12-1.25-2.38-1.19-3.56.07-1.19.69-2.19 1.38-2.81.69-.63 1.56-.81 2.31-.81.25 0 .5.06.69.06.31 0 .5.13.69.38.19.25.19.56.13.88-.07.31-.13.5-.25.69-.13.19-.25.31-.44.44-.19.13-.31.25-.38.38-.07.13-.07.19.06.38.13.19.31.44.5.63.19.19.44.44.69.63.25.19.44.31.63.5.19.19.31.31.38.44.07.13.07.25.07.38zm-4.88 5.81c-1.38 0-2.69-.38-3.81-1.06l-4.06 1.06 1.12-3.94c-.75-1.19-1.19-2.63-1.19-4.13 0-4.31 3.5-7.81 7.81-7.81 4.31 0 7.81 3.5 7.81 7.81 0 4.31-3.5 7.81-7.81 7.81z" />
+    <path d="M16.75 13.96c.25.13.43.2.5.33.07.13.07.75-.12 1.38-.19.63-.98 1.2-1.7 1.33-.72.13-1.38.07-1.94-.19-.56-.25-1.38-.5-2.63-1.12-1.25-.63-2.25-1.5-3.06-2.63-.81-1.12-1.25-2.38-1.19-3.56.07-1.19.69-2.19 1.38-2.81.69-.63 1.56-.81 2.31-.81.25 0 .5.06.69.06.31 0 .5.13.69.38.19.25.19.56.13.88-.07.31-.13.5-.25.69-.13.19-.25.31-.38.38-.07.13-.07.19.06.38.13.19.31.44.5.63.19.19.44.44.69.63.25.19.44.31.63.5.19.19.31.31.38.44.07.13.07.25.07.38zm-4.88 5.81c-1.38 0-2.69-.38-3.81-1.06l-4.06 1.06 1.12-3.94c-.75-1.19-1.19-2.63-1.19-4.13 0-4.31 3.5-7.81 7.81-7.81 4.31 0 7.81 3.5 7.81 7.81 0 4.31-3.5 7.81-7.81 7.81z" />
   </svg>
 );
 
@@ -39,10 +40,31 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
+  const { firestore } = useFirebase();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminAuthenticated] = useLocalStorage('isAdminAuthenticated', false);
+
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user && firestore) {
+        if (user.email === 'qukly@study.com') {
+          setIsAdmin(true);
+          return;
+        }
+        const adminDocRef = doc(firestore, 'roles_admin', user.uid);
+        const adminDoc = await getDoc(adminDocRef);
+        setIsAdmin(adminDoc.exists());
+      } else {
+        setIsAdmin(false);
+      }
+    };
+    checkAdmin();
+  }, [user, firestore]);
   
 
   const handleLogout = async () => {
@@ -74,7 +96,7 @@ export function AppSidebar() {
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
     { href: "/youtube", label: "यूट्यूब", icon: Youtube, tooltip: "YouTube" },
-    { href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" },
+    ...(isAdmin || isAdminAuthenticated ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
@@ -133,7 +155,7 @@ export function AppSidebar() {
           <Link href="/refer" onClick={handleLinkClick} className="block w-full p-3 text-center rounded-lg bg-yellow-400/20 text-yellow-600 dark:text-yellow-300 border border-yellow-500/50 hover:bg-yellow-400/30">
             <div className="flex items-center justify-center gap-2">
               <Gift className="h-5 w-5"/>
-              <span className="font-bold">Refer & Earn</span>
+              <span className="font-bold">Refer &amp; Earn</span>
             </div>
           </Link>
         </div>

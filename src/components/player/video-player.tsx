@@ -98,12 +98,18 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
   const onPlayerError = (event: any) => {
     let errorMessage = "The video may be private, removed, or unavailable.";
     switch (event.data) {
+        case 2:
+            errorMessage = "The video ID is invalid.";
+            break;
+        case 5:
+            errorMessage = "An error occurred with the HTML5 player.";
+            break;
+        case 100:
+            errorMessage = "The video was not found or has been removed.";
+            break;
         case 101:
         case 150:
             errorMessage = "The video owner has disabled playback on other websites.";
-            break;
-        case 100:
-            errorMessage = "The video was not found.";
             break;
     }
     setErrorOccurred(errorMessage);
@@ -122,6 +128,13 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
     if (event.data === YouTube.PlayerState.PAUSED || event.data === YouTube.PlayerState.ENDED) {
         setShowControls(true);
         if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+    }
+     if (event.data === YouTube.PlayerState.UNSTARTED && errorOccurred) {
+        return;
+    }
+    // Don't clear the error if it's 150, as it's a permanent restriction for the video.
+    if(event.data !== 150){
+        setErrorOccurred(null); 
     }
   };
 
@@ -208,12 +221,12 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
   
-  if (!videoUrl || errorOccurred) {
+  if (!videoUrl) {
     return (
        <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center">
           <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
           <h2 className="text-2xl font-bold">Could Not Load Video</h2>
-          <p className="text-muted-foreground">{!videoUrl ? 'The video link is missing.' : errorOccurred}</p>
+          <p className="text-muted-foreground">The video link is missing.</p>
           <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
              <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
           </Button>
@@ -230,16 +243,16 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
       onClick={handleContainerClick}
     >
       <div className="w-full h-full absolute" id="video-player-container">
-        {isYoutubeVideo && videoId ? (
+        {isYoutubeVideo && videoId && !errorOccurred ? (
             <YouTube
             videoId={videoId}
             opts={{ height: '100%', width: '100%', playerVars: { autoplay: 1, controls: 0, rel: 0, showinfo: 0, modestbranding: 1, fs: 0, iv_load_policy: 3, hl: 'hi' }}}
             onReady={onPlayerReady}
             onStateChange={onPlayerStateChange}
             onError={onPlayerError}
-            className="w-full h-full"
+            className={cn("w-full h-full")}
             />
-        ) : isExternalVideo ? (
+        ) : isExternalVideo && !errorOccurred ? (
              <iframe
                 ref={iframeRef}
                 src={videoUrl}
@@ -251,7 +264,18 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
         ) : null}
       </div>
 
-     {(isYoutubeVideo) && (
+     {errorOccurred && (
+          <div className="w-full h-full bg-black flex flex-col items-center justify-center text-white p-4 text-center z-20">
+              <AlertTriangle className="h-16 w-16 mb-4 text-destructive" />
+              <h2 className="text-2xl font-bold">Could Not Load Video</h2>
+              <p className="text-muted-foreground max-w-md">{errorOccurred}</p>
+              <Button variant="outline" onClick={() => router.back()} className="mt-6 bg-transparent text-white hover:bg-white/10 hover:text-white focus-visible:ring-0 focus-visible:ring-offset-0">
+                 <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+              </Button>
+          </div>
+      )}
+
+     {(isYoutubeVideo && !errorOccurred) && (
       <div className={cn("absolute inset-0 transition-opacity duration-300 z-10", showControls ? "opacity-100" : "opacity-0")}>
         <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none"></div>
         <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/70 to-transparent pointer-events-none"></div>
@@ -296,7 +320,7 @@ export default function VideoPlayer({ videoUrl: urlProp, videoId: videoIdProp, t
       </div>
      )}
      
-     {(!isYoutubeVideo) && (
+     {(!isYoutubeVideo && !errorOccurred) && (
          <header className={cn("absolute top-0 left-0 right-0 z-20 transition-opacity duration-300", showControls ? "opacity-100" : "opacity-0 pointer-events-none")}>
            <div className="p-2 flex items-center gap-4 bg-gradient-to-b from-black/60 to-transparent">
              <Button variant="ghost" size="icon" onClick={handleBackClick} className="hover:bg-white/10 focus-visible:ring-0 focus-visible:ring-offset-0">

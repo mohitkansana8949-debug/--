@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -21,13 +22,34 @@ export default function YouTubeExplorerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
   const [channels, setChannels] = useState<SearchOutput['channels']>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(true); // Start with searching for initial videos
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch initial videos from our channel on component mount
+    const fetchInitialVideos = async () => {
+        setIsSearching(true);
+        setError(null);
+        try {
+          const results = await youtubeSearchFlow({ 
+            query: '', // Empty query to get general videos
+            channelId: QUICKLY_STUDY_CHANNEL.channelId 
+          });
+          setVideos(results.videos);
+          setChannels([]); // No need to show channel results on initial load
+        } catch (err: any) {
+          setError(err.message || "Failed to fetch initial videos.");
+          console.error(err);
+        } finally {
+          setIsSearching(false);
+        }
+    };
+    fetchInitialVideos();
+  }, []);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!searchQuery.trim()) {
-        // Clear previous search results if query is empty
         setVideos([]);
         setChannels([]);
         return;
@@ -41,7 +63,7 @@ export default function YouTubeExplorerPage() {
         channelId: null
       });
       setVideos(results.videos);
-      setChannels(results.channels);
+      setChannels(results.channels.filter(c => c.channelId !== QUICKLY_STUDY_CHANNEL.channelId));
     } catch (err: any) {
       setError(err.message || "Failed to fetch videos.");
       console.error(err);
@@ -149,11 +171,11 @@ export default function YouTubeExplorerPage() {
             </div>
         )}
         
-        {!isSearching && !error && videos.length === 0 && channels.length > 0 && searchQuery.trim() && (
+        {!isSearching && !error && videos.length === 0 && channels.length === 0 && searchQuery.trim() && (
             <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
               <Tv className="mx-auto h-12 w-12" />
-              <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-              <p>Your search did not return any videos. Please try a different query.</p>
+              <h3 className="mt-4 text-lg font-semibold">No Results Found</h3>
+              <p>Your search for "{searchQuery}" did not return any channels or videos.</p>
             </div>
         )}
       </div>

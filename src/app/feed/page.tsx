@@ -52,8 +52,14 @@ export default function FeedPage() {
                     title: 'Post from Quickly Study',
                     text: message,
                 });
-            } catch (error) {
-                console.error('Error sharing:', error);
+            } catch (error: any) {
+                if (error.name === 'AbortError') {
+                    // This is not an actual error, but the user cancelled the share dialog
+                    toast({ title: 'Sharing was cancelled.' });
+                } else {
+                    console.error('Error sharing:', error);
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not share the post.'});
+                }
             }
         } else {
              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;

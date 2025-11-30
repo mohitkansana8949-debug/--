@@ -34,35 +34,35 @@ const doubtSolverFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // 1. Construct the prompt
-    const promptParts: any[] = [
-        `You are an expert AI tutor for students preparing for competitive exams in India. A student has a doubt. Provide a clear, concise, and helpful answer in ${input.language}.`
-    ];
+    let promptText = `You are an expert AI tutor for students preparing for competitive exams in India. A student has a doubt. Provide a clear, concise, and helpful answer in ${input.language}.`;
 
-    if (input.doubt) {
-        promptParts.push(`\n\nStudent's Question: "${input.doubt}"`);
+    if (input.imageUrl) {
+        promptText += `\n\nThe user has provided an image. Analyze it carefully.`;
     }
+    
+    if (input.doubt) {
+        promptText += `\n\nStudent's Question: "${input.doubt}"`;
+    } else if (input.imageUrl) {
+        promptText += "\n\nStudent's Question is in the image. Analyze the image to understand and answer the question.";
+    }
+
+    const promptParts: any[] = [promptText];
 
     if (input.imageUrl) {
         promptParts.push({ media: { url: input.imageUrl } });
-        if (!input.doubt) {
-             promptParts.push("\n\nStudent's Question: (Analyze the attached image)");
-        }
     }
     
     promptParts.push(`\n\nYour Answer (in ${input.language}):`);
 
-    // 2. Generate the answer using the LLM
     const llmResponse = await ai.generate({
       prompt: promptParts,
       config: {
-        temperature: 0.5, // Be more factual
+        temperature: 0.5, 
       }
     });
 
     const answer = llmResponse.text;
 
-    // 3. Save the interaction to Firestore
     try {
         const { firestore } = initializeFirebase();
         const doubtsCollection = collection(firestore, 'doubts');
@@ -72,12 +72,9 @@ const doubtSolverFlow = ai.defineFlow(
             createdAt: serverTimestamp(),
         });
     } catch (e) {
-        // We don't want to fail the whole flow if Firestore write fails.
-        // Log the error for debugging.
         console.error("Failed to save doubt to Firestore:", e);
     }
     
-    // 4. Return the generated answer
     return {
       answer,
     };
