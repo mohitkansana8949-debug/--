@@ -6,7 +6,7 @@ import { z } from 'zod';
 import {config} from 'dotenv';
 config();
 
-const youtubeApiKey = process.env.YOUTUBE_API_KEY || '';
+const youtubeApiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY || process.env.YOUTUBE_API_KEY;
 
 const SearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube'),
@@ -39,6 +39,7 @@ export type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
 async function searchYouTube(query: string, channelId: string | null) {
   if (!youtubeApiKey) {
+    console.error('YOUTUBE_API_KEY is not set in the environment variables.');
     throw new Error('YOUTUBE_API_KEY is not set in the environment variables.');
   }
 
@@ -60,23 +61,25 @@ async function searchYouTube(query: string, channelId: string | null) {
      const uploadsPlaylistId = channelDetailsData.items[0].contentDetails.relatedPlaylists.uploads;
 
      // Fetch videos from the uploads playlist
-     const searchUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${youtubeApiKey}`;
-     const searchResponse = await fetch(searchUrl);
-     const searchData = await searchResponse.json();
+     const playlistItemsUrl = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${youtubeApiKey}`;
+     const playlistItemsResponse = await fetch(playlistItemsUrl);
+     const playlistItemsData = await playlistItemsResponse.json();
      
-     if (searchData.error) {
-       console.error('YouTube API Error:', searchData.error);
-       throw new Error(searchData.error.message);
+     if (playlistItemsData.error) {
+       console.error('YouTube API Error (PlaylistItems):', playlistItemsData.error);
+       throw new Error(playlistItemsData.error.message);
      }
 
-     videos = searchData.items.map((item: any) => ({
-       videoId: item.snippet.resourceId.videoId,
-       title: item.snippet.title,
-       description: item.snippet.description,
-       thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-       channelTitle: channelSnippet.title,
-       channelId: item.snippet.channelId,
-     }));
+     if (playlistItemsData.items) {
+        videos = playlistItemsData.items.map((item: any) => ({
+            videoId: item.snippet.resourceId.videoId,
+            title: item.snippet.title,
+            description: item.snippet.description,
+            thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+            channelTitle: channelSnippet.title,
+            channelId: item.snippet.channelId,
+        }));
+     }
 
   } else {
     // If no channelId, search for channels based on the query.
@@ -88,26 +91,30 @@ async function searchYouTube(query: string, channelId: string | null) {
       console.error('YouTube Channel API Error:', channelSearchData.error);
       throw new Error(channelSearchData.error.message);
     }
-
-    const foundChannelIds = channelSearchData.items.map((item: any) => item.id.channelId).join(',');
     
-    if (foundChannelIds) {
-      const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${foundChannelIds}&key=${youtubeApiKey}`;
-      const channelDetailsResponse = await fetch(channelDetailsUrl);
-      const channelDetailsData = await channelDetailsResponse.json();
+    if (channelSearchData.items && channelSearchData.items.length > 0) {
+        const foundChannelIds = channelSearchData.items.map((item: any) => item.id.channelId).join(',');
+        
+        if (foundChannelIds) {
+          const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${foundChannelIds}&key=${youtubeApiKey}`;
+          const channelDetailsResponse = await fetch(channelDetailsUrl);
+          const channelDetailsData = await channelDetailsResponse.json();
 
-       if (channelDetailsData.error) {
-          console.error('YouTube Channel Details API Error:', channelDetailsData.error);
-          throw new Error(channelDetailsData.error.message);
-      }
-      
-      channels = channelDetailsData.items.map((item: any) => ({
-        channelId: item.id,
-        title: item.snippet.title,
-        description: item.snippet.description,
-        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-        subscriberCount: item.statistics.subscriberCount,
-      }));
+           if (channelDetailsData.error) {
+              console.error('YouTube Channel Details API Error:', channelDetailsData.error);
+              throw new Error(channelDetailsData.error.message);
+          }
+          
+          if (channelDetailsData.items) {
+             channels = channelDetailsData.items.map((item: any) => ({
+                channelId: item.id,
+                title: item.snippet.title,
+                description: item.snippet.description,
+                thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+                subscriberCount: item.statistics.subscriberCount,
+            }));
+          }
+        }
     }
   }
 

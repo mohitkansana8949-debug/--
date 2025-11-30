@@ -35,7 +35,6 @@ const footerItems = [
     { name: 'Home', icon: Home, href: '/' },
     { name: 'Library', icon: Library, href: '/my-library' },
     { name: 'Feed', icon: Rss, href: '/feed' },
-    { name: 'My Orders', icon: ShoppingBag, href: '/my-orders' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
@@ -108,6 +107,7 @@ function AiDoubtSolverCard() {
                     <Wand2 className="mx-auto h-8 w-8 mb-2" />
                     <h2 className="text-xl font-bold mb-1">AI Doubt Solver</h2>
                     <p className="text-sm">Get instant answers to all your questions.</p>
+                     <Button variant="secondary" size="sm" className="mt-2">Start Now</Button>
                 </div>
             </div>
         </Link>
@@ -228,4 +228,3 @@ export default function HomePage() {
     </div>
   );
 }
-

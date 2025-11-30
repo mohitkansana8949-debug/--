@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,19 +24,22 @@ export default function ChannelVideosPage() {
             setIsLoading(true);
             setError(null);
             try {
+                // Directly call the flow to get videos for the specific channelId
                 const results = await youtubeSearchFlow({ query: '', channelId: channelId });
                 setVideos(results.videos);
                 if (results.videos.length > 0) {
                     setChannelTitle(results.videos[0].channelTitle);
                 } else {
-                    // Fallback to fetch channel title if no videos are found
-                    const channelInfo = await youtubeSearchFlow({ query: channelId, channelId: null });
-                     if (channelInfo.channels.length > 0) {
-                        setChannelTitle(channelInfo.channels[0].title);
+                     // Fallback to fetch channel details if no videos returned, to get the title
+                    const channelDetails = await youtubeSearchFlow({ query: channelId, channelId: null});
+                    const targetChannel = channelDetails.channels.find(c => c.channelId === channelId);
+                    if(targetChannel) {
+                        setChannelTitle(targetChannel.title);
                     }
                 }
             } catch (err: any) {
                 setError(err.message || "Failed to fetch videos.");
+                console.error(err);
             } finally {
                 setIsLoading(false);
             }
@@ -65,7 +69,8 @@ export default function ChannelVideosPage() {
             ) : videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {videos.map(video => {
-                        const videoId = getYouTubeID(video.videoId); // Ensure we have a clean ID
+                        // The videoId from the API is what we need for the watch page
+                        const videoId = video.videoId;
                         if (!videoId) return null;
                         
                         return (
