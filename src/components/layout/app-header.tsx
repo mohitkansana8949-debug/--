@@ -71,7 +71,7 @@ export function AppHeader() {
             <span className="sr-only">Shopping Cart</span>
             {cart.length > 0 && (
                 <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                    {cart.length}
+                    {cart.reduce((acc, item) => acc + item.quantity, 0)}
                 </span>
             )}
         </Link>

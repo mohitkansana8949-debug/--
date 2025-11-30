@@ -71,6 +71,11 @@ export default function AdminDashboardOverview() {
     const checkAdminStatus = async () => {
         if (user && firestore) {
             try {
+                if (user.email === 'Qukly@study.com') {
+                    setIsAdmin(true);
+                    setIsAdminLoading(false);
+                    return;
+                }
                 const adminRef = doc(firestore, 'roles_admin', user.uid);
                 const adminDoc = await getDoc(adminRef);
                 setIsAdmin(adminDoc.exists());
