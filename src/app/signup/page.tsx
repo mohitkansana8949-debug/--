@@ -92,16 +92,27 @@ export default function SignupPage() {
       // Handle referral and initial points logic in a transaction
       await runTransaction(firestore, async (transaction) => {
         const referredId = userCredential.user.uid;
+        const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
+        
+        // If there's a referral, perform the read operation first.
+        let referrerPointsRef;
+        let referrerPointsDoc;
+        if (data.referralCode) {
+            const referrerId = data.referralCode;
+            referrerPointsRef = doc(firestore, 'referralPoints', referrerId);
+            referrerPointsDoc = await transaction.get(referrerPointsRef);
+        }
+
+        // Now, perform all write operations.
         
         // 1. Give the new user 5 points for signing up
-        const newUserPointsRef = doc(firestore, 'referralPoints', referredId);
         transaction.set(newUserPointsRef, {
           userId: referredId,
           points: 5,
         });
         
-        // 2. If there's a referral code, handle the referrer's points and record the referral
-        if (data.referralCode) {
+        // 2. If there was a referral, handle the referrer's points and record the referral
+        if (data.referralCode && referrerPointsRef && referrerPointsDoc) {
             const referrerId = data.referralCode;
             
             // Create a referral record
@@ -114,9 +125,6 @@ export default function SignupPage() {
             });
 
             // Award points to the referrer
-            const referrerPointsRef = doc(firestore, 'referralPoints', referrerId);
-            const referrerPointsDoc = await transaction.get(referrerPointsRef);
-
             if (referrerPointsDoc.exists()) {
                 const currentPoints = referrerPointsDoc.data().points || 0;
                 transaction.update(referrerPointsRef, {
