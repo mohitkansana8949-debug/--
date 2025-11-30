@@ -69,64 +69,66 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
-  const { firestore } = useFirestore();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
+  
+  // TEMPORARILY DISABLED ADMIN CHECK
+  // const { firestore } = useFirestore();
+  // const [isAdmin, setIsAdmin] = useState(false);
+  // const [isAdminLoading, setIsAdminLoading] = useState(true);
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-        if (!user || !firestore) {
-            setIsAdmin(false);
-            setIsAdminLoading(false);
-            return;
-        }
+  // useEffect(() => {
+  //   const checkAdmin = async () => {
+  //       if (!user || !firestore) {
+  //           setIsAdmin(false);
+  //           setIsAdminLoading(false);
+  //           return;
+  //       }
 
-        if (user.email === 'Qukly@study.com') {
-            setIsAdmin(true);
-            setIsAdminLoading(false);
-            return;
-        }
+  //       if (user.email === 'Qukly@study.com') {
+  //           setIsAdmin(true);
+  //           setIsAdminLoading(false);
+  //           return;
+  //       }
         
-        try {
-            const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
-            setIsAdmin(adminDoc.exists());
-        } catch (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
-        } finally {
-            setIsAdminLoading(false);
-        }
-    };
-    if (!isUserLoading) {
-        checkAdmin();
-    }
-  }, [user, firestore, isUserLoading]);
+  //       try {
+  //           const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
+  //           setIsAdmin(adminDoc.exists());
+  //       } catch (error) {
+  //           console.error("Error checking admin status:", error);
+  //           setIsAdmin(false);
+  //       } finally {
+  //           setIsAdminLoading(false);
+  //       }
+  //   };
+  //   if (!isUserLoading) {
+  //       checkAdmin();
+  //   }
+  // }, [user, firestore, isUserLoading]);
 
 
   const isFullPage = adminNavItems.some(item => pathname.startsWith(item.href) && item.href !== '/admin');
 
 
-  const isLoading = isUserLoading || isAdminLoading;
+  // const isLoading = isUserLoading || isAdminLoading;
 
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
-  }
+  // if (isLoading) {
+  //   return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
+  // }
   
-  if (!isAdmin) {
-      return (
-          <div className="flex h-screen items-center justify-center">
-            <Card className="m-8 max-w-md">
-                <CardHeader>
-                    <CardTitle>Access Denied</CardTitle>
-                    <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild><Link href="/">Go to Home</Link></Button>
-                </CardContent>
-            </Card>
-          </div>
-      )
-  }
+  // if (!isAdmin) {
+  //     return (
+  //         <div className="flex h-screen items-center justify-center">
+  //           <Card className="m-8 max-w-md">
+  //               <CardHeader>
+  //                   <CardTitle>Access Denied</CardTitle>
+  //                   <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
+  //               </CardHeader>
+  //               <CardContent>
+  //                   <Button asChild><Link href="/">Go to Home</Link></Button>
+  //               </CardContent>
+  //           </Card>
+  //         </div>
+  //     )
+  // }
 
   if (isFullPage) {
      return <div className="md:pl-[16rem]">{children}</div>;
