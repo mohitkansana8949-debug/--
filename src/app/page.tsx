@@ -35,7 +35,7 @@ import { useEffect, useState, useMemo } from 'react';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Support', href: '/order-support', icon: LifeBuoy },
+    { name: 'Purchases', href: '/my-purchases', icon: ShoppingBag },
     { name: 'Feed', icon: Rss, href: '/feed' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];

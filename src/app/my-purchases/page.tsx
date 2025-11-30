@@ -1,91 +1,55 @@
 
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader, Package, ChevronRight, ShoppingBag } from 'lucide-react';
+import { LifeBuoy, Info } from 'lucide-react';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
 
 export default function MyPurchasesPage() {
-    const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
-
-    // Secure query: Only fetch orders for the current logged-in user.
-    const ordersQuery = useMemoFirebase(() => (
-        user && firestore ? query(
-            collection(firestore, 'bookOrders'),
-            where('userId', '==', user.uid),
-            orderBy('createdAt', 'desc')
-        ) : null
-    ), [user, firestore]);
-
-    const { data: orders, isLoading } = useCollection(ordersQuery);
-
-    const getStatusVariant = (status: string) => {
-        switch (status) {
-            case 'Shipped': return 'secondary';
-            case 'Delivered': return 'success';
-            case 'Cancelled': return 'destructive';
-            default: return 'default'; // For 'Pending'
-        }
-    };
-
-    if (isLoading || isUserLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
-    }
-
-    return (
-        <div className="container mx-auto p-4 max-w-4xl">
-             <div className="mb-8">
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                    <ShoppingBag className="h-8 w-8" />
-                    My Purchases
-                </h1>
-                <p className="text-muted-foreground">
-                    Track all your book purchases here.
-                </p>
-            </div>
-            
-            {orders && orders.length > 0 ? (
-                <div className="space-y-4">
-                    {orders.map(order => (
-                        <Card key={order.id} className="hover:bg-muted/50 transition-colors">
-                             <Link href={`/my-orders/${order.id}`}>
-                                <CardContent className="p-4 flex items-center justify-between">
-                                    <div className="flex-1 space-y-1">
-                                        <p className="text-sm text-muted-foreground">Order #{order.id.substring(0, 6)}</p>
-                                        <p className="font-semibold">Placed on {order.createdAt ? format(order.createdAt.toDate(), 'MMMM d, yyyy') : ''}</p>
-                                        <p className="font-bold text-lg">₹{order.total.toFixed(2)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
-                                        <Button variant="outline" size="sm" asChild>
-                                            <div className="flex items-center">
-                                                Track Order
-                                                <ChevronRight className="h-4 w-4 ml-2" />
-                                            </div>
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                             </Link>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                 <Card>
-                    <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-12">
-                        <Package className="h-12 w-12 mb-4" />
-                        <h3 className="text-xl font-semibold">No purchases yet</h3>
-                        <p>You haven't placed any book orders yet.</p>
-                        <Button asChild className="mt-4">
-                            <Link href="/bookshala">Start Shopping</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
+  return (
+    <div className="container mx-auto p-4 max-w-2xl">
+        <div className="mb-8">
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+                <LifeBuoy className="h-8 w-8 text-primary" />
+                मेरे ऑर्डर्स
+            </h1>
+            <p className="text-muted-foreground">
+                अपनी पुस्तक ऑर्डर के साथ सहायता प्राप्त करें।
+            </p>
         </div>
-    )
+
+        <Card>
+            <CardHeader>
+                <CardTitle>क्या आपको अपने ऑर्डर में सहायता चाहिए?</CardTitle>
+                <CardDescription>
+                    यदि आपके द्वारा दिए गए किसी पुस्तक ऑर्डर के बारे में आपके कोई प्रश्न हैं, तो कृपया हमसे संपर्क करें।
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div className="flex">
+                        <Info className="h-5 w-5 text-blue-600 dark:text-blue-300 mr-3 mt-1 shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-blue-800 dark:text-blue-200">निर्देश</h4>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                ऑर्डर देने के बाद, कृपया हमारी टीम से पुष्टि संदेश के लिए एक दिन प्रतीक्षा करें। यदि आपको पुष्टि नहीं मिलती है या आपके कोई अन्य प्रश्न हैं, तो कृपया हमारी सहायता टीम से संपर्क करें।
+                            </p>
+                            <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+                                हमें आपका ऑर्डर जल्दी खोजने में मदद करने के लिए, कृपया भुगतान के दौरान उपयोग किया गया अपना मोबाइल नंबर प्रदान करें।
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <Button asChild className="w-full">
+                    <Link href="/support">
+                        <LifeBuoy className="mr-2 h-4 w-4" />
+                        सहायता टीम से संपर्क करें
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+    </div>
+  );
 }
