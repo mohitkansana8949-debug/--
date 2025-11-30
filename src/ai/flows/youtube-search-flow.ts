@@ -8,6 +8,8 @@ import getConfig from 'next/config';
 const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 const youtubeApiKey = serverRuntimeConfig.YOUTUBE_API_KEY || publicRuntimeConfig.YOUTUBE_API_KEY;
 
+const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
+
 const SearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube'),
 });
@@ -33,7 +35,13 @@ async function searchYouTube(query: string) {
     throw new Error('The YouTube API key is not configured. Please contact the administrator.');
   }
 
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
+  // Check if the query is for "Quickly Study" and scope the search to the specific channel
+  const isQuicklyStudySearch = /quickly\s*study/i.test(query);
+  const channelIdParam = isQuicklyStudySearch ? `&channelId=${QUICKLY_STUDY_CHANNEL_ID}` : '';
+  const finalQuery = isQuicklyStudySearch ? 'Quickly Study' : query; // Use a clean query for the channel search
+
+  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(finalQuery)}&type=video&maxResults=20${channelIdParam}&key=${youtubeApiKey}`;
+  
   const response = await fetch(searchUrl);
   const data = await response.json();
 

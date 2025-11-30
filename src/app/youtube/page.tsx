@@ -10,17 +10,14 @@ import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
 
-// Your main channel ID
-const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
-
 export default function YouTubeExplorerPage() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('Sainik School, Military School, Navodaya Vidyalaya');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initially load videos from your main channel
+    // Initially load videos with the default query
     handleSearch();
   }, []);
 
@@ -29,11 +26,8 @@ export default function YouTubeExplorerPage() {
     setIsLoading(true);
     setError(null);
     try {
-      // The flow will search within the specified channel ID.
-      // The query will filter videos within that channel.
       const results = await youtubeSearchFlow({ 
-        query: searchQuery, 
-        channelId: QUICKLY_STUDY_CHANNEL_ID 
+        query: searchQuery || 'Sainik School, Military School, Navodaya Vidyalaya',
       });
       setVideos(results.videos);
     } catch (err: any) {
@@ -49,10 +43,10 @@ export default function YouTubeExplorerPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center">
             <Youtube className="mr-3 h-8 w-8 text-red-500" />
-            Quickly Study YouTube
+            YouTube Explorer
         </h1>
         <p className="text-muted-foreground">
-          Explore all educational videos from the official Quickly Study channel.
+          Explore educational videos from across YouTube.
         </p>
       </div>
 
@@ -63,7 +57,7 @@ export default function YouTubeExplorerPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for videos on our channel..."
+              placeholder="Search for any topic on YouTube..."
               className="flex-grow pl-10"
               disabled={isLoading}
             />
@@ -103,7 +97,7 @@ export default function YouTubeExplorerPage() {
         <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
           <Tv className="mx-auto h-12 w-12" />
           <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-          <p>Your search did not return any results. Please try a different query or clear the search.</p>
+          <p>Your search did not return any results. Please try a different query.</p>
         </div>
       )}
     </div>
