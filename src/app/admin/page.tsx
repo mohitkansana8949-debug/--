@@ -82,13 +82,15 @@ export default function AdminDashboardOverview() {
     }
   }, [user, firestore, isUserLoading]);
   
-  const usersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'users') : null), [firestore, isAdmin]);
-  const coursesQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'courses') : null), [firestore, isAdmin]);
-  const enrollmentsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'enrollments') : null), [firestore, isAdmin]);
-  const ebooksQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'ebooks') : null), [firestore, isAdmin]);
-  const pyqsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'pyqs') : null), [firestore, isAdmin]);
-  const testsQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'tests') : null), [firestore, isAdmin]);
-  const bookOrdersQuery = useMemoFirebase(() => (firestore && isAdmin ? collection(firestore, 'bookOrders') : null), [firestore, isAdmin]);
+  const canFetchAdminData = !isAdminLoading && isAdmin;
+
+  const usersQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'users') : null), [firestore, canFetchAdminData]);
+  const coursesQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'courses') : null), [firestore, canFetchAdminData]);
+  const enrollmentsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'enrollments') : null), [firestore, canFetchAdminData]);
+  const ebooksQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'ebooks') : null), [firestore, canFetchAdminData]);
+  const pyqsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'pyqs') : null), [firestore, canFetchAdminData]);
+  const testsQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'tests') : null), [firestore, canFetchAdminData]);
+  const bookOrdersQuery = useMemoFirebase(() => (firestore && canFetchAdminData ? collection(firestore, 'bookOrders') : null), [firestore, canFetchAdminData]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
@@ -105,7 +107,7 @@ export default function AdminDashboardOverview() {
 
   const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
 
-  const loading = isUserLoading || isAdminLoading || (isAdmin && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
+  const loading = isUserLoading || isAdminLoading || (canFetchAdminData && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
 
   const stats = [
       { title: 'यूज़र्स', icon: Users, value: users?.length ?? 0 },
@@ -212,3 +214,5 @@ export default function AdminDashboardOverview() {
     </div>
   );
 }
+
+    
