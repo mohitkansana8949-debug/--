@@ -3,8 +3,10 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import getConfig from 'next/config';
 
-const youtubeApiKey = process.env.YOUTUBE_API_KEY;
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
+const youtubeApiKey = serverRuntimeConfig.YOUTUBE_API_KEY || publicRuntimeConfig.YOUTUBE_API_KEY;
 
 const SearchInputSchema = z.object({
   query: z.string().describe('The search query for YouTube'),

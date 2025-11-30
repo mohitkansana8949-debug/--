@@ -103,7 +103,7 @@ export default function AdminLayout({
   }, [user, firestore, isUserLoading]);
 
 
-  const isFullPage = adminNavItems.some(item => pathname === item.href) && pathname !== '/admin';
+  const isFullPage = adminNavItems.some(item => pathname.startsWith(item.href) && item.href !== '/admin');
 
 
   const isLoading = isUserLoading || isAdminLoading;
@@ -129,7 +129,7 @@ export default function AdminLayout({
   }
 
   if (isFullPage) {
-     return <>{children}</>;
+     return <div className="md:pl-[16rem]">{children}</div>;
   }
 
   return (
@@ -142,15 +142,15 @@ export default function AdminLayout({
           <nav className="flex flex-col gap-2">
             <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => {
-              const isFullPageItem = item.href !== '/admin';
+              const isChildRouteOfItem = pathname.startsWith(item.href) && item.href !== '/admin';
               return (
                 <Button
                   key={item.href}
                   asChild
-                  variant={pathname === item.href ? 'secondary' : 'ghost'}
+                  variant={(pathname === item.href || isChildRouteOfItem) ? 'secondary' : 'ghost'}
                   className="justify-start"
                 >
-                  <Link href={item.href} target={isFullPageItem ? '_blank' : '_self'}>
+                  <Link href={item.href}>
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.label}
                   </Link>
@@ -165,7 +165,7 @@ export default function AdminLayout({
                 variant={pathname === item.href ? 'default' : 'outline'}
                 className="justify-start"
               >
-                <Link href={item.href} target="_blank">
+                <Link href={item.href}>
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.label}
                 </Link>
