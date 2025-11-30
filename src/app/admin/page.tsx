@@ -69,13 +69,13 @@ export default function AdminDashboardOverview() {
         setIsAdminLoading(true);
         if (user && firestore) {
             try {
-                if (user.email === 'Qukly@study.com') {
+                if (user.email?.toLowerCase() === 'qukly@study.com') {
                     setIsAdmin(true);
-                    return;
+                } else {
+                    const adminRef = doc(firestore, 'roles_admin', user.uid);
+                    const adminDoc = await getDoc(adminRef);
+                    setIsAdmin(adminDoc.exists());
                 }
-                const adminRef = doc(firestore, 'roles_admin', user.uid);
-                const adminDoc = await getDoc(adminRef);
-                setIsAdmin(adminDoc.exists());
             } catch (error) {
                 console.error("Error checking admin status:", error);
                 setIsAdmin(false);
