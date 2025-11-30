@@ -91,6 +91,7 @@ export default function AdminUsersPage() {
                                                 id={`admin-switch-${user.id}`}
                                                 checked={isCurrentUserAdmin}
                                                 onCheckedChange={() => handleAdminToggle(user.id, isCurrentUserAdmin)}
+                                                disabled={user.email === 'Qukly@study.com'}
                                             />
                                             <Label htmlFor={`admin-switch-${user.id}`}>{isCurrentUserAdmin ? 'Admin' : 'User'}</Label>
                                         </div>
