@@ -13,14 +13,11 @@ export default function MyPurchasesPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    // Secure query: Only fetch orders for the current user that are NOT pending.
-    // This ensures users only see orders after admin approval, fixing permission issues.
+    // Secure query: Only fetch orders for the current logged-in user.
     const ordersQuery = useMemoFirebase(() => (
         user && firestore ? query(
             collection(firestore, 'bookOrders'),
             where('userId', '==', user.uid),
-            where('status', '!=', 'Pending'),
-            orderBy('status'),
             orderBy('createdAt', 'desc')
         ) : null
     ), [user, firestore]);
@@ -32,7 +29,7 @@ export default function MyPurchasesPage() {
             case 'Shipped': return 'secondary';
             case 'Delivered': return 'success';
             case 'Cancelled': return 'destructive';
-            default: return 'default';
+            default: return 'default'; // For 'Pending'
         }
     };
 
@@ -82,7 +79,7 @@ export default function MyPurchasesPage() {
                     <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-12">
                         <Package className="h-12 w-12 mb-4" />
                         <h3 className="text-xl font-semibold">No purchases yet</h3>
-                        <p>You haven't placed any book orders, or your order is pending approval.</p>
+                        <p>You haven't placed any book orders yet.</p>
                         <Button asChild className="mt-4">
                             <Link href="/bookshala">Start Shopping</Link>
                         </Button>

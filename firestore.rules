@@ -64,7 +64,11 @@ service cloud.firestore {
       allow update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Book orders can only be created and read by the owner. Admins can list and manage all orders.
+    // Book orders:
+    // - Users can create their own order.
+    // - Users can read their own order document.
+    // - Users CANNOT list all orders.
+    // - Admins can list, update, and delete all orders.
     match /bookOrders/{orderId} {
         allow create: if request.auth.uid == request.resource.data.userId;
         allow read: if request.auth.uid == resource.data.userId;
