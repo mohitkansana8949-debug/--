@@ -2,7 +2,7 @@
 'use client';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from '@/hooks/use-toast';
 import type { CartItem, Book } from '@/lib/types';
 
 interface CartState {
@@ -18,7 +18,6 @@ export const useCart = create(
     (set, get) => ({
       cart: [],
       addToCart: (book) => {
-        const { toast } = useToast();
         const currentCart = get().cart;
         const existingItem = currentCart.find((item) => item.id === book.id);
 
@@ -39,7 +38,6 @@ export const useCart = create(
         toast({ title: "Added to cart", description: `"${book.name}" has been added to your cart.` });
       },
       removeFromCart: (bookId) => {
-         const { toast } = useToast();
          set({ cart: get().cart.filter((item) => item.id !== bookId) });
          toast({ title: "Removed from cart" });
       },
