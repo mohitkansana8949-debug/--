@@ -34,7 +34,7 @@ import { useEffect, useState, useMemo } from 'react';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Your Orders', href: '/your-orders', icon: ShoppingBag },
+    { name: 'Purchases', href: '/my-purchases', icon: ShoppingBag },
     { name: 'Feed', icon: Rss, href: '/feed' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -144,7 +144,7 @@ export default function HomePage() {
     if (showYoutubeFeature) {
         cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
     } else {
-        cards.push({ title: 'Your Orders', href: '/your-orders', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
+        cards.push({ title: 'My Purchases', href: '/my-purchases', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
     }
     
     // Ensure it's always 9 cards for a clean grid

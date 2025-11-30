@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 
-export default function MyOrdersPage() {
+export default function MyPurchasesPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
@@ -21,7 +21,7 @@ export default function MyOrdersPage() {
         ) : null
     ), [user, firestore]);
 
-    const { data: orders, isLoading, error } = useCollection(ordersQuery);
+    const { data: orders, isLoading } = useCollection(ordersQuery);
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -35,21 +35,13 @@ export default function MyOrdersPage() {
     if (isLoading || isUserLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
     }
-    
-    if (error) {
-        return (
-            <div className="flex h-screen items-center justify-center text-red-500">
-                <p>Error loading orders: {error.message}</p>
-            </div>
-        );
-    }
 
     return (
         <div className="container mx-auto p-4 max-w-4xl">
              <div className="mb-8">
                 <h1 className="text-3xl font-bold flex items-center gap-2">
                     <ShoppingBag className="h-8 w-8" />
-                    My Orders
+                    My Purchases
                 </h1>
                 <p className="text-muted-foreground">
                     Track all your book purchases here.
@@ -59,10 +51,10 @@ export default function MyOrdersPage() {
             {orders && orders.length > 0 ? (
                 <div className="space-y-4">
                     {orders.map(order => (
-                        <Card key={order.id} className="hover:bg-muted/50">
+                        <Card key={order.id} className="hover:bg-muted/50 transition-colors">
                              <Link href={`/my-orders/${order.id}`}>
                                 <CardContent className="p-4 flex items-center justify-between">
-                                    <div className="flex-1">
+                                    <div className="flex-1 space-y-1">
                                         <p className="text-sm text-muted-foreground">Order #{order.id.substring(0, 6)}</p>
                                         <p className="font-semibold">Placed on {format(order.createdAt.toDate(), 'MMMM d, yyyy')}</p>
                                         <p className="font-bold text-lg">₹{order.total.toFixed(2)}</p>
@@ -70,7 +62,7 @@ export default function MyOrdersPage() {
                                     <div className="flex items-center gap-4">
                                         <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
                                         <Button variant="outline" size="sm">
-                                            Track Order
+                                            Track Your Order
                                             <ChevronRight className="h-4 w-4 ml-2" />
                                         </Button>
                                     </div>
@@ -83,7 +75,7 @@ export default function MyOrdersPage() {
                  <Card>
                     <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-12">
                         <Package className="h-12 w-12 mb-4" />
-                        <h3 className="text-xl font-semibold">No orders yet</h3>
+                        <h3 className="text-xl font-semibold">No purchases yet</h3>
                         <p>You haven't placed any book orders.</p>
                         <Button asChild className="mt-4">
                             <Link href="/bookshala">Start Shopping</Link>
