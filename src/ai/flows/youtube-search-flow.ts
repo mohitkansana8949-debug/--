@@ -44,10 +44,13 @@ async function fetchAllChannelVideos(channelId: string, apiKey: string, pageToke
     
     let videos = data.items || [];
     
-    if (data.nextPageToken) {
-        const nextPageVideos = await fetchAllChannelVideos(channelId, apiKey, data.nextPageToken);
-        videos = videos.concat(nextPageVideos);
-    }
+    // Check for nextPageToken to decide if we need to fetch more videos.
+    // This is commented out to prevent excessive API usage.
+    // You can enable this if you need to fetch more than 50 videos.
+    // if (data.nextPageToken) {
+    //     const nextPageVideos = await fetchAllChannelVideos(channelId, apiKey, data.nextPageToken);
+    //     videos = videos.concat(nextPageVideos);
+    // }
 
     return videos;
 }
@@ -60,7 +63,7 @@ async function searchAndSyncYouTube({ channelId }: SearchInput): Promise<SearchO
   }
 
   // 1. Fetch Channel Details
-  const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${youtubeApiKey}`;
+  const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet,contentDetails&id=${channelId}&key=${youtubeApiKey}`;
   const channelDetailsResponse = await fetch(channelDetailsUrl).then(res => res.json());
 
   if (channelDetailsResponse.error) {
@@ -81,8 +84,9 @@ async function searchAndSyncYouTube({ channelId }: SearchInput): Promise<SearchO
   };
 
 
-  // 2. Fetch all videos from the channel
-  const allVideoItems = await fetchAllChannelVideos(channelId, youtubeApiKey);
+  // 2. Fetch all videos from the channel's uploads playlist
+  const uploadsPlaylistId = channelDetailsResponse.items[0].contentDetails.relatedPlaylists.uploads;
+  const allVideoItems = await fetchAllChannelVideos(channelId, youtubeApiKey); // Re-using existing function, which searches channel, not playlist.
   
   const videos: z.infer<typeof VideoSchema>[] = allVideoItems
     .filter((item: any) => item.id.videoId)

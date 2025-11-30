@@ -25,7 +25,14 @@ export default function YouTubeExplorerPage() {
   ), [firestore]);
 
   const { data: channels, isLoading: channelsLoading } = useCollection(channelsQuery);
-  const quicklyStudyChannel = useMemo(() => channels?.find(c => c.id === QUICKLY_STUDY_CHANNEL_ID), [channels]);
+  
+  const quicklyStudyChannel = useMemo(() => {
+      if (channels && channels.length > 0) {
+          return channels.find(c => c.id === QUICKLY_STUDY_CHANNEL_ID);
+      }
+      return null;
+  }, [channels]);
+
   const allVideos = useMemo(() => quicklyStudyChannel?.videos || [], [quicklyStudyChannel]);
 
 
@@ -57,7 +64,7 @@ export default function YouTubeExplorerPage() {
         </p>
       </div>
       
-      {isLoading ? <div className="flex h-32 items-center justify-center"><Loader className="animate-spin" /></div> : quicklyStudyChannel && (
+      {isLoading ? <div className="flex h-32 items-center justify-center"><Loader className="animate-spin" /></div> : quicklyStudyChannel ? (
           <Card className="overflow-hidden bg-muted/50">
             <div className="flex flex-col md:flex-row items-center gap-4 p-4">
                 <Image
@@ -76,6 +83,12 @@ export default function YouTubeExplorerPage() {
                 </a>
             </div>
           </Card>
+      ): (
+        <Card className="text-center p-8">
+            <CardTitle>Channel Not Synced</CardTitle>
+            <CardDescription>The YouTube channel has not been synced yet. Please go to the admin panel to sync it.</CardDescription>
+            <Button asChild className="mt-4"><Link href="/admin/youtube">Go to Admin Panel</Link></Button>
+        </Card>
       )}
 
 

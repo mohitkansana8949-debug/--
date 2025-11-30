@@ -69,9 +69,11 @@ export default function AddLiveLecturePage() {
     try {
       const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtubeApiKey}`;
       const response = await fetch(detailsUrl);
-      if (!response.ok) throw new Error('Failed to fetch video details from YouTube API.');
       
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error?.message || 'Failed to fetch video details from YouTube API.');
+      }
 
       if (data.items && data.items.length > 0) {
         const snippet = data.items[0].snippet;
