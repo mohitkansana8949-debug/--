@@ -37,10 +37,19 @@ async function searchYouTube(query: string) {
 
   // Check if the query is for "Quickly Study" and scope the search to the specific channel
   const isQuicklyStudySearch = /quickly\s*study/i.test(query);
-  const channelIdParam = isQuicklyStudySearch ? `&channelId=${QUICKLY_STUDY_CHANNEL_ID}` : '';
-  const finalQuery = isQuicklyStudySearch ? 'Quickly Study' : query; // Use a clean query for the channel search
-
-  const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(finalQuery)}&type=video&maxResults=20${channelIdParam}&key=${youtubeApiKey}`;
+  
+  let searchUrl = '';
+  if (isQuicklyStudySearch) {
+    // Search specifically within the Quickly Study channel
+    searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}`;
+    if (query.trim().toLowerCase() !== 'quickly study') {
+      // If there's more to the query, use it
+      searchUrl += `&q=${encodeURIComponent(query)}`;
+    }
+  } else {
+    // General search across YouTube
+    searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
+  }
   
   const response = await fetch(searchUrl);
   const data = await response.json();
@@ -67,4 +76,52 @@ async function searchYouTube(query: string) {
 export async function youtubeSearchFlow(input: SearchInput): Promise<SearchOutput> {
   const { query } = input;
   return await searchYouTube(query);
+}
+
+// New flow to get videos from our channel and others
+const HomePageVideosSchema = z.object({});
+export type HomePageVideosInput = z.infer<typeof HomePageVideosSchema>;
+
+const HomePageVideosOutputSchema = z.object({
+  quicklyStudyVideos: z.array(VideoSchema),
+  otherVideos: z.array(VideoSchema),
+});
+export type HomePageVideosOutput = z.infer<typeof HomePageVideosOutputSchema>;
+
+export async function getHomePageVideos(input: HomePageVideosInput): Promise<HomePageVideosOutput> {
+  if (!youtubeApiKey) {
+    throw new Error('The YouTube API key is not configured.');
+  }
+
+  // Fetch videos from Quickly Study channel
+  const quicklyStudyUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=3&order=date&type=video&key=${youtubeApiKey}`;
+  const qsResponse = await fetch(quicklyStudyUrl);
+  const qsData = await qsResponse.json();
+  const quicklyStudyVideos = qsData.items?.map((item: any) => ({
+    videoId: item.id.videoId,
+    title: item.snippet.title,
+    description: item.snippet.description,
+    thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+    channelTitle: item.snippet.channelTitle,
+    channelId: item.snippet.channelId,
+  })) || [];
+
+  // Fetch general educational videos
+  const generalQuery = 'Sainik School, Military School, Navodaya Vidyalaya';
+  const generalUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(generalQuery)}&type=video&maxResults=20&key=${youtubeApiKey}`;
+  const generalResponse = await fetch(generalUrl);
+  const generalData = await generalResponse.json();
+  const otherVideos = generalData.items?.map((item: any) => ({
+    videoId: item.id.videoId,
+    title: item.snippet.title,
+    description: item.snippet.description,
+    thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+    channelTitle: item.snippet.channelTitle,
+    channelId: item.snippet.channelId,
+  })) || [];
+
+  return {
+    quicklyStudyVideos,
+    otherVideos,
+  };
 }

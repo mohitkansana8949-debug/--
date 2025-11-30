@@ -5,29 +5,51 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader, Search, Youtube, Tv } from 'lucide-react';
-import { youtubeSearchFlow } from '@/ai/flows/youtube-search-flow';
+import { youtubeSearchFlow, getHomePageVideos } from '@/ai/flows/youtube-search-flow';
 import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
 
 export default function YouTubeExplorerPage() {
-  const [searchQuery, setSearchQuery] = useState('Sainik School, Military School, Navodaya Vidyalaya');
+  const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initially load videos with the default query
-    handleSearch();
+    // Initially load a mix of videos
+    handleInitialLoad();
   }, []);
+
+  const handleInitialLoad = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const results = await getHomePageVideos({});
+      // Combine videos, with Quickly Study videos first
+      const combinedVideos = [...results.quicklyStudyVideos, ...results.otherVideos];
+      setVideos(combinedVideos);
+    } catch (err: any) {
+      setError(err.message || "Failed to fetch initial videos.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (!searchQuery.trim()) {
+      // If search is empty, reload the initial set of videos
+      handleInitialLoad();
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
       const results = await youtubeSearchFlow({ 
-        query: searchQuery || 'Sainik School, Military School, Navodaya Vidyalaya',
+        query: searchQuery,
       });
       setVideos(results.videos);
     } catch (err: any) {

@@ -22,6 +22,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 export default function AdminUsersPage() {
     const { firestore } = useFirebase();
@@ -52,6 +53,12 @@ export default function AdminUsersPage() {
             }
         } catch (error) {
             console.error("Error updating admin status:", error);
+            const contextualError = new FirestorePermissionError({
+                operation: 'write',
+                path: adminDocRef.path,
+                requestResourceData: { role: 'admin' }
+            });
+            errorEmitter.emit('permission-error', contextualError);
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to update admin status.' });
         }
     };
