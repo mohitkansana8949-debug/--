@@ -48,8 +48,9 @@ export function AppSidebar() {
     user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
   ), [user, firestore]);
   const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
-  const isAdmin = !!adminDoc;
 
+  const isSuperAdmin = user?.email === 'Qukly@study.com';
+  const isAdmin = isSuperAdmin || !!adminDoc;
 
   const handleLogout = async () => {
     try {

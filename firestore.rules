@@ -5,9 +5,8 @@ service cloud.firestore {
     
     // Helper function to check for admin role
     function isAdmin() {
-      // TEMPORARY RULE: Grant specific user admin access directly.
-      // This should be removed after the initial admin setup.
-      return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) || request.auth.uid == 'e5Y6t35Rfja030gFTsUYqAWgQIw1';
+      // Super admin has permanent access
+      return request.auth.token.email == 'Qukly@study.com' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
     }
 
     // Default allow writes for admins, reads for authenticated users.

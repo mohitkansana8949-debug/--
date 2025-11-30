@@ -76,10 +76,11 @@ export default function AdminLayout({
   ), [user, firestore]);
   const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
 
-  const isAdmin = !!adminDoc;
+  const isSuperAdmin = user?.email === 'Qukly@study.com';
+  const isAdmin = isSuperAdmin || !!adminDoc;
 
   // These paths will be rendered as full pages outside the main admin layout
-  const fullPagePaths = ['/admin/create-course', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon'];
+  const fullPagePaths = ['/admin/create-course', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;
@@ -113,22 +114,24 @@ export default function AdminLayout({
           <nav className="flex flex-col gap-2">
             <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => {
-               const isFullPage = ['/admin/notifications', '/admin/users/'].some(p => item.href.startsWith(p));
-               const target = isFullPage ? '_blank' : '_self';
-              
-              return(
+              // The new logic to keep most pages inside the layout
+              const isFullPage = ['/admin/notifications', '/admin/users/'].some(p => item.href.startsWith(p));
+              const shouldRenderInLayout = !isFullPage || pathname === item.href;
+
+              return (
                 <Button
                   key={item.href}
                   asChild
                   variant={pathname === item.href ? 'secondary' : 'ghost'}
                   className="justify-start"
                 >
-                  <Link href={item.href} target={target}>
+                  <Link href={item.href} target={shouldRenderInLayout ? '_self' : '_blank'}>
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.label}
                   </Link>
                 </Button>
-            )})}
+              )
+            })}
             <h3 className="px-4 text-lg font-semibold tracking-tight mt-6 mb-2">Creation</h3>
              {creationNavItems.map((item) => (
               <Button
