@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -12,11 +13,14 @@ export default function MyPurchasesPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
 
-    // Secure query: Only fetch orders where userId matches the current user's UID
+    // Secure query: Only fetch orders for the current user that are NOT pending.
+    // This ensures users only see orders after admin approval, fixing permission issues.
     const ordersQuery = useMemoFirebase(() => (
         user && firestore ? query(
             collection(firestore, 'bookOrders'),
             where('userId', '==', user.uid),
+            where('status', '!=', 'Pending'),
+            orderBy('status'),
             orderBy('createdAt', 'desc')
         ) : null
     ), [user, firestore]);
@@ -78,7 +82,7 @@ export default function MyPurchasesPage() {
                     <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-12">
                         <Package className="h-12 w-12 mb-4" />
                         <h3 className="text-xl font-semibold">No purchases yet</h3>
-                        <p>You haven't placed any book orders.</p>
+                        <p>You haven't placed any book orders, or your order is pending approval.</p>
                         <Button asChild className="mt-4">
                             <Link href="/bookshala">Start Shopping</Link>
                         </Button>

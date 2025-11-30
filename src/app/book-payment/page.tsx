@@ -120,7 +120,7 @@ function BookPaymentComponent() {
             subtotal,
             discount,
             total,
-            status: 'Pending',
+            status: 'Pending', // Set initial status to Pending
             createdAt: serverTimestamp(),
             paymentMethod: paymentMethod || 'unknown',
             paymentId: paymentMobileNumber,
@@ -142,10 +142,10 @@ function BookPaymentComponent() {
 
         try {
             await batch.commit();
-            toast({ title: 'सफलता!', description: 'आपका ऑर्डर सफलतापूर्वक प्लेस हो गया है।'});
+            toast({ title: 'सफलता!', description: 'आपका ऑर्डर सफलतापूर्वक प्लेस हो गया है। एडमिन द्वारा पुष्टि के बाद यह आपके "My Purchases" में दिखाई देगा।'});
             clearCart();
             localStorage.removeItem('shippingAddress');
-            router.push('/my-orders');
+            router.push('/');
         } catch (error) {
             const contextualError = new FirestorePermissionError({
                 operation: 'create',
