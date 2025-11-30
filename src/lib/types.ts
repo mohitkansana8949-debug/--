@@ -1,3 +1,4 @@
+
 import { Timestamp } from "firebase/firestore";
 
 export type Flashcard = {
@@ -26,6 +27,7 @@ export interface User {
   category?: string;
   state?: string;
   class?: string;
+  fcmToken?: string | null;
 }
 
 export type CourseContent = {

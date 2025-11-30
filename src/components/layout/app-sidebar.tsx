@@ -14,9 +14,10 @@ import {
   SidebarFooter,
   useSidebar
 } from "@/components/ui/sidebar";
-import { useUser, useAuth } from "@/firebase";
+import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
+import { doc } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 
@@ -36,11 +37,18 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { isUserLoading } = useUser();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
+  
+  const adminRef = useMemoFirebase(() => (
+    user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
+  ), [user, firestore]);
+  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
+  const isAdmin = adminDoc && adminDoc.role === 'admin';
 
 
   const handleLogout = async () => {
@@ -89,7 +97,7 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
   
-  if (isUserLoading) {
+  if (isUserLoading || isAdminLoading) {
       return (
           <Sidebar>
             <SidebarHeader>
@@ -127,7 +135,7 @@ export function AppSidebar() {
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
-          {adminNavItems.map((item) => (
+          {isAdmin && adminNavItems.map((item) => (
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild

@@ -25,7 +25,12 @@ import {
   Package,
   TicketPercent,
   Bell,
+  ShieldCheck,
 } from 'lucide-react';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader } from 'lucide-react';
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
@@ -63,12 +68,39 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
+
+  const adminRef = useMemoFirebase(() => (
+    user && firestore ? doc(firestore, 'roles_admin', user.uid) : null
+  ), [user, firestore]);
+  const { data: adminDoc, isLoading: isAdminLoading } = useDoc(adminRef);
+
+  const isAdmin = adminDoc && adminDoc.role === 'admin';
 
   // These paths will not use the admin layout and will be rendered as full pages
-  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications'];
+  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book', '/admin/create-coupon', '/admin/notifications', '/admin/users/'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;
+  }
+
+  if (isUserLoading || isAdminLoading) {
+    return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
+  }
+  
+  if (!isAdmin) {
+      return (
+          <Card className="m-8">
+              <CardHeader>
+                  <CardTitle>Access Denied</CardTitle>
+                  <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
+              </CardHeader>
+               <CardContent>
+                  <Button asChild><Link href="/">Go to Home</Link></Button>
+              </CardContent>
+          </Card>
+      )
   }
 
   return (

@@ -1,13 +1,15 @@
+
 'use client';
 
 import { useUser, useFirestore } from '@/firebase';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { Loader } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { AppHeader } from '@/components/layout/app-header';
+import { NotificationHandler } from '@/components/notification-handler';
 
 const PUBLIC_PATHS = ['/login', '/signup'];
 const NO_LAYOUT_PATHS = ['/login', '/signup', '/complete-profile'];
@@ -21,7 +23,7 @@ const shouldShowLayout = (pathname: string) => {
     return true;
 }
 
-export function AuthGate({ children }: { children: React.ReactNode }) {
+export function AuthGate({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
   const pathname = usePathname();
@@ -31,33 +33,31 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   const [isCheckingProfile, setIsCheckingProfile] = useState(true);
 
   useEffect(() => {
-    const checkUserProfile = async () => {
-      if (isUserLoading || !firestore) return;
+    if (isUserLoading || !firestore) return;
       
-      if (!user) {
+    if (!user) {
         setIsProfileComplete(false);
         setIsCheckingProfile(false);
         return;
-      }
-      
-      try {
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists() && userDoc.data().profileComplete === true) {
-          setIsProfileComplete(true);
+    }
+    
+    setIsCheckingProfile(true);
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const unsubscribe = onSnapshot(userDocRef, (doc) => {
+        if (doc.exists() && doc.data().profileComplete === true) {
+            setIsProfileComplete(true);
         } else {
-          setIsProfileComplete(false);
+            setIsProfileComplete(false);
         }
-      } catch (error) {
-        console.error("Error checking user profile:", error);
-        setIsProfileComplete(false); // Assume incomplete on error
-      } finally {
         setIsCheckingProfile(false);
-      }
-    };
+    }, (error) => {
+        console.error("Error listening to user profile:", error);
+        setIsProfileComplete(false);
+        setIsCheckingProfile(false);
+    });
 
-    checkUserProfile();
-  }, [user, isUserLoading, firestore, pathname]); // Rerun on pathname change too
+    return () => unsubscribe();
+  }, [user, isUserLoading, firestore]);
 
   useEffect(() => {
     const isLoading = isUserLoading || isCheckingProfile;
@@ -66,6 +66,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
     }
 
     const isPublicPath = PUBLIC_PATHS.includes(pathname);
+    const isAdminPath = pathname.startsWith('/admin');
     const isProfilePath = pathname === PROFILE_COMPLETE_PATH;
 
     if (!user) {
@@ -77,7 +78,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
       // Logged in
       if (isPublicPath) {
         router.push('/'); // Already logged in, redirect from public paths
-      } else if (!isProfileComplete && !isProfilePath) {
+      } else if (!isProfileComplete && !isProfilePath && !isAdminPath) { // Allow access to admin paths even if profile is incomplete
         router.push(PROFILE_COMPLETE_PATH); // Profile is not complete, force completion
       } else if (isProfileComplete && isProfilePath) {
         router.push('/'); // Profile is complete, redirect from completion page
@@ -101,7 +102,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   // Logic to prevent flash of content during redirection
   if (!user && !isPublicPath) return null; // Waiting for redirect to /signup
   if (user && isPublicPath) return null; // Waiting for redirect to /
-  if (user && !isProfileComplete && !isProfilePath) return null; // Waiting for redirect to /complete-profile
+  if (user && !isProfileComplete && !isProfilePath && !pathname.startsWith('/admin')) return null; // Waiting for redirect to /complete-profile
   if (user && isProfileComplete && isProfilePath) return null; // Waiting for redirect from /complete-profile
 
   if (shouldShowLayout(pathname)) {
@@ -109,6 +110,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
           <SidebarProvider>
             <AppSidebar />
             <SidebarInset>
+              <NotificationHandler />
               <AppHeader />
               <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
                 {children}

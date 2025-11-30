@@ -6,12 +6,16 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users, Award, ChevronRight } from 'lucide-react';
+import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users, Award, ChevronRight, Bell } from 'lucide-react';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, onSnapshot, collection, query, orderBy, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, orderBy, Timestamp, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -47,11 +51,15 @@ const truncateUid = (uid: string | null | undefined) => {
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminLoading, setIsAdminLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
   const [referralData, setReferralData] = useState<{ points: number; count: number }>({ points: 0, count: 0 });
   const [isReferralLoading, setIsReferralLoading] = useState(true);
+  
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
   const referralsQuery = useMemoFirebase(
       () => user ? query(collection(firestore, 'referrals'), where('referrerId', '==', user.uid)) : null,
@@ -86,39 +94,49 @@ export default function ProfilePage() {
     }
     
     // Check Admin Status
-    const checkAdminStatus = async () => {
-        setIsAdminLoading(true);
-        if (user.email === 'Qukly@study.com') {
-            setIsAdmin(true);
-            setIsAdminLoading(false);
-            return;
-        }
-        try {
-            const adminRef = doc(firestore, "roles_admin", user.uid);
-            const adminDoc = await getDoc(adminRef);
-            setIsAdmin(adminDoc.exists());
-        } catch (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
-        } finally {
-            setIsAdminLoading(false);
-        }
-    };
+    const adminRef = doc(firestore, 'roles_admin', user.uid);
+    const unsubAdmin = onSnapshot(adminRef, (doc) => {
+        setIsAdmin(doc.exists() && doc.data().role === 'admin');
+        setIsAdminLoading(false);
+    });
     
     // Fetch User Data
     const userRef = doc(firestore, 'users', user.uid);
     const unsubUser = onSnapshot(userRef, (doc) => {
       if (doc.exists()) {
-        setUserData(doc.data());
+        const data = doc.data();
+        setUserData(data);
+        setNotificationsEnabled(!!data.fcmToken);
       }
     });
 
-    checkAdminStatus();
-
     return () => {
+        unsubAdmin();
         unsubUser();
     };
 }, [user, firestore, isUserLoading]);
+
+  const handleNotificationToggle = async (enabled: boolean) => {
+      if (!user || !firestore) return;
+      
+      const userRef = doc(firestore, 'users', user.uid);
+      
+      if (enabled) {
+          // Logic to request permission and get token is in NotificationHandler
+          // Here we just reflect the intended state, the handler will update fcmToken
+          toast({ title: 'Please allow notification permission in your browser.' });
+      } else {
+          // User wants to disable, so we remove the token
+          try {
+              await updateDoc(userRef, { fcmToken: null });
+              setNotificationsEnabled(false);
+              toast({ title: 'Notifications Disabled' });
+          } catch (error) {
+              console.error("Error disabling notifications:", error);
+              toast({ variant: 'destructive', title: 'Error', description: 'Could not disable notifications.' });
+          }
+      }
+  }
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'QS';
@@ -201,6 +219,22 @@ export default function ProfilePage() {
             <ProfileInfoItem icon={<MapPin size={18} />} label="State" value={userData?.state} />
             <ProfileInfoItem icon={<BookCopy size={18} />} label="Class/Exam" value={userData?.class} />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center"><Bell className="mr-2 h-5 w-5 text-primary"/>Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+             <div className="flex items-center justify-between">
+                <Label htmlFor="notif-toggle" className="font-medium">Receive Push Notifications</Label>
+                <Switch
+                    id="notif-toggle"
+                    checked={notificationsEnabled}
+                    onCheckedChange={handleNotificationToggle}
+                />
+            </div>
         </CardContent>
       </Card>
       

@@ -1,8 +1,7 @@
 
 'use client';
-import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, deleteDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirebase } from '@/firebase';
+import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, Edit, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,27 +18,45 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export default function AdminUsersPage() {
     const { firestore } = useFirebase();
     const { toast } = useToast();
+
     const usersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
     const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!firestore) return;
+    const adminsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'roles_admin') : null), [firestore]);
+    const { data: admins, isLoading: adminsLoading } = useCollection(adminsQuery);
+    
+    const adminUids = useMemoFirebase(() => new Set(admins?.map(admin => admin.id)), [admins]);
 
+    const handleAdminToggle = async (userId: string, currentIsAdmin: boolean) => {
+        if (!firestore) return;
+        
+        const adminDocRef = doc(firestore, 'roles_admin', userId);
+        
         try {
-            await deleteDoc(doc(firestore, 'users', userId));
-            toast({ title: "Success", description: "User has been deleted permanently."});
-            // Note: In a real app, you might want to delete associated Firebase Auth user too via a Cloud Function.
+            if (currentIsAdmin) {
+                // Revoke admin: delete the document
+                await deleteDoc(adminDocRef);
+                toast({ title: 'Admin Revoked', description: 'User is no longer an admin.' });
+            } else {
+                // Grant admin: create the document
+                await setDoc(adminDocRef, { role: 'admin' });
+                toast({ title: 'Admin Granted', description: 'User is now an admin.' });
+            }
         } catch (error) {
-            toast({ variant: 'destructive', title: "Error", description: "Failed to delete user."});
-            console.error("Error deleting user: ", error);
+            console.error("Error updating admin status:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update admin status.' });
         }
     };
+
+    const isLoading = usersLoading || adminsLoading;
 
     return (
         <Card>
@@ -50,51 +67,46 @@ export default function AdminUsersPage() {
                         <TableRow>
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
-                            <TableHead>Mobile</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Admin</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {usersLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
-                        {users?.map(user => (
-                            <TableRow key={user.id}>
-                                <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
-                                <TableCell>{user.email || 'N/A'}</TableCell>
-                                <TableCell>{user.mobile || 'N/A'}</TableCell>
-                                <TableCell>
-                                    <Badge variant={user.status === 'suspended' ? 'destructive' : 'success'}>
-                                        {user.status || 'active'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="space-x-2">
-                                    <Button asChild variant="outline" size="sm">
-                                        <Link href={`/admin/users/${user.id}`}>
-                                            <Edit className="mr-2 h-3 w-3" />
-                                            Manage
-                                        </Link>
-                                    </Button>
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will permanently delete the user and all their associated data. This action cannot be undone.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                         {!usersLoading && users?.length === 0 && (
+                        {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
+                        {users?.map(user => {
+                            const isCurrentUserAdmin = adminUids.has(user.id);
+                            return (
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
+                                    <TableCell>{user.email || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={user.status === 'suspended' ? 'destructive' : 'success'}>
+                                            {user.status || 'active'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center space-x-2">
+                                            <Switch
+                                                id={`admin-switch-${user.id}`}
+                                                checked={isCurrentUserAdmin}
+                                                onCheckedChange={() => handleAdminToggle(user.id, isCurrentUserAdmin)}
+                                            />
+                                            <Label htmlFor={`admin-switch-${user.id}`}>{isCurrentUserAdmin ? 'Admin' : 'User'}</Label>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="space-x-2">
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/admin/users/${user.id}`}>
+                                                <Edit className="mr-2 h-3 w-3" />
+                                                Manage
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                         {!isLoading && users?.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={5} className="text-center text-muted-foreground">
                                     कोई यूज़र नहीं मिला।
