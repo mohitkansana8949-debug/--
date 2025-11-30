@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader, Search, Youtube, Tv, UserSquare2 } from 'lucide-react';
-import { youtubeSearchFlow, getHomePageVideos } from '@/ai/flows/youtube-search-flow';
+import { youtubeSearchFlow, getChannelDetails, QUICKLY_STUDY_CHANNEL } from '@/ai/flows/youtube-search-flow';
 import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -15,46 +15,42 @@ export default function YouTubeExplorerPage() {
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
   const [channels, setChannels] = useState<SearchOutput['channels']>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const [quicklyStudyChannel, setQuicklyStudyChannel] = useState<SearchOutput['channels'][0] | null>(null);
 
   useEffect(() => {
-    handleInitialLoad();
+    // Only fetch the main channel details on initial load to save quota
+    const fetchMainChannel = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const channelDetails = await getChannelDetails({ channelId: QUICKLY_STUDY_CHANNEL.ID });
+            setQuicklyStudyChannel(channelDetails);
+        } catch (err: any) {
+            setError(err.message || "Failed to fetch channel details.");
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    fetchMainChannel();
   }, []);
 
-  const handleInitialLoad = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // This will now fetch a limited number of videos from the main channel
-      const results = await getHomePageVideos({});
-      setVideos(results.videos);
-      
-      const qsChannelDetails = await youtubeSearchFlow({ query: 'Quickly Study', channelId: null });
-      if (qsChannelDetails.channels.length > 0) {
-        setQuicklyStudyChannel(qsChannelDetails.channels[0]);
-      }
-
-      setChannels([]); // Clear channels on initial load
-    } catch (err: any) {
-      setError(err.message || "Failed to fetch initial videos.");
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!searchQuery.trim()) {
-      handleInitialLoad();
-      return;
+        // Clear previous search results if query is empty
+        setVideos([]);
+        setChannels([]);
+        return;
     }
 
-    setIsLoading(true);
+    setIsSearching(true);
     setError(null);
-    setQuicklyStudyChannel(null); // Hide featured channel during search
     try {
       const results = await youtubeSearchFlow({ 
         query: searchQuery,
@@ -66,7 +62,7 @@ export default function YouTubeExplorerPage() {
       setError(err.message || "Failed to fetch videos.");
       console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
@@ -91,11 +87,11 @@ export default function YouTubeExplorerPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for any topic on YouTube..."
               className="flex-grow pl-10"
-              disabled={isLoading}
+              disabled={isLoading || isSearching}
             />
         </div>
-        <Button type="submit" disabled={isLoading}>
-            {isLoading ? <Loader className="animate-spin" /> : <Search />}
+        <Button type="submit" disabled={isLoading || isSearching}>
+            {isSearching ? <Loader className="animate-spin" /> : <Search />}
         </Button>
       </form>
       
@@ -122,7 +118,13 @@ export default function YouTubeExplorerPage() {
                  </div>
             )}
             
-            {(videos.length > 0 || channels.length > 0) && (
+            {isSearching && (
+                <div className="flex justify-center mt-8">
+                    <Loader className="animate-spin h-8 w-8" />
+                </div>
+            )}
+
+            {!isSearching && (videos.length > 0 || channels.length > 0) && (
                  <div className="space-y-6">
                     {channels.length > 0 && (
                          <div>
@@ -170,11 +172,11 @@ export default function YouTubeExplorerPage() {
                 </div>
             )}
             
-            {(!isLoading && !error && videos.length === 0 && channels.length === 0 && !quicklyStudyChannel) && (
+            {!isLoading && !isSearching && !error && videos.length === 0 && channels.length > 0 && searchQuery.trim() && (
                 <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
                   <Tv className="mx-auto h-12 w-12" />
                   <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-                  <p>Your search did not return any results. Please try a different query.</p>
+                  <p>Your search did not return any videos. Please try a different query.</p>
                 </div>
             )}
         </div>

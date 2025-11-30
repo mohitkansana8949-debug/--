@@ -38,7 +38,7 @@ const SearchOutputSchema = z.object({
 });
 export type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
-async function searchYouTube({ query, channelId }: SearchInput) {
+async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchOutput> {
   if (!youtubeApiKey) {
     console.error('YOUTUBE_API_KEY is not set in the environment variables.');
     throw new Error('The YouTube API key is not configured. Please contact the administrator.');
@@ -50,10 +50,11 @@ async function searchYouTube({ query, channelId }: SearchInput) {
   let channelSearchUrl = '';
   
   if (channelId) {
-     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}`;
+     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}&type=video`;
   } else if (isQuicklyStudySearch) {
-    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query)}`;
-    channelSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=1&key=${youtubeApiKey}`;
+    // If "Quickly Study" is searched, prioritize finding the channel and its videos
+    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(query.replace(/quickly\s*study/i, '').trim())}`;
+    channelSearchUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${QUICKLY_STUDY_CHANNEL_ID}&key=${youtubeApiKey}`;
   } else {
     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
     channelSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=channel&maxResults=5&key=${youtubeApiKey}`;
@@ -66,12 +67,12 @@ async function searchYouTube({ query, channelId }: SearchInput) {
   const [videoData, channelData] = await Promise.all([videoPromise, channelPromise]);
 
   if (videoData.error) {
-    console.error('YouTube API Error (Videos):', videoData.error);
+    console.error('YouTube API Error (Videos):', videoData.error.message);
     throw new Error(videoData.error.message);
   }
   if (channelData.error) {
-    console.error('YouTube API Error (Channels):', channelData.error);
-    // Don't throw, just log, as video search might have succeeded
+    console.error('YouTube API Error (Channels):', channelData.error.message);
+    // Don't throw for channel error, video search might have succeeded
   }
 
   const videos: z.infer<typeof VideoSchema>[] = videoData.items
@@ -87,7 +88,7 @@ async function searchYouTube({ query, channelId }: SearchInput) {
 
   const channels: z.infer<typeof ChannelSchema>[] = channelData.items
     ? channelData.items.map((item: any) => ({
-        channelId: item.snippet.channelId,
+        channelId: item.id.channelId || item.id, // Handles both search and channels list response
         title: item.snippet.title,
         description: item.snippet.description,
         thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
@@ -105,25 +106,40 @@ export const youtubeSearchFlow = ai.defineFlow(
   searchYouTube
 );
 
-export const getHomePageVideos = ai.defineFlow(
+export const getChannelDetails = ai.defineFlow(
     {
-        name: 'getHomePageVideos',
-        inputSchema: z.object({}),
-        outputSchema: SearchOutputSchema,
+        name: 'getChannelDetails',
+        inputSchema: z.object({ channelId: z.string() }),
+        outputSchema: ChannelSchema.nullable(),
     },
-    async () => {
+    async ({ channelId }) => {
          if (!youtubeApiKey) {
             throw new Error('The YouTube API key is not configured.');
         }
 
-        // Fetch videos from Quickly Study channel
-        const quicklyStudyPromise = searchYouTube({ query: 'Quickly Study', channelId: QUICKLY_STUDY_CHANNEL_ID });
+        const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${youtubeApiKey}`;
+        const response = await fetch(channelDetailsUrl);
+        const data = await response.json();
+        
+        if (data.error) {
+             console.error('YouTube API Error (Channel Details):', data.error.message);
+             throw new Error(data.error.message);
+        }
 
-        const [quicklyStudyResult] = await Promise.all([quicklyStudyPromise]);
-
-        return {
-            videos: quicklyStudyResult.videos.slice(0, 4), // Limit to 4 videos
-            channels: quicklyStudyResult.channels,
-        };
+        if (data.items && data.items.length > 0) {
+            const item = data.items[0];
+            return {
+                channelId: item.id,
+                title: item.snippet.title,
+                description: item.snippet.description,
+                thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
+            };
+        }
+        
+        return null;
     }
 );
+
+export const QUICKLY_STUDY_CHANNEL = {
+    ID: QUICKLY_STUDY_CHANNEL_ID
+};
