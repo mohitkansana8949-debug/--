@@ -1,44 +1,28 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader, Search, Youtube, Tv, UserSquare2 } from 'lucide-react';
-import { youtubeSearchFlow, getChannelDetails } from '@/ai/flows/youtube-search-flow';
+import { youtubeSearchFlow } from '@/ai/flows/youtube-search-flow';
 import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
+
+const QUICKLY_STUDY_CHANNEL = {
+  channelId: 'UCF2s8P3t1-x9-g_X0d-jC-g',
+  title: 'Quickly Study',
+  description: 'The quickest way to study for competitive exams.',
+  thumbnailUrl: 'https://yt3.ggpht.com/g-qu-yW38j2J9_Z8zMOPx3DF3nE3zMvA_a2zKbC1A9h3J8JCaR8E3g_D-MvJz_c_hJzYQ5g=s176-c-k-c0x00ffffff-no-rj',
+};
+
 
 export default function YouTubeExplorerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
   const [channels, setChannels] = useState<SearchOutput['channels']>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const [quicklyStudyChannel, setQuicklyStudyChannel] = useState<SearchOutput['channels'][0] | null>(null);
-
-  useEffect(() => {
-    // Only fetch the main channel details on initial load to save quota
-    const fetchMainChannel = async () => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const channelDetails = await getChannelDetails({ channelId: 'QUICKLY_STUDY' });
-            setQuicklyStudyChannel(channelDetails);
-        } catch (err: any) {
-            setError(err.message || "Failed to fetch channel details.");
-            console.error(err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    fetchMainChannel();
-  }, []);
-
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -87,100 +71,92 @@ export default function YouTubeExplorerPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search for any topic on YouTube..."
               className="flex-grow pl-10"
-              disabled={isLoading || isSearching}
+              disabled={isSearching}
             />
         </div>
-        <Button type="submit" disabled={isLoading || isSearching}>
+        <Button type="submit" disabled={isSearching}>
             {isSearching ? <Loader className="animate-spin" /> : <Search />}
         </Button>
       </form>
       
-      {isLoading ? (
-        <div className="flex justify-center mt-8">
-          <Loader className="animate-spin h-10 w-10" />
-        </div>
-      ) : error ? (
-        <p className="text-destructive text-center">{error}</p>
-      ) : (
-        <div className="space-y-8">
-            {quicklyStudyChannel && (
-                 <div className="space-y-4">
-                     <h2 className="text-xl font-bold flex items-center"><UserSquare2 className="mr-2"/> Our Channel</h2>
-                     <Link href={`/youtube/${quicklyStudyChannel.channelId}`} key={quicklyStudyChannel.channelId}>
-                         <Card className="p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors bg-gradient-to-r from-primary/10 via-background to-background">
-                            <Image src={quicklyStudyChannel.thumbnailUrl} alt={quicklyStudyChannel.title} width={80} height={80} className="rounded-full border-2 border-primary" />
-                            <div className="flex-1">
-                                <p className="font-bold text-lg">{quicklyStudyChannel.title}</p>
-                                <p className="text-sm text-muted-foreground line-clamp-2">{quicklyStudyChannel.description}</p>
-                            </div>
-                        </Card>
-                    </Link>
-                 </div>
-            )}
-            
-            {isSearching && (
-                <div className="flex justify-center mt-8">
-                    <Loader className="animate-spin h-8 w-8" />
+      <div className="space-y-8">
+        <div className="space-y-4">
+          <h2 className="text-xl font-bold flex items-center"><UserSquare2 className="mr-2"/> Our Channel</h2>
+          <Link href={`/youtube/${QUICKLY_STUDY_CHANNEL.channelId}`} key={QUICKLY_STUDY_CHANNEL.channelId}>
+              <Card className="p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors bg-gradient-to-r from-primary/10 via-background to-background">
+                <Image src={QUICKLY_STUDY_CHANNEL.thumbnailUrl} alt={QUICKLY_STUDY_CHANNEL.title} width={80} height={80} className="rounded-full border-2 border-primary" />
+                <div className="flex-1">
+                    <p className="font-bold text-lg">{QUICKLY_STUDY_CHANNEL.title}</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{QUICKLY_STUDY_CHANNEL.description}</p>
                 </div>
-            )}
+            </Card>
+        </Link>
+        </div>
+        
+        {isSearching && (
+            <div className="flex justify-center mt-8">
+                <Loader className="animate-spin h-8 w-8" />
+            </div>
+        )}
 
-            {!isSearching && (videos.length > 0 || channels.length > 0) && (
-                 <div className="space-y-6">
-                    {channels.length > 0 && (
-                         <div>
-                            <h2 className="text-xl font-bold mb-4 flex items-center"><UserSquare2 className="mr-2"/> Channels</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {channels.map(channel => (
-                                    <Link href={`/youtube/${channel.channelId}`} key={channel.channelId}>
-                                        <Card className="p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors h-full">
-                                            <Image src={channel.thumbnailUrl} alt={channel.title} width={60} height={60} className="rounded-full" />
-                                            <div className="flex-1">
-                                                <p className="font-semibold">{channel.title}</p>
-                                                <p className="text-xs text-muted-foreground line-clamp-2">{channel.description}</p>
-                                            </div>
-                                        </Card>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    {videos.length > 0 && (
-                        <div>
-                             <h2 className="text-xl font-bold mb-4 flex items-center"><Tv className="mr-2"/> Videos</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                              {videos.map(video => (
-                                <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
-                                  <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
-                                    <div className="relative w-full aspect-video">
-                                      <Image
-                                        src={video.thumbnailUrl}
-                                        alt={video.title}
-                                        fill
-                                        className="object-cover"
-                                      />
-                                    </div>
-                                    <CardHeader>
-                                      <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{video.title}</CardTitle>
-                                      <CardDescription className="text-xs">{video.channelTitle}</CardDescription>
-                                    </CardHeader>
-                                  </Card>
+        {error && <p className="text-destructive text-center">{error}</p>}
+
+        {!isSearching && (videos.length > 0 || channels.length > 0) && (
+             <div className="space-y-6">
+                {channels.length > 0 && (
+                     <div>
+                        <h2 className="text-xl font-bold mb-4 flex items-center"><UserSquare2 className="mr-2"/> Channels</h2>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {channels.map(channel => (
+                                <Link href={`/youtube/${channel.channelId}`} key={channel.channelId}>
+                                    <Card className="p-4 flex items-center gap-4 hover:bg-muted/50 transition-colors h-full">
+                                        <Image src={channel.thumbnailUrl} alt={channel.title} width={60} height={60} className="rounded-full" />
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{channel.title}</p>
+                                            <p className="text-xs text-muted-foreground line-clamp-2">{channel.description}</p>
+                                        </div>
+                                    </Card>
                                 </Link>
-                              ))}
-                            </div>
+                            ))}
                         </div>
-                    )}
-                </div>
-            )}
-            
-            {!isLoading && !isSearching && !error && videos.length === 0 && channels.length > 0 && searchQuery.trim() && (
-                <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
-                  <Tv className="mx-auto h-12 w-12" />
-                  <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-                  <p>Your search did not return any videos. Please try a different query.</p>
-                </div>
-            )}
-        </div>
-      )}
+                    </div>
+                )}
+                {videos.length > 0 && (
+                    <div>
+                         <h2 className="text-xl font-bold mb-4 flex items-center"><Tv className="mr-2"/> Videos</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          {videos.map(video => (
+                            <Link href={`/courses/watch/${video.videoId}?chatId=${video.channelId}`} key={video.videoId}>
+                              <Card className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col h-full group">
+                                <div className="relative w-full aspect-video">
+                                  <Image
+                                    src={video.thumbnailUrl}
+                                    alt={video.title}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                                <CardHeader>
+                                  <CardTitle className="text-base line-clamp-2 h-12 group-hover:text-primary">{video.title}</CardTitle>
+                                  <CardDescription className="text-xs">{video.channelTitle}</CardDescription>
+                                </CardHeader>
+                              </Card>
+                            </Link>
+                          ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
+        
+        {!isSearching && !error && videos.length === 0 && channels.length > 0 && searchQuery.trim() && (
+            <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
+              <Tv className="mx-auto h-12 w-12" />
+              <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
+              <p>Your search did not return any videos. Please try a different query.</p>
+            </div>
+        )}
+      </div>
     </div>
   );
 }

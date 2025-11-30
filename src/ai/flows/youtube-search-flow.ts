@@ -53,7 +53,7 @@ async function searchYouTube({ query, channelId }: SearchInput): Promise<SearchO
      videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&maxResults=50&key=${youtubeApiKey}&q=${encodeURIComponent(query || '')}&type=video`;
   } else if (isQuicklyStudySearch) {
     // If "Quickly Study" is searched, prioritize finding the channel and its videos
-    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(query.replace(/quickly\s*study/i, '').trim())}`;
+    videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${QUICKLY_STUDY_CHANNEL_ID}&maxResults=20&key=${youtubeApiKey}&q=${encodeURIComponent(query.replace(/quickly\s*study/i, '').trim())}&type=video`;
     channelSearchUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${QUICKLY_STUDY_CHANNEL_ID}&key=${youtubeApiKey}`;
   } else {
     videoSearchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&maxResults=20&key=${youtubeApiKey}`;
@@ -104,42 +104,4 @@ export const youtubeSearchFlow = ai.defineFlow(
     outputSchema: SearchOutputSchema,
   },
   searchYouTube
-);
-
-export const getChannelDetails = ai.defineFlow(
-    {
-        name: 'getChannelDetails',
-        inputSchema: z.object({ channelId: z.string() }),
-        outputSchema: ChannelSchema.nullable(),
-    },
-    async ({ channelId }) => {
-         if (!youtubeApiKey) {
-            throw new Error('The YouTube API key is not configured.');
-        }
-
-        if (channelId === 'QUICKLY_STUDY') {
-            channelId = QUICKLY_STUDY_CHANNEL_ID;
-        }
-
-        const channelDetailsUrl = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${youtubeApiKey}`;
-        const response = await fetch(channelDetailsUrl);
-        const data = await response.json();
-        
-        if (data.error) {
-             console.error('YouTube API Error (Channel Details):', data.error.message);
-             throw new Error(data.error.message);
-        }
-
-        if (data.items && data.items.length > 0) {
-            const item = data.items[0];
-            return {
-                channelId: item.id,
-                title: item.snippet.title,
-                description: item.snippet.description,
-                thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default.url,
-            };
-        }
-        
-        return null;
-    }
 );
