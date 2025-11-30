@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase, useFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -99,13 +98,28 @@ function UpdateOrderDialog({ order }: { order: any }) {
 export default function AdminBookOrdersPage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isAdminLoading, setIsAdminLoading] = useState(true);
+
+    useEffect(() => {
+        const checkAdmin = async () => {
+            if (user && firestore) {
+                 const adminDoc = await doc(firestore, 'roles_admin', user.uid).get();
+                 setIsAdmin(adminDoc.exists());
+            }
+            setIsAdminLoading(false);
+        }
+        if(!isUserLoading) {
+            checkAdmin();
+        }
+    }, [user, firestore, isUserLoading]);
 
     const ordersQuery = useMemoFirebase(() => (
-        firestore ? query(
+        firestore && isAdmin ? query(
             collection(firestore, 'bookOrders'),
             orderBy('createdAt', 'desc')
         ) : null
-    ), [firestore]);
+    ), [firestore, isAdmin]);
 
     const { data: orders, isLoading } = useCollection(ordersQuery);
 
@@ -118,8 +132,19 @@ export default function AdminBookOrdersPage() {
         }
     };
 
-    if (isLoading || isUserLoading) {
+    if (isLoading || isUserLoading || isAdminLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
+    }
+    
+    if (!isAdmin) {
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle>Access Denied</CardTitle>
+                    <CardDescription>You do not have permission to view this page.</CardDescription>
+                </CardHeader>
+            </Card>
+        )
     }
 
     return (
