@@ -10,7 +10,7 @@ import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, T
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, getDoc, onSnapshot, collection, query, orderBy, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, collection, query, where, orderBy, Timestamp, updateDoc } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
