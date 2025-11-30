@@ -64,10 +64,10 @@ service cloud.firestore {
       allow update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
     
-    // Book orders can be read by the owner or an admin. Only admins can list/update.
+    // Book orders can be read by the owner. Admins can list and manage all orders.
     match /bookOrders/{orderId} {
         allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
+        allow read: if request.auth.uid == resource.data.userId;
         allow list, update, delete: if get(/databases/$(database)/documents/roles_admin/$(request.auth.uid)).data.role == 'admin';
     }
 

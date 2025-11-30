@@ -32,9 +32,9 @@ import { collection, doc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 
 const footerItems = [
-    { name: 'Home', icon: Home, href: '/' },
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Your Orders', icon: ShoppingBag, href: '/my-orders' },
+    { name: 'Your Orders', href: '/your-orders', icon: ShoppingBag },
     { name: 'Feed', icon: Rss, href: '/feed' },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -84,15 +84,16 @@ function InstallPWA() {
     }
 
     return (
-        <div className="relative p-6 rounded-lg overflow-hidden bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-gradient-xy">
+        <div className="relative p-4 rounded-lg overflow-hidden bg-gradient-to-r from-pink-500 via-red-500 to-yellow-500 animate-gradient-xy">
             <div className="text-white text-center">
-                <h2 className="text-2xl font-bold mb-2">Install App for a Better Experience</h2>
-                <p className="mb-4">Get the full app experience by installing it on your home screen.</p>
+                <h2 className="text-xl font-bold mb-1">Install App for a Better Experience</h2>
+                <p className="text-sm mb-3">Get the full app experience by installing it on your home screen.</p>
                 <Button 
                     onClick={handleInstallClick} 
                     className="bg-white text-primary hover:bg-gray-100 font-bold py-2 px-4 rounded-full shadow-lg transition-transform hover:scale-105"
+                    size="sm"
                 >
-                    <Download className="mr-2 h-5 w-5" />
+                    <Download className="mr-2 h-4 w-4" />
                     Install App
                 </Button>
             </div>
@@ -107,8 +108,7 @@ function AiDoubtSolverCard() {
                 <div className="text-white text-center">
                     <Wand2 className="mx-auto h-8 w-8 mb-2" />
                     <h2 className="text-xl font-bold mb-1">AI Doubt Solver</h2>
-                    <p className="text-sm">Get instant answers to all your questions.</p>
-                     <Button variant="secondary" size="sm" className="mt-2">Start Now</Button>
+                     <Button variant="secondary" size="sm" className="mt-1">Start Now</Button>
                 </div>
             </div>
         </Link>
@@ -144,7 +144,7 @@ export default function HomePage() {
     if (showYoutubeFeature) {
         cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
     } else {
-        cards.push({ title: 'My Orders', href: '/my-orders', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
+        cards.push({ title: 'Your Orders', href: '/your-orders', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: ShoppingBag });
     }
     
     // Ensure it's always 9 cards for a clean grid
