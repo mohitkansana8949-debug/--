@@ -39,43 +39,11 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export function AppSidebar() {
   const pathname = usePathname();
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
-
-  useEffect(() => {
-    const checkAdmin = async () => {
-        if (!user || !firestore) {
-            setIsAdmin(false);
-            setIsAdminLoading(false);
-            return;
-        }
-
-        if (user.email === 'Qukly@study.com') {
-            setIsAdmin(true);
-            setIsAdminLoading(false);
-            return;
-        }
-        
-        try {
-            const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
-            setIsAdmin(adminDoc.exists());
-        } catch (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
-        } finally {
-            setIsAdminLoading(false);
-        }
-    };
-    if (!isUserLoading) {
-        checkAdmin();
-    }
-  }, [user, firestore, isUserLoading]);
 
   const handleLogout = async () => {
     try {
@@ -106,11 +74,8 @@ export function AppSidebar() {
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
     { href: "/youtube", label: "यूट्यूब", icon: Youtube, tooltip: "YouTube" },
-    { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
-  ];
-  
-  const adminNavItems = [
     { href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" },
+    { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
   
   const socialLinks = [
@@ -123,7 +88,7 @@ export function AppSidebar() {
 
   const profileNavItem = { href: "/profile", label: "प्रोफ़ाइल", icon: User, tooltip: "Profile" };
   
-  if (isUserLoading || isAdminLoading) {
+  if (isUserLoading) {
       return (
           <Sidebar>
             <SidebarHeader>
@@ -150,22 +115,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
-                tooltip={{ children: item.tooltip }}
-                onClick={handleLinkClick}
-              >
-                <Link href={item.href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-          {isAdmin && adminNavItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
-              <SidebarMenuButton
-                asChild
-                isActive={pathname.startsWith(item.href)}
+                isActive={pathname.startsWith(item.href) && (item.href === '/' ? pathname === '/' : true)}
                 tooltip={{ children: item.tooltip }}
                 onClick={handleLinkClick}
               >

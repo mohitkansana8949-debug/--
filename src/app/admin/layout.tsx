@@ -1,6 +1,6 @@
 
 'use client';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -27,11 +27,12 @@ import {
   Bell,
   ShieldCheck,
 } from 'lucide-react';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
@@ -69,65 +70,31 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const { firestore } = useFirestore();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminLoading, setIsAdminLoading] = useState(true);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useLocalStorage('isAdminAuthenticated', false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const checkAdmin = async () => {
-        if (!user || !firestore) {
-            setIsAdmin(false);
-            setIsAdminLoading(false);
-            return;
-        }
-        
-        if (user.email?.toLowerCase() === 'qukly@study.com') {
-             setIsAdmin(true);
-             setIsAdminLoading(false);
-             return;
-        }
-        
-        try {
-            const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
-            setIsAdmin(adminDoc.exists());
-        } catch (error) {
-            console.error("Error checking admin status:", error);
-            setIsAdmin(false);
-        } finally {
-            setIsAdminLoading(false);
-        }
-    };
+    // This effect runs on the client side
     if (!isUserLoading) {
-        checkAdmin();
+        if (!isAdminAuthenticated) {
+            router.replace('/admin-auth');
+        } else {
+            setIsCheckingAuth(false);
+        }
     }
-  }, [user, firestore, isUserLoading]);
+  }, [isAdminAuthenticated, isUserLoading, router]);
 
-
-  const isFullPage = adminNavItems.some(item => pathname.startsWith(item.href) && item.href !== '/admin');
-
-
-  const isLoading = isUserLoading || isAdminLoading;
-
-  if (isLoading) {
+  if (isUserLoading || isCheckingAuth) {
     return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
   }
   
-  if (!isAdmin) {
-      return (
-          <div className="flex h-screen items-center justify-center">
-            <Card className="m-8 max-w-md">
-                <CardHeader>
-                    <CardTitle>Access Denied</CardTitle>
-                    <CardDescription>You do not have permission to view the admin dashboard.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild><Link href="/">Go to Home</Link></Button>
-                </CardContent>
-            </Card>
-          </div>
-      )
+  if (!isAdminAuthenticated) {
+    // This will be shown briefly before the redirect happens, or if redirect fails.
+    return null;
   }
+
 
   return (
     <div className="container mx-auto p-4">
