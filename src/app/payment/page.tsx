@@ -74,8 +74,8 @@ function PaymentComponent() {
             toast({ variant: 'destructive', title: 'त्रुटि', description: 'आवश्यक जानकारी उपलब्ध नहीं है।'});
             return;
         }
-        if (!paymentMobileNumber.trim()) {
-            toast({ variant: 'destructive', title: 'त्रुटि', description: 'कृपया वह मोबाइल नंबर दर्ज करें जिससे आपने पेमेंट किया है।'});
+        if (!paymentMobileNumber.trim() || paymentMobileNumber.trim().length !== 10) {
+            toast({ variant: 'destructive', title: 'त्रुटि', description: 'कृपया 10 अंकों का मान्य मोबाइल नंबर दर्ज करें।'});
             return;
         }
 
@@ -188,11 +188,12 @@ function PaymentComponent() {
 
                              <div>
                                 <Input 
-                                    type="tel" 
+                                    type="tel"
+                                    maxLength={10}
                                     placeholder="पेमेंट किया गया मोबाइल नंबर" 
                                     className="text-center" 
                                     value={paymentMobileNumber}
-                                    onChange={(e) => setPaymentMobileNumber(e.target.value)}
+                                    onChange={(e) => setPaymentMobileNumber(e.target.value.replace(/\D/g, ''))}
                                 />
                                 <Button className="mt-4 w-full" onClick={handleSubmitEnrollment} disabled={isSubmitting}>
                                     {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin"/> सबमिट हो रहा है...</> : 'सबमिट करें और एनरोलमेंट की पुष्टि करें'}

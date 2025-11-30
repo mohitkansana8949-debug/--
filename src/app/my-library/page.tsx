@@ -174,7 +174,7 @@ export default function MyLibraryPage() {
             )}
 
             {!finalLoading && filteredItems.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredItems.map(item => (
                         <Card key={`${item.type}-${item.id}`} className="overflow-hidden transition-shadow hover:shadow-lg flex flex-col">
                            {item.thumbnailUrl ? (

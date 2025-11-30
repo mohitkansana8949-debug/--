@@ -21,6 +21,8 @@ import {
   Youtube,
   Clapperboard,
   MessageSquare,
+  ShoppingBag,
+  Package,
 } from 'lucide-react';
 
 const adminNavItems = [
@@ -30,8 +32,10 @@ const adminNavItems = [
   { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },
   { href: '/admin/pyqs', label: 'Manage PYQs', icon: FileQuestion },
   { href: '/admin/test-series', label: 'Manage Tests', icon: Newspaper },
+  { href: '/admin/books', label: 'Manage Books', icon: Package },
   { href: '/admin/posts', label: 'Manage Posts', icon: MessageSquare },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
+  { href: '/admin/book-orders', label: 'Book Orders', icon: ShoppingBag },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
   { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
@@ -44,6 +48,7 @@ const creationNavItems = [
     { href: '/admin/create-ebook', label: 'Add E-book', icon: PlusCircle },
     { href: '/admin/create-pyq', label: 'Add PYQ', icon: PlusCircle },
     { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
+    { href: '/admin/create-book', label: 'Add Book', icon: PlusCircle },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
 ]
 
@@ -55,7 +60,7 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   // These paths will not use the admin layout and will be rendered as full pages
-  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures'];
+  const fullPagePaths = ['/admin/create-course', '/admin/content/', '/admin/create-ebook', '/admin/create-pyq', '/admin/create-test', '/admin/live-lectures', '/admin/create-book'];
 
   if (fullPagePaths.some(p => pathname.startsWith(p))) {
     return <>{children}</>;

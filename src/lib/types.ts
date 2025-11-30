@@ -125,3 +125,44 @@ export interface Comment {
     text: string;
     createdAt: Timestamp;
 }
+
+export interface Book {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    offer?: string;
+    imageUrl: string;
+    createdAt: Timestamp;
+}
+
+export type CartItem = {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl: string;
+    quantity: number;
+}
+
+export type Address = {
+    name: string;
+    mobile: string;
+    address: string;
+    pincode: string;
+    city: string;
+    state: string;
+}
+
+export interface BookOrder {
+    id: string;
+    userId: string;
+    items: CartItem[];
+    total: number;
+    address: Address;
+    createdAt: Timestamp;
+    status: 'Pending' | 'Shipped' | 'Delivered' | 'Cancelled';
+    paymentMethod: string;
+    paymentId: string;
+    trackingId?: string;
+    trackingUrl?: string;
+}

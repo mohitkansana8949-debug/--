@@ -36,14 +36,15 @@ const codeSchema = z.object({
 });
 type CodeFormValues = z.infer<typeof codeSchema>;
 
-const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate') => {
+const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate' | 'createdAt') => {
     const last7Days = Array.from({ length: 7 }, (_, i) => startOfDay(subDays(new Date(), i))).reverse();
     
     const dailyCounts = last7Days.map(day => {
         const dayString = format(day, 'MMM d');
         const count = items?.filter(item => {
             if (!item[dateKey]) return false;
-            const itemDate = (item[dateKey] as Timestamp).toDate();
+            // Handle both Firestore Timestamps and regular Date objects
+            const itemDate = item[dateKey] instanceof Timestamp ? item[dateKey].toDate() : new Date(item[dateKey]);
             return startOfDay(itemDate).getTime() === day.getTime();
         }).length || 0;
         return { date: dayString, count };
@@ -71,6 +72,7 @@ export default function AdminDashboardOverview() {
   const ebooksQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'ebooks') : null), [firestore, isAdminVerified]);
   const pyqsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'pyqs') : null), [firestore, isAdminVerified]);
   const testsQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'tests') : null), [firestore, isAdminVerified]);
+  const bookOrdersQuery = useMemoFirebase(() => (firestore && isAdminVerified ? collection(firestore, 'bookOrders') : null), [firestore, isAdminVerified]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
@@ -78,9 +80,12 @@ export default function AdminDashboardOverview() {
   const { data: ebooks, isLoading: ebooksLoading } = useCollection(ebooksQuery);
   const { data: pyqs, isLoading: pyqsLoading } = useCollection(pyqsQuery);
   const { data: tests, isLoading: testsLoading } = useCollection(testsQuery);
+  const { data: bookOrders, isLoading: bookOrdersLoading } = useCollection(bookOrdersQuery);
   
   const newUsersChartData = useMemo(() => processChartData(users, 'signUpDate'), [users]);
   const newEnrollmentsChartData = useMemo(() => processChartData(enrollments, 'enrollmentDate'), [enrollments]);
+  const newBookOrdersChartData = useMemo(() => processChartData(bookOrders, 'createdAt'), [bookOrders]);
+
 
   const codeForm = useForm<CodeFormValues>({resolver: zodResolver(codeSchema), defaultValues: { code: '' }});
 
@@ -94,7 +99,7 @@ export default function AdminDashboardOverview() {
       }
   }
 
-  const loading = isUserLoading || (isAdminVerified && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading));
+  const loading = isUserLoading || (isAdminVerified && (usersLoading || coursesLoading || enrollmentsLoading || ebooksLoading || pyqsLoading || testsLoading || bookOrdersLoading));
 
   const stats = [
       { title: 'यूज़र्स', icon: Users, value: users?.length ?? 0 },
@@ -151,18 +156,18 @@ export default function AdminDashboardOverview() {
            ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center"><Users className="mr-2" /> New Users (Last 7 Days)</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pl-2">
                    <ResponsiveContainer width="100%" height={250}>
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Users", color: "hsl(var(--chart-1))" } }}>
                                 <RechartsBarChart data={newUsersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="count" fill="var(--color-count)" radius={4} />
@@ -176,13 +181,33 @@ export default function AdminDashboardOverview() {
                 <CardHeader>
                     <CardTitle className="flex items-center"><CreditCard className="mr-2" /> New Enrollments (Last 7 Days)</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pl-2">
                     <ResponsiveContainer width="100%" height={250}>
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }}>
                                 <RechartsBarChart data={newEnrollmentsChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                                    <YAxis allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                                </RechartsBarChart>
+                            </ChartContainer>
+                        )}
+                   </ResponsiveContainer>
+                </CardContent>
+            </Card>
+             <Card className="xl:col-span-2">
+                <CardHeader>
+                    <CardTitle className="flex items-center"><Book className="mr-2" /> New Book Orders (Last 7 Days)</CardTitle>
+                </CardHeader>
+                <CardContent className="pl-2">
+                    <ResponsiveContainer width="100%" height={250}>
+                        {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                            <ChartContainer config={{ count: { label: "Orders", color: "hsl(var(--chart-3))" } }}>
+                                <RechartsBarChart data={newBookOrdersChartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <Bar dataKey="count" fill="var(--color-count)" radius={4} />
