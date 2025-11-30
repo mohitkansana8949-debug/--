@@ -1,6 +1,7 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader, Package, ChevronRight, ShoppingBag, Eye } from 'lucide-react';
@@ -22,7 +23,6 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getDoc } from 'firebase/firestore';
 
 function UpdateOrderDialog({ order }: { order: any }) {
     const { firestore } = useFirebase();
@@ -118,12 +118,9 @@ export default function AdminBookOrdersPage() {
     }, [user, firestore, isUserLoading]);
 
     const ordersQuery = useMemoFirebase(() => {
-        // Ensure firestore is loaded, admin check is complete, and user is an admin
-        if (!firestore || isAdminLoading || !isAdmin) {
-            return null;
-        }
+        if (!firestore) return null;
         return query(collection(firestore, 'bookOrders'), orderBy('createdAt', 'desc'));
-    }, [firestore, isAdmin, isAdminLoading]);
+    }, [firestore]);
 
     const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
     
@@ -178,7 +175,7 @@ export default function AdminBookOrdersPage() {
                             {orders?.map(order => (
                                 <TableRow key={order.id}>
                                     <TableCell className='font-mono text-xs'>{order.id.substring(0, 6)}</TableCell>
-                                    <TableCell>{format(order.createdAt.toDate(), 'dd MMM yyyy')}</TableCell>
+                                    <TableCell>{order.createdAt.toDate ? format(order.createdAt.toDate(), 'dd MMM yyyy') : 'N/A'}</TableCell>
                                     <TableCell className="font-mono text-xs">{order.userId.substring(0, 6)}</TableCell>
                                     <TableCell>₹{order.total.toFixed(2)}</TableCell>
                                     <TableCell><Badge variant={getStatusVariant(order.status)}>{order.status}</Badge></TableCell>

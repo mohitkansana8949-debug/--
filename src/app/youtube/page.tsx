@@ -12,6 +12,8 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase
 import { collection, doc } from 'firebase/firestore';
 
 const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
+const QUICKLY_STUDY_CHANNEL_URL = 'https://youtube.com/@quicklystudy01';
+
 
 export default function YouTubeExplorerPage() {
   const firestore = useFirestore();
@@ -62,7 +64,7 @@ export default function YouTubeExplorerPage() {
                 <CardTitle>{channelData.title}</CardTitle>
                 <CardDescription className="mt-1 line-clamp-2">{channelData.description}</CardDescription>
                 </div>
-                <a href={`https://www.youtube.com/channel/${channelData.id}`} target="_blank" rel="noopener noreferrer" className="md:ml-auto">
+                <a href={QUICKLY_STUDY_CHANNEL_URL} target="_blank" rel="noopener noreferrer" className="md:ml-auto">
                     <Button>View on YouTube</Button>
                 </a>
             </div>
