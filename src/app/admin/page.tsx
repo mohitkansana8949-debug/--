@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where, getDocs, Timestamp, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, getDoc, doc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
