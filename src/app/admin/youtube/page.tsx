@@ -44,7 +44,7 @@ export default function ManageYoutubePage() {
                 ...result.channel,
                 videos: result.videos, // Array of all video objects
                 lastSynced: serverTimestamp(),
-            });
+            }, { merge: true });
 
             toast({ title: 'Sync Successful!', description: `Synced ${result.videos.length} videos from "${result.channel.title}".`});
 
