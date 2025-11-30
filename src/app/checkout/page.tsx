@@ -2,20 +2,19 @@
 'use client';
 
 import { useCart } from "@/hooks/use-cart";
-import { useUser, useFirebase } from "@/firebase";
+import { useUser } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useState } from "react";
-import { addDoc, collection, serverTimestamp, query, where, getDocs, doc, writeBatch, documentId, getDoc } from "firebase/firestore";
 import { Loader } from "lucide-react";
-import type { Address, Coupon } from "@/lib/types";
+import type { Address } from "@/lib/types";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -29,12 +28,8 @@ const addressSchema = z.object({
 export default function CheckoutPage() {
     const { cart, clearCart } = useCart();
     const { user } = useUser();
-    const { firestore } = useFirebase();
     const router = useRouter();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [couponCode, setCouponCode] = useState('');
-    const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-    const [discount, setDiscount] = useState(0);
 
     const form = useForm<Address>({
         resolver: zodResolver(addressSchema),
@@ -56,104 +51,22 @@ export default function CheckoutPage() {
     }, [cart, router]);
     
     const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-    const total = subtotal - discount;
-
-    const handleApplyCoupon = async () => {
-        if (!firestore || !couponCode.trim()) {
-            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'Please enter a coupon code.'});
-            return;
-        }
-
-        const q = query(collection(firestore, 'coupons'), where('code', '==', couponCode.trim().toUpperCase()));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            toast({ variant: 'destructive', title: 'Invalid Coupon', description: 'This coupon code does not exist.'});
-            setAppliedCoupon(null);
-            setDiscount(0);
-            return;
-        }
-
-        const coupon = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as Coupon;
-
-        // Check expiry
-        if (coupon.expiresAt && coupon.expiresAt.toDate() < new Date()) {
-            toast({ variant: 'destructive', title: 'Coupon Expired', description: 'This coupon has expired.'});
-            return;
-        }
-        
-        // Check usage limit
-        if (coupon.maxUses && (coupon.uses || 0) >= coupon.maxUses) {
-            toast({ variant: 'destructive', title: 'Coupon Limit Reached', description: 'This coupon has reached its usage limit.'});
-            return;
-        }
-
-        let calculatedDiscount = 0;
-        if (coupon.discountType === 'percentage') {
-            calculatedDiscount = subtotal * (coupon.discountValue / 100);
-        } else { // fixed
-            calculatedDiscount = coupon.discountValue;
-        }
-
-        if (calculatedDiscount > subtotal) {
-            calculatedDiscount = subtotal;
-        }
-        
-        setDiscount(calculatedDiscount);
-        setAppliedCoupon(coupon);
-        toast({ title: 'Coupon Applied!', description: `You saved ₹${calculatedDiscount.toFixed(2)}!`});
-    };
 
     const onSubmit = async (data: Address) => {
-        if (!user || !firestore) {
+        if (!user) {
             toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to place an order.' });
             return;
         }
 
         setIsSubmitting(true);
+        
+        // Instead of creating the order, save address to local storage and redirect to payment page
         try {
-            const batch = writeBatch(firestore);
-
-            const orderData = {
-                userId: user.uid,
-                items: cart,
-                subtotal: subtotal,
-                discount: discount,
-                total: total,
-                address: data,
-                createdAt: serverTimestamp(),
-                status: 'Pending',
-                paymentMethod: 'COD', // Placeholder, can be changed after payment integration
-                paymentId: `cod_${Date.now()}`,
-                ...(appliedCoupon && {
-                    appliedCoupon: {
-                        code: appliedCoupon.code,
-                        discountAmount: discount,
-                    }
-                })
-            };
-
-            const orderRef = doc(collection(firestore, 'bookOrders'));
-            batch.set(orderRef, orderData);
-
-            // Increment coupon usage count if a coupon was applied
-            if (appliedCoupon) {
-                const couponRef = doc(firestore, 'coupons', appliedCoupon.id);
-                const couponSnap = await getDoc(couponRef);
-                const currentUses = couponSnap.data()?.uses || 0;
-                batch.update(couponRef, { uses: currentUses + 1 });
-            }
-
-            await batch.commit();
-            
-            clearCart();
-            toast({ title: 'Order Placed!', description: 'Your order has been placed successfully.' });
-            
-            router.push(`/my-orders/${orderRef.id}`);
-
+            localStorage.setItem('shippingAddress', JSON.stringify(data));
+            router.push('/book-payment');
         } catch (error) {
-            console.error("Order submission error:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to place your order.' });
+             console.error("Redirection error:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not proceed to payment.' });
         } finally {
             setIsSubmitting(false);
         }
@@ -197,20 +110,13 @@ export default function CheckoutPage() {
                                 )} />
                                 
                                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>Placing Order...</> : `Place Order (₹${total.toFixed(2)})`}
+                                    {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin"/>Saving Address...</> : `Proceed to Payment (₹${subtotal.toFixed(2)})`}
                                 </Button>
                             </form>
                         </Form>
                     </CardContent>
                 </Card>
                  <div className="space-y-4">
-                    <Card>
-                        <CardHeader><CardTitle>Apply Coupon</CardTitle></CardHeader>
-                        <CardContent className="flex items-center gap-2">
-                            <Input placeholder="Coupon Code" value={couponCode} onChange={e => setCouponCode(e.target.value)} disabled={!!appliedCoupon} />
-                            <Button onClick={handleApplyCoupon} disabled={!!appliedCoupon}>Apply</Button>
-                        </CardContent>
-                    </Card>
                     <Card>
                         <CardHeader><h3 className="text-lg font-semibold">Your Items</h3></CardHeader>
                         <CardContent className="space-y-4 divide-y">
@@ -225,15 +131,15 @@ export default function CheckoutPage() {
                                 </div>
                             ))}
                         </CardContent>
-                        <CardFooter className="flex flex-col gap-2 text-sm">
-                            <div className="w-full flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toFixed(2)}</span></div>
-                            {discount > 0 && <div className="w-full flex justify-between text-green-500"><span>Discount:</span><span>- ₹{discount.toFixed(2)}</span></div>}
-                             <div className="w-full flex justify-between"><span>Shipping:</span><span>Free</span></div>
-                            <div className="w-full flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total:</span><span>₹{total.toFixed(2)}</span></div>
-                        </CardFooter>
+                        <CardHeader className="border-t">
+                             <div className="flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toFixed(2)}</span></div>
+                             <div className="flex justify-between"><span>Shipping:</span><span>Free</span></div>
+                            <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2"><span>Total:</span><span>₹{subtotal.toFixed(2)}</span></div>
+                        </CardHeader>
                     </Card>
                 </div>
             </div>
         </div>
     );
 }
+

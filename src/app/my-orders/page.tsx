@@ -21,7 +21,7 @@ export default function MyOrdersPage() {
         ) : null
     ), [user, firestore]);
 
-    const { data: orders, isLoading, error } = useCollection(ordersQuery);
+    const { data: orders, isLoading } = useCollection(ordersQuery);
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -83,3 +83,4 @@ export default function MyOrdersPage() {
         </div>
     )
 }
+

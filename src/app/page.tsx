@@ -129,7 +129,7 @@ export default function HomePage() {
   const showAiDoubtSolver = useMemo(() => appSettings?.aiDoubtSolverEnabled === true, [appSettings]);
   
   const featureCards = useMemo(() => {
-    const cards = [
+    let cards = [
       { title: 'कोर्सेस', href: '/courses', icon: BookOpen, color: 'bg-blue-500' },
       { title: 'Live Classes', href: '/live-lectures', icon: Clapperboard, color: 'bg-red-500' },
       { title: 'Bookshala', href: '/bookshala', icon: Package, color: 'bg-indigo-500' },
@@ -146,7 +146,12 @@ export default function HomePage() {
         cards.push({ title: 'My Orders', href: '/my-orders', icon: ShoppingBag, color: 'bg-rose-600' });
     }
     
-    return cards;
+    // Ensure it's always 9 cards for a clean grid
+    while (cards.length < 9) {
+        cards.push({ title: 'Explore', href: '/', icon: Star, color: 'bg-gray-500' });
+    }
+    
+    return cards.slice(0, 9);
 }, [showYoutubeFeature]);
 
 
@@ -172,8 +177,8 @@ export default function HomePage() {
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        {featureCards.map((card) => (
-          <Link href={card.href} key={card.title}>
+        {featureCards.map((card, index) => (
+          <Link href={card.href} key={index}>
             <Card
               className={`flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 ${card.color}`}
             >
@@ -223,3 +228,4 @@ export default function HomePage() {
     </div>
   );
 }
+
