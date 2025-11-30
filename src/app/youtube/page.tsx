@@ -10,6 +10,9 @@ import type { SearchOutput } from '@/ai/flows/youtube-search-flow';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Your main channel ID
+const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
+
 export default function YouTubeExplorerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [videos, setVideos] = useState<SearchOutput['videos']>([]);
@@ -17,30 +20,21 @@ export default function YouTubeExplorerPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchInitialVideos = async () => {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const results = await youtubeSearchFlow({ query: 'Sainik School, Military School, Navodaya Vidyalaya' });
-        setVideos(results.videos);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch videos.");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchInitialVideos();
+    // Initially load videos from your main channel
+    handleSearch();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      const results = await youtubeSearchFlow({ query: searchQuery });
+      // The flow will search within the specified channel ID.
+      // The query will filter videos within that channel.
+      const results = await youtubeSearchFlow({ 
+        query: searchQuery, 
+        channelId: QUICKLY_STUDY_CHANNEL_ID 
+      });
       setVideos(results.videos);
     } catch (err: any) {
       setError(err.message || "Failed to fetch videos.");
@@ -55,10 +49,10 @@ export default function YouTubeExplorerPage() {
       <div>
         <h1 className="text-3xl font-bold flex items-center">
             <Youtube className="mr-3 h-8 w-8 text-red-500" />
-            YouTube Explorer
+            Quickly Study YouTube
         </h1>
         <p className="text-muted-foreground">
-          Search for educational videos across YouTube.
+          Explore all educational videos from the official Quickly Study channel.
         </p>
       </div>
 
@@ -69,7 +63,7 @@ export default function YouTubeExplorerPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for any topic on YouTube..."
+              placeholder="Search for videos on our channel..."
               className="flex-grow pl-10"
               disabled={isLoading}
             />
@@ -109,7 +103,7 @@ export default function YouTubeExplorerPage() {
         <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
           <Tv className="mx-auto h-12 w-12" />
           <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-          <p>Your search did not return any results. Please try a different query.</p>
+          <p>Your search did not return any results. Please try a different query or clear the search.</p>
         </div>
       )}
     </div>
