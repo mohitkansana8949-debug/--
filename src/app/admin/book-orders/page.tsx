@@ -1,5 +1,5 @@
 'use client';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useFirebase } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getDoc } from 'firebase/firestore';
 
 function UpdateOrderDialog({ order }: { order: any }) {
     const { firestore } = useFirebase();
@@ -97,14 +98,14 @@ function UpdateOrderDialog({ order }: { order: any }) {
 
 export default function AdminBookOrdersPage() {
     const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
+    const { firestore } = useFirestore();
     const [isAdmin, setIsAdmin] = useState(false);
     const [isAdminLoading, setIsAdminLoading] = useState(true);
 
     useEffect(() => {
         const checkAdmin = async () => {
             if (user && firestore) {
-                 const adminDoc = await doc(firestore, 'roles_admin', user.uid).get();
+                 const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
                  setIsAdmin(adminDoc.exists());
             }
             setIsAdminLoading(false);
@@ -114,14 +115,17 @@ export default function AdminBookOrdersPage() {
         }
     }, [user, firestore, isUserLoading]);
 
-    const ordersQuery = useMemoFirebase(() => (
-        firestore && isAdmin ? query(
-            collection(firestore, 'bookOrders'),
-            orderBy('createdAt', 'desc')
-        ) : null
-    ), [firestore, isAdmin]);
+    const ordersQuery = useMemoFirebase(() => {
+        // Ensure firestore is loaded, admin check is complete, and user is an admin
+        if (!firestore || isAdminLoading || !isAdmin) {
+            return null;
+        }
+        return query(collection(firestore, 'bookOrders'), orderBy('createdAt', 'desc'));
+    }, [firestore, isAdmin, isAdminLoading]);
 
-    const { data: orders, isLoading } = useCollection(ordersQuery);
+    const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
+    
+    const isLoading = isUserLoading || isAdminLoading;
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -132,7 +136,7 @@ export default function AdminBookOrdersPage() {
         }
     };
 
-    if (isLoading || isUserLoading || isAdminLoading) {
+    if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
     }
     
@@ -154,7 +158,7 @@ export default function AdminBookOrdersPage() {
                 <CardDescription>View and manage all book orders placed by users.</CardDescription>
             </CardHeader>
             <CardContent>
-                 {isLoading ? (
+                 {ordersLoading && !orders ? (
                     <div className="flex justify-center p-8"><Loader className="animate-spin"/></div>
                 ) : (
                     <Table>
@@ -182,7 +186,7 @@ export default function AdminBookOrdersPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {!isLoading && orders?.length === 0 && (
+                            {!ordersLoading && orders?.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={6} className="text-center text-muted-foreground p-8">
                                       <ShoppingBag className="mx-auto h-12 w-12" />
