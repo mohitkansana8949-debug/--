@@ -47,8 +47,7 @@ const adminNavItems = [
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
   { href: '/admin/notifications', label: 'Send Notification', icon: Bell },
-  { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
-   { href: '/admin/live-content', label: 'Live Content', icon: Radio },
+  { href: '/admin/live-content', label: 'Live Content', icon: Radio },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
 ];
 
