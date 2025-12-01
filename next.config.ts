@@ -7,14 +7,7 @@ const withPWA = createNextPwa({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  extendWebpack: (config) => {
-    config.watchOptions = {
-        ...config.watchOptions,
-        poll: 1000,
-        aggregateTimeout: 300,
-    }
-    return config;
-  },
+  // The old webpack-specific config is removed.
 });
 
 
