@@ -139,6 +139,7 @@ function PaymentComponent() {
             itemId: itemData.id,
             itemType: itemType as Enrollment['itemType'],
             itemName: itemData.name, // Denormalized name
+            itemPrice: itemData.price, // Denormalized price for revenue calculation
             enrollmentDate: serverTimestamp(),
             paymentMethod: paymentMethod || 'unknown',
             paymentTransactionId: paymentMobileNumber, 

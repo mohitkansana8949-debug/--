@@ -24,7 +24,6 @@ export function WebsiteSplashScreen() {
       return;
     }
 
-    // Show splash for 10 seconds
     const timer = setTimeout(() => {
       setIsFadingOut(true);
     }, 9500); 
@@ -32,7 +31,7 @@ export function WebsiteSplashScreen() {
     const fadeOutTimer = setTimeout(() => {
         setIsLoading(false);
         sessionStorage.setItem('hasVisitedQuicklyStudy', 'true');
-    }, 10000); // Total 10 seconds
+    }, 10000);
     
     return () => {
         clearTimeout(timer);
@@ -64,7 +63,7 @@ export function WebsiteSplashScreen() {
        
        <style jsx>{`
         @keyframes fall-in {
-            from { opacity: 0; transform: translateY(-100vh); }
+            from { opacity: 0; transform: translateY(-20vh); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-fall-in { animation: fall-in 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }

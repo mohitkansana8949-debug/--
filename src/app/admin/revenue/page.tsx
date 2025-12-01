@@ -129,13 +129,13 @@ export default function AdminRevenuePage() {
             let calculatedRevenue = 0;
 
             approvedEnrollments?.forEach(enrollment => {
-                // Ensure itemPrice is a number before adding
-                if (typeof enrollment.itemPrice === 'number') {
-                    calculatedRevenue += enrollment.itemPrice;
-                }
+                const itemPrice = enrollment.itemPrice || 0;
+                const discount = enrollment.appliedCoupon?.discountAmount || 0;
+                calculatedRevenue += (itemPrice - discount);
             });
 
             deliveredOrders?.forEach(order => {
+                // Book orders already have a 'total' which is subtotal - discount
                 if (typeof order.total === 'number') {
                     calculatedRevenue += order.total;
                 }
@@ -245,4 +245,3 @@ export default function AdminRevenuePage() {
     </div>
   );
 }
-

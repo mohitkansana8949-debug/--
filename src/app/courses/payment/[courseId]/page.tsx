@@ -67,7 +67,7 @@ export default function PaymentPage() {
                 enrollmentDate: serverTimestamp(),
                 paymentMethod: paymentMethod || 'unknown',
                 paymentTransactionId: paymentMobileNumber, 
-                status: 'approved',
+                status: 'approved', // Auto-approve course enrollments
             };
             batch.set(courseEnrollmentRef, courseEnrollmentData);
             

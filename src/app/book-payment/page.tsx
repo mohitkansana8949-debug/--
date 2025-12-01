@@ -116,7 +116,6 @@ function BookPaymentComponent() {
         const orderData: Omit<BookOrder, 'id'> = {
             userId: user.uid,
             items: cart,
-            address: shippingAddress,
             subtotal,
             discount,
             total,

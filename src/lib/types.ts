@@ -56,6 +56,7 @@ export interface Enrollment {
   itemId: string; // Can be courseId, ebookId, testId, etc.
   itemType: 'course' | 'ebook' | 'pyq' | 'test';
   itemName: string; // Denormalized for easier display
+  itemPrice?: number; // Denormalized for revenue calculation
   enrollmentDate: Timestamp;
   paymentMethod: string;
   paymentTransactionId: string;
