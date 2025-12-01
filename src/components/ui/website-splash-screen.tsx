@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -20,7 +19,7 @@ export function WebsiteSplashScreen() {
   useEffect(() => {
     setIsMounted(true);
 
-    const DURATION = 10000; // 10 seconds
+    const DURATION = 5000; // 5 seconds
 
     const fadeOutTimer = setTimeout(() => {
       setIsFadingOut(true);
@@ -36,6 +35,15 @@ export function WebsiteSplashScreen() {
     }
 
   }, []);
+
+  useEffect(() => {
+    // Hide splash screen if it has been seen before in the same session
+    if (sessionStorage.getItem('splashSeen')) {
+        setIsLoading(false);
+    } else if (isLoading === false) {
+        sessionStorage.setItem('splashSeen', 'true');
+    }
+  }, [isLoading]);
 
   if (!isMounted || !isLoading) {
     return null;
@@ -112,12 +120,23 @@ export function WebsiteSplashScreen() {
         isFadingOut ? 'opacity-0' : 'opacity-100'
       )}
     >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gray-700">
+            <div
+                className="h-full bg-gradient-to-r from-green-400 to-emerald-600"
+                style={{ animation: `shrink 5s linear forwards` }}
+            />
+        </div>
+
        {customSplashUrl && !settingsLoading ? <CustomSplashScreen url={customSplashUrl} /> : <DefaultSplashScreen />}
        
        <style jsx>{`
         @keyframes fall-in {
             from { opacity: 0; transform: scale(1.1); }
             to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
         }
         .animate-fall-in { animation: fall-in 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
        `}</style>
