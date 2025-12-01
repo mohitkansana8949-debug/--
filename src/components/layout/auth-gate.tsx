@@ -91,11 +91,9 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   // Show a global loader while we determine auth/profile status
   if (isLoading) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <Loader className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    // Return null instead of a loader to prevent hydration mismatch during initial server render.
+    // The splash screen or the page content itself will show a loading state if necessary.
+    return null;
   }
 
   // Logic to prevent flash of content during redirection
