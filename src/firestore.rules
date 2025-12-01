@@ -5,8 +5,12 @@ service cloud.firestore {
     
     // Helper function to check for admin role
     function isAdmin() {
-      // Super admin has permanent access
-      return request.auth.token.email == 'Qukly@study.com' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      // Super admin has permanent access. Check for email in a case-insensitive manner.
+      return request.auth.token.email.lower() == 'qukly@study.com' || exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+    
+    function isBookManager() {
+      return isAdmin() || exists(/databases/$(database)/documents/roles_book_manager/$(request.auth.uid));
     }
 
     // Default allow writes for admins, reads for authenticated users.
@@ -76,11 +80,11 @@ service cloud.firestore {
     // - Users can create their own order.
     // - Users can read their own order document.
     // - Users CANNOT list all orders.
-    // - Admins can list, update, and delete all orders.
+    // - Admins or Book Managers can list, update, and delete all orders.
     match /bookOrders/{orderId} {
         allow create: if request.auth.uid == request.resource.data.userId;
-        allow read: if request.auth.uid == resource.data.userId || isAdmin();
-        allow list, update, delete: if isAdmin();
+        allow read: if request.auth.uid == resource.data.userId || isBookManager();
+        allow list, update, delete: if isBookManager();
     }
 
     // Chat messages can be read and written by any authenticated user
@@ -116,6 +120,10 @@ service cloud.firestore {
 
     // Admin roles can only be managed by other admins
     match /roles_admin/{userId} {
+        allow read, write: if isAdmin();
+    }
+    // Book manager role can only be managed by admins
+    match /roles_book_manager/{userId} {
         allow read, write: if isAdmin();
     }
   }
