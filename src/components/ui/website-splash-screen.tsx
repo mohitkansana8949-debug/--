@@ -9,6 +9,7 @@ import { doc } from 'firebase/firestore';
 export function WebsiteSplashScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
   const { firestore } = useFirebase();
 
   const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
@@ -17,6 +18,14 @@ export function WebsiteSplashScreen() {
   const customSplashUrl = appSettings?.splashScreenUrl || 'https://i.supaimg.com/666f0c51-e68b-44ff-93fe-f7366ef31930.jpg';
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) {
+      return;
+    }
+
     const hasVisited = sessionStorage.getItem('hasVisitedQuicklyStudy');
     
     if (hasVisited) {
@@ -38,7 +47,7 @@ export function WebsiteSplashScreen() {
         clearTimeout(fadeOutTimer);
     }
 
-  }, []);
+  }, [isMounted]);
 
   if (!isLoading) {
     return null;
