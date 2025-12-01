@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { adminDB, adminMessaging } from '@/lib/firebaseAdmin';
 import { firestore } from 'firebase-admin';
 
-
 interface User {
   fcmToken?: string | null;
   // other user properties

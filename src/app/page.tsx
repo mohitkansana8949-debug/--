@@ -41,7 +41,6 @@ const footerItems = [
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
-
 function AiDoubtSolverCard() {
     return (
         <Link href="/ai-doubt-solver" className="block">
@@ -54,6 +53,61 @@ function AiDoubtSolverCard() {
             </div>
         </Link>
     );
+}
+
+function PwaInstallCard() {
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setIsInstallable(true);
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult: any) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    });
+  };
+  
+  // Also check if app is already installed
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
+  }, []);
+
+  if (!isInstallable) return null;
+
+  return (
+    <Card className="bg-primary text-primary-foreground">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Download /> Install Quickly Study App
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>Get a better experience by installing our app on your device. It's fast and free!</p>
+        <Button onClick={handleInstallClick} variant="secondary" className="mt-4 w-full">
+          Install App
+        </Button>
+      </CardContent>
+    </Card>
+  );
 }
 
 
@@ -118,6 +172,8 @@ export default function HomePage() {
           <Link href="/support">Support</Link>
         </Button>
       </div>
+
+      <PwaInstallCard />
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card, index) => (

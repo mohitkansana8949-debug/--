@@ -1,33 +1,22 @@
+
 {
-    "theme_color": "#090E23",
-    "background_color": "#090E23",
-    "display": "standalone",
-    "scope": "/",
-    "start_url": "/",
     "name": "Quickly Study",
-    "short_name": "Quickly Study",
+    "short_name": "QuicklyStudy",
     "description": "The quickest way to study.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#090E23",
+    "theme_color": "#090E23",
     "icons": [
         {
-            "src": "/icon.jpg",
+            "src": "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
             "sizes": "192x192",
             "type": "image/jpeg"
         },
         {
-            "src": "/icon.jpg",
-            "sizes": "256x256",
-            "type": "image/jpeg"
-        },
-        {
-            "src": "/icon.jpg",
-            "sizes": "384x384",
-            "type": "image/jpeg"
-        },
-        {
-            "src": "/icon.jpg",
+            "src": "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
             "sizes": "512x512",
             "type": "image/jpeg"
         }
-    ],
-    "splash_pages": null
+    ]
 }

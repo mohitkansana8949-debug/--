@@ -47,7 +47,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="apple-touch-startup-image" href="/splash.jpg" />
+        <link rel="apple-touch-startup-image" href="https://i.supaimg.com/666f0c51-e68b-44ff-93fe-f7366ef31930.jpg" />
       </head>
       <body className="font-body antialiased">
         <ThemeProvider
