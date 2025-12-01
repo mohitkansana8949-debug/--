@@ -11,18 +11,20 @@ import { User } from '@/lib/types';
 
 
 function initializeAdminApp() {
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccount) {
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountString) {
     console.error("Firebase Admin SDK service account is not set in environment variables.");
     return false;
   }
+
   try {
      // Check if the default app is already initialized
     if (getApps().some(app => app.name === '[DEFAULT]')) {
       return true;
     }
+     const serviceAccount = JSON.parse(serviceAccountString);
     initializeApp({
-      credential: cert(JSON.parse(serviceAccount)),
+      credential: cert(serviceAccount),
     });
     return true;
   } catch (error: any) {
@@ -127,3 +129,4 @@ const notificationFlow = ai.defineFlow(
     }
   }
 );
+
