@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { useTheme } from "next-themes";
 import { Moon, Sun, LogOut, ShoppingCart, ShieldCheck, Bell } from "lucide-react";
@@ -94,7 +93,7 @@ function UserMenu() {
     useEffect(() => {
         const checkAdminStatus = async () => {
             if (user && firestore) {
-                 if (user.email === 'Qukly@study.com') {
+                 if (user.email === 'qukly@study.com') {
                     setIsAdmin(true);
                     setIsAdminLoading(false);
                     return;

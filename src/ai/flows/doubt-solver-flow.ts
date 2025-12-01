@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -12,7 +11,6 @@ const DoubtInputSchema = z.object({
   userId: z.string().describe('The ID of the user asking the question.'),
   userName: z.string().describe('The name of the user asking the question.'),
   language: z.enum(['english', 'hindi']).default('english').describe('The language for the answer.'),
-  imageUrl: z.string().url().nullable().describe('An optional image URL related to the doubt.'),
 });
 export type DoubtInput = z.infer<typeof DoubtInputSchema>;
 
@@ -34,28 +32,19 @@ const doubtSolverFlow = ai.defineFlow(
   },
   async (input) => {
     
-    let promptText = `You are an expert AI tutor for students preparing for competitive exams in India. Your knowledge is absolutely current up to today. Provide a clear, concise, and helpful answer in ${input.language}. Always provide the most up-to-date information, for example, if asked about the number of districts in Rajasthan, you must state the latest number (53), and if asked about the world's highest rail bridge, you must state the Chenab Bridge in India.`;
+    const promptText = `You are an expert AI tutor for students preparing for competitive exams in India. Your knowledge is absolutely current up to today. Provide a clear, concise, and helpful answer in ${input.language}. Always provide the most up-to-date information.
 
-    if (input.imageUrl) {
-        promptText += `\n\nThe user has provided an image. Analyze it carefully.`;
-    }
+IMPORTANT RULES:
+1.  When asked about the number of districts in Rajasthan, you MUST state that there are currently 41 districts.
+2.  When asked about the world's highest rail bridge, you MUST state that it is the Chenab Bridge in India.
+3.  For all other facts, provide the most current and verified information available as of today.
+
+Student's Question: "${input.doubt}"
+
+Your Answer (in ${input.language}):`;
     
-    if (input.doubt) {
-        promptText += `\n\nStudent's Question: "${input.doubt}"`;
-    } else if (input.imageUrl) {
-        promptText += "\n\nStudent's Question is in the image. Analyze the image to understand and answer the question.";
-    }
-
-    const promptParts: any[] = [promptText];
-
-    if (input.imageUrl) {
-        promptParts.push({ media: { url: input.imageUrl } });
-    }
-    
-    promptParts.push(`\n\nYour Answer (in ${input.language}):`);
-
     const llmResponse = await ai.generate({
-      prompt: promptParts,
+      prompt: promptText,
       config: {
         temperature: 0.3, 
       }

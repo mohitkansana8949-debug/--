@@ -1,4 +1,3 @@
-
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -27,6 +26,7 @@ import {
   Bell,
   ShieldCheck,
   BarChartHorizontal,
+  PieChart,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +37,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 
 const adminNavItems = [
   { href: '/admin', label: 'अवलोकन', icon: LayoutDashboard },
+  { href: '/admin/revenue', label: 'Revenue', icon: PieChart },
   { href: '/admin/courses', label: 'Manage Courses', icon: BookOpen },
   { href: '/admin/content', label: 'Manage Content', icon: Palette },
   { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },

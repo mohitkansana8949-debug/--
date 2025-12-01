@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef } from 'react';
 import { useUser, useFirebase } from '@/firebase';
@@ -18,41 +17,17 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export default function AiDoubtSolverPage() {
     const { user } = useUser();
-    const { firebaseApp } = useFirebase();
     const { toast } = useToast();
     
     const [doubt, setDoubt] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [language, setLanguage] = useState<'english' | 'hindi'>('hindi');
     const [answer, setAnswer] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > MAX_FILE_SIZE) {
-                toast({
-                    variant: 'destructive',
-                    title: 'File Too Large',
-                    description: 'Please upload an image smaller than 5 MB.',
-                });
-                return;
-            }
-            setImageFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
 
     const handleSolveDoubt = async () => {
-        if (!doubt.trim() && !imageFile) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please enter a doubt or upload an image.' });
+        if (!doubt.trim()) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please enter a doubt.' });
             return;
         }
         if (!user) {
@@ -62,30 +37,6 @@ export default function AiDoubtSolverPage() {
 
         setIsLoading(true);
         setAnswer(null);
-
-        let imageUrl: string | null = null;
-        if (imageFile && firebaseApp) {
-            try {
-                const storage = getStorage(firebaseApp);
-                const storageRef = ref(storage, `doubts/${user.uid}/${Date.now()}-${imageFile.name}`);
-                const uploadResult = await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(uploadResult.ref);
-            } catch (error) {
-                 console.error("Image upload error:", error);
-                 let description = 'Failed to upload image. Please check your network and try again.';
-                 if (error instanceof FirebaseError) {
-                     if (error.code === 'storage/unauthorized') {
-                         description = "You don't have permission to upload files. Please check storage rules."
-                     } else {
-                         description = `Storage Error: ${error.message}`;
-                     }
-                 }
-                 toast({ variant: 'destructive', title: 'Image Upload Failed', description });
-                 setAnswer("Sorry, I couldn't process your request because the image upload failed.");
-                 setIsLoading(false);
-                 return;
-            }
-        }
         
         try {
             const response = await solveDoubt({
@@ -93,7 +44,6 @@ export default function AiDoubtSolverPage() {
                 userId: user.uid,
                 userName: user.displayName || 'Student',
                 language,
-                imageUrl,
             });
             setAnswer(response.answer);
         } catch (error) {
@@ -114,7 +64,7 @@ export default function AiDoubtSolverPage() {
                         Quickly Study Doubt Solver
                     </CardTitle>
                     <CardDescription>
-                        Ask any question by typing or uploading an image. Our AI will help you out.
+                        Ask any question by typing. Our AI will help you out.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 space-y-4">
@@ -143,26 +93,7 @@ export default function AiDoubtSolverPage() {
                         />
                     </div>
                     
-                    <div className="space-y-2">
-                        <Label>Image (Optional)</Label>
-                        {imagePreview ? (
-                            <div className="relative w-32 h-32">
-                                <Image src={imagePreview} alt="Image preview" layout="fill" className="rounded-md object-cover" />
-                                <Button size="icon" variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={() => {setImageFile(null); setImagePreview(null)}}>
-                                    <X size={14} />
-                                </Button>
-                            </div>
-                        ) : (
-                            <div>
-                                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                    <ImageIcon className="mr-2" /> Upload Image
-                                </Button>
-                                <input type="file" ref={fileInputRef} onChange={handleImageChange} accept="image/*" className="hidden" />
-                            </div>
-                        )}
-                    </div>
-                    
-                    <Button onClick={handleSolveDoubt} disabled={isLoading || (!doubt.trim() && !imageFile)}>
+                    <Button onClick={handleSolveDoubt} disabled={isLoading || !doubt.trim()}>
                         {isLoading ? <Loader className="animate-spin"/> : <Wand2 className="mr-2"/>}
                         Get Answer
                     </Button>

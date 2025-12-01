@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -15,12 +14,12 @@ import {
   Book,
   FileQuestion,
   Newspaper,
-  BarChart,
   ShoppingBag,
   DollarSign,
+  PieChart,
 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import { subDays, format, startOfDay } from 'date-fns';
 
 const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate' | 'createdAt') => {
@@ -39,6 +38,8 @@ const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollme
 
     return dailyCounts;
 };
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
 
 export default function AdminDashboardOverview() {
   const { firestore } = useFirebase();
@@ -111,7 +112,8 @@ export default function AdminDashboardOverview() {
 
               const bookRevenue = bookOrdersSnap.docs.reduce((acc, doc) => acc + (doc.data().total || 0), 0);
               const enrollmentRevenue = enrollmentsSnap.docs.reduce((acc, doc) => {
-                  const itemPrice = doc.data().itemPrice || 0; // Assuming price is stored
+                  // Assuming itemPrice is stored, otherwise this needs adjustment
+                  const itemPrice = doc.data().itemPrice || 0; 
                   return acc + itemPrice;
               }, 0);
               const totalRevenue = bookRevenue + enrollmentRevenue;
@@ -156,8 +158,14 @@ export default function AdminDashboardOverview() {
       { title: 'PYQs', icon: FileQuestion, value: stats.pyqs },
       { title: 'Tests', icon: Newspaper, value: stats.tests },
       { title: 'एनरोलमेंट्स', icon: CreditCard, value: stats.enrollments },
-      { title: 'Book Orders', icon: ShoppingBag, value: stats.bookOrders },
   ];
+  
+  const revenueSplit = [
+      { name: 'Ashok (Quickly Study Owner)', value: stats.totalRevenue * 0.80 },
+      { name: 'App Management', value: stats.totalRevenue * 0.15 },
+      { name: 'Mohit (App Developer)', value: stats.totalRevenue * 0.05 },
+  ];
+
 
   const loading = isUserLoading || isAdminLoading || isDataLoading;
 
@@ -188,13 +196,25 @@ export default function AdminDashboardOverview() {
               </CardHeader>
               <CardContent>{loading ? <Loader className="animate-spin"/> : <div className="text-2xl font-bold">₹{stats.totalRevenue.toFixed(2)}</div>}</CardContent>
            </Card>
-           <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">आपका हिस्सा (70%)</CardTitle>
-                  <DollarSign className="h-4 w-4 text-muted-foreground text-green-500" />
-              </CardHeader>
-              <CardContent>{loading ? <Loader className="animate-spin"/> : <div className="text-2xl font-bold text-green-500">₹{(stats.totalRevenue * 0.70).toFixed(2)}</div>}</CardContent>
-           </Card>
+           <Card className="lg:col-span-2">
+                <CardHeader>
+                    <CardTitle className="flex items-center"><PieChart className="mr-2" /> Revenue Split</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[150px]">
+                   <ResponsiveContainer width="100%" height="100%">
+                        {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
+                            <RechartsPieChart>
+                                <Pie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
+                                    {revenueSplit.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                            </RechartsPieChart>
+                        )}
+                   </ResponsiveContainer>
+                </CardContent>
+            </Card>
            {statCards.map(stat => (
                 <Card key={stat.title}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -236,26 +256,6 @@ export default function AdminDashboardOverview() {
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                             <ChartContainer config={{ count: { label: "Enrollments", color: "hsl(var(--chart-2))" } }}>
                                 <RechartsBarChart data={chartData.enrollments} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
-                                    <YAxis allowDecimals={false} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <Bar dataKey="count" fill="var(--color-count)" radius={4} />
-                                </RechartsBarChart>
-                            </ChartContainer>
-                        )}
-                   </ResponsiveContainer>
-                </CardContent>
-            </Card>
-             <Card className="xl:col-span-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center"><ShoppingBag className="mr-2" /> New Book Orders (Last 7 Days)</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2 h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
-                            <ChartContainer config={{ count: { label: "Orders", color: "hsl(var(--chart-3))" } }}>
-                                <RechartsBarChart data={chartData.bookOrders} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
                                     <YAxis allowDecimals={false} />

@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -28,6 +27,7 @@ import {
   Wand2,
   LifeBuoy,
   ShoppingCart,
+  UserCheck,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
@@ -37,7 +37,7 @@ import { useCart } from '@/hooks/use-cart';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Cart', href: '/cart', icon: ShoppingCart },
+    { name: 'Bookshala', href: '/bookshala', icon: Package },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
@@ -62,16 +62,15 @@ function PwaInstallCard() {
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
+      // Check if the app is already installed
+      if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+          return;
+      }
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
     
-    // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
-      // Already installed, do nothing
-    } else {
-       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    }
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     return () => {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -111,6 +110,23 @@ function PwaInstallCard() {
   );
 }
 
+function SubmitResultCard() {
+     return (
+        <Link href="/submit-result" className="block">
+            <Card className="bg-gradient-to-br from-green-500 to-teal-600 text-white transition-transform hover:scale-105">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <UserCheck /> Submit Your Result
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>Did you clear an exam with our help? Share your success with us!</p>
+                </CardContent>
+            </Card>
+        </Link>
+    );
+}
+
 
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
@@ -136,16 +152,11 @@ export default function HomePage() {
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
       { title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library },
+      { title: 'Bookshala', href: '/bookshala', gradient: 'bg-gradient-to-br from-slate-500 to-gray-600', icon: Package },
     ];
     
-    if (showYoutubeFeature) {
-        cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
-    } else {
-        cards.push({ title: 'Order Support', href: '/my-purchases', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: LifeBuoy });
-    }
-    
-    return cards.slice(0, 9);
-}, [showYoutubeFeature]);
+    return cards;
+}, []);
 
 
   if (isUserLoading || settingsLoading) {
@@ -170,6 +181,18 @@ export default function HomePage() {
       </div>
 
       <PwaInstallCard />
+
+      {showYoutubeFeature ? (
+          <Link href="/youtube" className="block">
+            <Card className="bg-gradient-to-br from-rose-500 to-red-600 text-white">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Youtube /> YouTube</CardTitle>
+                </CardHeader>
+            </Card>
+          </Link>
+      ) : (
+          <SubmitResultCard />
+      )}
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card, index) => (
@@ -213,11 +236,6 @@ export default function HomePage() {
             const Icon = item.icon;
             return (
                 <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/4 text-center relative">
-                    {item.name === 'Cart' && cart.length > 0 && (
-                        <span className="absolute top-0 right-3 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                            {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                        </span>
-                    )}
                     <Icon className="h-5 w-5 mb-1"/> 
                     <span>{item.name}</span>
                 </Link>

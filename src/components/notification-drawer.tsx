@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -16,21 +15,55 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { hi } from 'date-fns/locale';
 import Image from "next/image";
+import { useState, useEffect } from 'react';
 
 export function NotificationDrawer() {
     const firestore = useFirestore();
+    const [hasNew, setHasNew] = useState(false);
+    const [lastOpened, setLastOpened] = useState<Date | null>(null);
 
     const notificationsQuery = useMemoFirebase(() => (
         firestore ? query(collection(firestore, 'notifications'), orderBy('createdAt', 'desc')) : null
     ), [firestore]);
 
     const { data: notifications, isLoading, error } = useCollection(notificationsQuery);
+    
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+             const storedTime = localStorage.getItem('lastNotificationCheck');
+             setLastOpened(storedTime ? new Date(storedTime) : null);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (notifications && notifications.length > 0 && lastOpened) {
+            const latestNotifTime = notifications[0].createdAt?.toDate();
+            if (latestNotifTime && latestNotifTime > lastOpened) {
+                setHasNew(true);
+            } else {
+                setHasNew(false);
+            }
+        } else if (notifications && notifications.length > 0 && !lastOpened) {
+            setHasNew(true);
+        }
+    }, [notifications, lastOpened]);
+
+    const handleOpenChange = (open: boolean) => {
+        if (open) {
+            const now = new Date();
+            localStorage.setItem('lastNotificationCheck', now.toISOString());
+            setLastOpened(now);
+            setHasNew(false);
+        }
+    }
+
 
     return (
-        <Sheet>
+        <Sheet onOpenChange={handleOpenChange}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5" />
+                    {hasNew && <span className="absolute top-2 right-2 flex h-2 w-2 rounded-full bg-red-500" />}
                     <span className="sr-only">Notifications</span>
                 </Button>
             </SheetTrigger>
