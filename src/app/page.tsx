@@ -31,6 +31,7 @@ import {
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
 
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
@@ -97,18 +98,19 @@ function PwaInstallCard() {
 
 function AiDoubtSolverCard() {
     return (
-        <Card className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Wand2 /> AI Doubt Solver
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p>Have a question? Get instant answers from our AI tutor.</p>
-                <Button asChild variant="secondary" className="mt-4 w-full">
+        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-1">
+            <div className="flex flex-col sm:flex-row items-center justify-between h-full w-full bg-background/80 dark:bg-background/50 rounded-md p-6 gap-4">
+                <div className="text-center sm:text-left">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-white">
+                        <Wand2 />
+                        Quickly Study Doubt Solver
+                    </h3>
+                    <p className="text-sm text-white/80 mt-1">Stuck on a question? Get instant answers from our AI tutor.</p>
+                </div>
+                <Button asChild variant="secondary" className="w-full sm:w-auto flex-shrink-0">
                     <Link href="/ai-doubt-solver">Ask a Doubt</Link>
                 </Button>
-            </CardContent>
+            </div>
         </Card>
     );
 }
@@ -170,14 +172,15 @@ export default function HomePage() {
       </div>
 
       <PwaInstallCard />
-      {showAiDoubtSolver && <AiDoubtSolverCard />}
-
-
+      
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card, index) => (
           <Link href={card.href} key={index}>
             <Card
-              className={`flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 ${card.gradient} animate-gradient-xy`}
+              className={cn(
+                "flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105",
+                card.gradient
+              )}
             >
               <card.icon className="mb-2 h-6 w-6 md:h-8 md:w-8" />
               <span className="font-semibold text-xs md:text-sm">{card.title}</span>
@@ -185,6 +188,8 @@ export default function HomePage() {
           </Link>
         ))}
       </div>
+
+      {showAiDoubtSolver && <AiDoubtSolverCard />}
       
        <div>
         <h2 className="text-2xl font-bold mb-4 flex items-center"><Users className="mr-2 h-6 w-6" /> हमारे एजुकेटर्स</h2>
