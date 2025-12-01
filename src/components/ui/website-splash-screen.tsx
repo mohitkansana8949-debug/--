@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 
 export function WebsiteSplashScreen() {
@@ -15,53 +15,95 @@ export function WebsiteSplashScreen() {
   const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
   const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
-  const customSplashUrl = appSettings?.splashScreenUrl || 'https://i.supaimg.com/666f0c51-e68b-44ff-93fe-f7366ef31930.jpg';
+  const customSplashUrl = appSettings?.splashScreenUrl;
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
 
-  useEffect(() => {
-    if (!isMounted) {
-      return;
-    }
-
-    const hasVisited = sessionStorage.getItem('hasVisitedQuicklyStudy');
-    
-    if (hasVisited) {
-      setIsLoading(false);
-      return;
-    }
-
-    const DURATION = 20000; // 20 seconds
+    const DURATION = 10000; // 10 seconds
 
     const fadeOutTimer = setTimeout(() => {
       setIsFadingOut(true);
-    }, DURATION); 
+    }, DURATION - 500);
 
     const unmountTimer = setTimeout(() => {
         setIsLoading(false);
-        sessionStorage.setItem('hasVisitedQuicklyStudy', 'true');
-    }, DURATION + 500); // 500ms for fade-out animation
+    }, DURATION);
     
     return () => {
         clearTimeout(fadeOutTimer);
         clearTimeout(unmountTimer);
     }
 
-  }, [isMounted]);
+  }, []);
 
-  if (!isLoading) {
+  if (!isMounted || !isLoading) {
     return null;
   }
   
+  const DefaultSplashScreen = () => (
+    <div className="flex flex-col items-center justify-center gap-4">
+        <h3 className="text-sm text-center font-semibold tracking-widest uppercase text-white/80">
+            Made with ❤️ in India
+        </h3>
+        <svg
+            className="h-20 w-20 text-white"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            >
+            <path
+                d="M12 2L2 7L12 12L22 7L12 2Z"
+                stroke="url(#grad1)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M2 17L12 22L22 17"
+                stroke="url(#grad2)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M2 12L12 17L22 12"
+                stroke="url(#grad3)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <defs>
+                <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#F87171" />
+                <stop offset="100%" stopColor="#FBBF24" />
+                </linearGradient>
+                <linearGradient id="grad2" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#3B82F6" />
+                <stop offset="100%" stopColor="#8B5CF6" />
+                </linearGradient>
+                <linearGradient id="grad3" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#6EE7B7" />
+                </linearGradient>
+            </defs>
+        </svg>
+
+        <h1 className="text-4xl font-bold tracking-tight text-center bg-clip-text text-transparent bg-gradient-to-r from-red-400 via-yellow-400 to-purple-500">
+            Quickly Study
+        </h1>
+        <h2 className="text-lg font-medium text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-teal-300 to-green-300">
+            The Quickest Way of Study
+        </h2>
+    </div>
+  );
+
   const CustomSplashScreen = ({ url }: {url: string}) => (
        <div 
         className="w-full h-full bg-cover bg-center animate-fall-in"
         style={{ backgroundImage: `url(${url})` }}
       />
   );
-
 
   return (
     <div
@@ -70,12 +112,12 @@ export function WebsiteSplashScreen() {
         isFadingOut ? 'opacity-0' : 'opacity-100'
       )}
     >
-       {settingsLoading ? null : <CustomSplashScreen url={customSplashUrl} />}
+       {customSplashUrl && !settingsLoading ? <CustomSplashScreen url={customSplashUrl} /> : <DefaultSplashScreen />}
        
        <style jsx>{`
         @keyframes fall-in {
-            from { opacity: 0; transform: translateY(-20vh); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: scale(1.1); }
+            to { opacity: 1; transform: scale(1); }
         }
         .animate-fall-in { animation: fall-in 1.5s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
        `}</style>
