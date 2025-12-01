@@ -7,6 +7,9 @@ import { getFirestore, collection, getDocs, query, where } from 'firebase/firest
 import { initializeFirebase } from '@/firebase';
 import admin from 'firebase-admin';
 import { User } from '@/lib/types';
+import { config } from 'dotenv';
+
+config();
 
 
 function initializeAdminApp() {
@@ -24,7 +27,6 @@ function initializeAdminApp() {
     try {
       serviceAccount = JSON.parse(serviceAccountString);
     } catch (parseError: any) {
-      // Throw a more specific error if parsing fails
       throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
     }
 
@@ -33,7 +35,6 @@ function initializeAdminApp() {
     });
   } catch (error: any) {
     console.error("Failed to initialize Firebase Admin SDK:", error.message);
-    // Re-throw the error to be caught by the calling flow
     throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
   }
 }
@@ -70,7 +71,6 @@ const notificationFlow = ai.defineFlow(
       initializeAdminApp();
       const { firestore } = initializeFirebase();
 
-      // 1. Fetch all users who have an FCM token
       const usersRef = collection(firestore, 'users');
       const q = query(usersRef, where('fcmToken', '!=', null));
       const usersSnapshot = await getDocs(q);
@@ -88,7 +88,6 @@ const notificationFlow = ai.defineFlow(
         };
       }
 
-      // 2. Send multicast message
       const message = {
         notification: {
           title,
@@ -98,7 +97,7 @@ const notificationFlow = ai.defineFlow(
         tokens: tokens,
         webpush: {
           fcmOptions: {
-            link: '/', // Link to open when notification is clicked
+            link: '/', 
           },
         },
       };
