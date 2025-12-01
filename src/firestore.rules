@@ -128,7 +128,7 @@ service cloud.firestore {
     match /roles_admin/{userId} {
         allow read, write: if isSuperAdmin();
     }
-    // Book manager role can only be managed by admins
+    // Book manager role can only be managed by the super admin
     match /roles_book_manager/{userId} {
         allow read, write: if isSuperAdmin();
     }

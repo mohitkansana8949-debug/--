@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useTheme } from "next-themes";
@@ -50,7 +51,6 @@ export function AppHeader() {
   if (!user) {
      return (
        <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30 justify-end">
-         <ThemeToggle />
        </header>
     );
   }
@@ -62,23 +62,10 @@ export function AppHeader() {
       <div className="w-full flex-1">
         {/* Future search bar can go here */}
       </div>
-      <ThemeToggle />
       <NotificationDrawer />
       <UserMenu />
     </header>
   );
-}
-
-function ThemeToggle() {
-    const { setTheme, theme } = useTheme();
-
-    return (
-      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-      </Button>
-    )
 }
 
 function UserMenu() {
@@ -93,7 +80,7 @@ function UserMenu() {
     useEffect(() => {
         const checkAdminStatus = async () => {
             if (user && firestore) {
-                 if (user.email === 'qukly@study.com') {
+                 if (user.email?.toLowerCase() === 'qukly@study.com') {
                     setIsAdmin(true);
                     setIsAdminLoading(false);
                     return;
