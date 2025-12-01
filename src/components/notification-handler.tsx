@@ -36,8 +36,12 @@ export function NotificationHandler() {
             toast({ variant: 'destructive', title: 'Configuration Error', description: 'Cannot enable notifications due to a server configuration issue.' });
             return;
           }
+          
+          // Explicitly register the service worker
+          const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
 
-          const currentToken = await getToken(messaging, { vapidKey });
+          const currentToken = await getToken(messaging, { vapidKey: vapidKey, serviceWorkerRegistration: swRegistration });
+
           if (currentToken) {
             const userDocRef = doc(firestore, 'users', user.uid);
             await updateDoc(userDocRef, { fcmToken: currentToken });
