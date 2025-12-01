@@ -30,6 +30,7 @@ export default function AppSettingsPage() {
 
     // App settings state
     const [appLogoUrl, setAppLogoUrl] = useState('');
+    const [splashScreenUrl, setSplashScreenUrl] = useState('');
     const [appUrl, setAppUrl] = useState('');
     const [youtubeFeatureEnabled, setYoutubeFeatureEnabled] = useState(true);
     const [aiDoubtSolverEnabled, setAiDoubtSolverEnabled] = useState(false);
@@ -70,6 +71,7 @@ export default function AppSettingsPage() {
     useEffect(() => {
         if (appSettings) {
             setAppLogoUrl(appSettings.logoUrl || '');
+            setSplashScreenUrl(appSettings.splashScreenUrl || '');
             setAppUrl(appSettings.appUrl || '');
             setYoutubeFeatureEnabled(appSettings.youtubeFeatureEnabled !== false);
             setAiDoubtSolverEnabled(appSettings.aiDoubtSolverEnabled === true);
@@ -112,6 +114,7 @@ export default function AppSettingsPage() {
         setIsAppSubmitting(true);
         const settingsUpdate = { 
             logoUrl: appLogoUrl, 
+            splashScreenUrl: splashScreenUrl,
             appUrl: appUrl,
             youtubeFeatureEnabled: youtubeFeatureEnabled,
             aiDoubtSolverEnabled: aiDoubtSolverEnabled,
@@ -172,20 +175,30 @@ export default function AppSettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>ऐप सेटिंग्स</CardTitle>
-                        <CardDescription>ऐप का लोगो, फ़ीचर और अन्य जानकारी मैनेज करें।</CardDescription>
+                        <CardDescription>ऐप का लोगो, स्प्लैश स्क्रीन, फ़ीचर और अन्य जानकारी मैनेज करें।</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-8">
                         {appSettingsLoading ? <SettingsSkeleton /> : (
                             <>
                                 <div className="space-y-4">
-                                    <Label htmlFor="app-logo-url">ऐप लोगो URL</Label>
+                                    <Label htmlFor="splash-screen-url">वेबसाइट स्प्लैश स्क्रीन URL</Label>
+                                     {splashScreenUrl && (
+                                        <div className="mt-2 w-full aspect-video relative">
+                                            <Image src={splashScreenUrl} alt="Splash Screen Preview" layout="fill" objectFit="cover" className="rounded-md border p-1" />
+                                        </div>
+                                    )}
+                                    <Input id="splash-screen-url" type="text" placeholder="https://example.com/splash.jpg" value={splashScreenUrl} onChange={e => setSplashScreenUrl(e.target.value)} />
+                                    <p className="text-sm text-muted-foreground">यह इमेज वेबसाइट लोड होने पर 10 सेकंड के लिए दिखेगी।</p>
+                                </div>
+                                <div className="space-y-4">
+                                    <Label htmlFor="app-logo-url">PWA आइकॉन URL</Label>
                                      {appLogoUrl && (
                                         <div className="mt-2 w-48 h-48 relative">
                                             <Image src={appLogoUrl} alt="App Logo Preview" layout="fill" objectFit="contain" className="rounded-md border p-1" />
                                         </div>
                                     )}
                                     <Input id="app-logo-url" type="text" placeholder="https://example.com/logo.png" value={appLogoUrl} onChange={e => setAppLogoUrl(e.target.value)} />
-                                    <p className="text-sm text-muted-foreground">यह लोगो PWA (प्रोग्रेसिव वेब ऐप) के लिए इस्तेमाल होगा।</p>
+                                    <p className="text-sm text-muted-foreground">यह आइकॉन PWA (प्रोग्रेसिव वेब ऐप) के लिए इस्तेमाल होगा।</p>
                                 </div>
                                 <div className="space-y-4">
                                     <Label htmlFor="app-url">App Base URL</Label>
