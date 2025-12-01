@@ -1,6 +1,6 @@
 
 'use client';
-import { useCollection, useMemoFirebase, useFirebase } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirebase, useUser } from '@/firebase';
 import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader, Edit, Trash2, ShoppingBag } from 'lucide-react';
@@ -24,9 +24,11 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { useMemo } from 'react';
 
 export default function AdminUsersPage() {
     const { firestore } = useFirebase();
+    const { user: currentUser } = useUser();
     const { toast } = useToast();
 
     const usersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
@@ -38,11 +40,25 @@ export default function AdminUsersPage() {
     const bookManagersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'roles_book_manager') : null), [firestore]);
     const { data: bookManagers, isLoading: bookManagersLoading } = useCollection(bookManagersQuery);
     
-    const adminUids = useMemoFirebase(() => new Set(admins?.map(admin => admin.id)), [admins]);
-    const bookManagerUids = useMemoFirebase(() => new Set(bookManagers?.map(manager => manager.id)), [bookManagers]);
+    const adminUids = useMemo(() => new Set(admins?.map(admin => admin.id)), [admins]);
+    const bookManagerUids = useMemo(() => new Set(bookManagers?.map(manager => manager.id)), [bookManagers]);
+
+    // Super admin can manage all roles.
+    const isSuperAdmin = currentUser?.email?.toLowerCase() === 'qukly@study.com';
+    const canManageBookManager = currentUser?.email?.toLowerCase() === 'qukly@study.com';
 
     const handleRoleToggle = async (userId: string, role: 'admin' | 'book_manager', currentIsRole: boolean) => {
         if (!firestore) return;
+
+        // Check permissions before proceeding
+        if (role === 'admin' && !isSuperAdmin) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only the super admin can manage admin roles.' });
+            return;
+        }
+         if (role === 'book_manager' && !canManageBookManager) {
+            toast({ variant: 'destructive', title: 'Permission Denied', description: 'Only the super admin can manage book manager roles.' });
+            return;
+        }
         
         const roleCollectionName = `roles_${role}`;
         const roleDocRef = doc(firestore, roleCollectionName, userId);
@@ -116,7 +132,7 @@ export default function AdminUsersPage() {
                                                     id={`admin-switch-${user.id}`}
                                                     checked={isCurrentUserAdmin}
                                                     onCheckedChange={() => handleRoleToggle(user.id, 'admin', isCurrentUserAdmin)}
-                                                    disabled={user.email?.toLowerCase() === 'qukly@study.com'}
+                                                    disabled={!isSuperAdmin || user.email?.toLowerCase() === 'qukly@study.com'}
                                                     className="data-[state=checked]:bg-destructive"
                                                 />
                                                 <Label htmlFor={`admin-switch-${user.id}`}>Admin</Label>
@@ -126,6 +142,7 @@ export default function AdminUsersPage() {
                                                     id={`book-manager-switch-${user.id}`}
                                                     checked={isCurrentUserBookManager}
                                                     onCheckedChange={() => handleRoleToggle(user.id, 'book_manager', isCurrentUserBookManager)}
+                                                     disabled={!canManageBookManager}
                                                     className="data-[state=checked]:bg-blue-600"
                                                 />
                                                 <Label htmlFor={`book-manager-switch-${user.id}`}>Book Manager</Label>

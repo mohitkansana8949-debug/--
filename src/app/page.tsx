@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
   UserCheck,
   LifeBuoy,
   MessageCircle,
+  Wand2,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
@@ -93,6 +95,24 @@ function PwaInstallCard() {
   );
 }
 
+function AiDoubtSolverCard() {
+    return (
+        <Card className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Wand2 /> AI Doubt Solver
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p>Have a question? Get instant answers from our AI tutor.</p>
+                <Button asChild variant="secondary" className="mt-4 w-full">
+                    <Link href="/ai-doubt-solver">Ask a Doubt</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
@@ -104,6 +124,7 @@ export default function HomePage() {
   const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
   const showYoutubeFeature = useMemo(() => appSettings?.youtubeFeatureEnabled !== false, [appSettings]);
+  const showAiDoubtSolver = useMemo(() => appSettings?.aiDoubtSolverEnabled === true, [appSettings]);
   
   const featureCards = useMemo(() => {
     let cards = [
@@ -149,6 +170,8 @@ export default function HomePage() {
       </div>
 
       <PwaInstallCard />
+      {showAiDoubtSolver && <AiDoubtSolverCard />}
+
 
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card, index) => (

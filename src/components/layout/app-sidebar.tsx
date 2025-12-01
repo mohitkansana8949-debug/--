@@ -17,11 +17,10 @@ import {
 import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from "@/firebase";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "../ui/separator";
 import { useState, useEffect } from "react";
-import { useLocalStorage } from '@/hooks/use-local-storage';
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -66,23 +65,19 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { isMobile, setOpenMobile } = useSidebar();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isAdminAuthenticated] = useLocalStorage('isAdminAuthenticated', false);
-
+  
   useEffect(() => {
-    const checkAdmin = async () => {
-      if (user && firestore) {
-        if (user.email && user.email.toLowerCase() === 'qukly@study.com') {
-          setIsAdmin(true);
+      if (!user || !firestore) {
+          setIsAdmin(false);
           return;
-        }
-        const adminDocRef = doc(firestore, 'roles_admin', user.uid);
-        const adminDoc = await getDoc(adminDocRef);
-        setIsAdmin(adminDoc.exists());
-      } else {
-        setIsAdmin(false);
-      }
-    };
-    checkAdmin();
+      };
+
+      const adminDocRef = doc(firestore, 'roles_admin', user.uid);
+      const unsubscribe = onSnapshot(adminDocRef, (doc) => {
+          setIsAdmin(doc.exists());
+      });
+      
+      return () => unsubscribe();
   }, [user, firestore]);
   
 
@@ -113,11 +108,9 @@ export function AppSidebar() {
   const navItems = [
     { href: "/", label: "होम", icon: Home, tooltip: "Dashboard" },
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
-    { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
     { href: "/my-progress", label: "My Progress", icon: BarChartHorizontal, tooltip: "My Progress" },
     { href: "/submit-result", label: "Submit Result", icon: UserCheck, tooltip: "Submit Result" },
-    ...(isAdminAuthenticated && isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
-    { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
+    ...(isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
   ];
   
   const socialLinks = [
