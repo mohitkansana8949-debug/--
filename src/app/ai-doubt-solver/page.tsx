@@ -74,10 +74,14 @@ export default function AiDoubtSolverPage() {
                  console.error("Image upload error:", error);
                  let description = 'Failed to upload image. Please check your network and try again.';
                  if (error instanceof FirebaseError) {
-                     description = `Storage Error: ${error.message}`;
+                     if (error.code === 'storage/unauthorized') {
+                         description = "You don't have permission to upload files. Please check storage rules."
+                     } else {
+                         description = `Storage Error: ${error.message}`;
+                     }
                  }
-                 toast({ variant: 'destructive', title: 'Upload Error', description });
-                 setAnswer("Sorry, I couldn't upload your image. Please try again.");
+                 toast({ variant: 'destructive', title: 'Image Upload Failed', description });
+                 setAnswer("Sorry, I couldn't process your request because the image upload failed.");
                  setIsLoading(false);
                  return;
             }

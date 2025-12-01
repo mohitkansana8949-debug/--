@@ -34,7 +34,7 @@ const doubtSolverFlow = ai.defineFlow(
   },
   async (input) => {
     
-    let promptText = `You are an expert AI tutor for students preparing for competitive exams in India. A student has a doubt. Provide a clear, concise, and helpful answer in ${input.language}.`;
+    let promptText = `You are an expert AI tutor for students preparing for competitive exams in India. Your knowledge is absolutely current up to today. Provide a clear, concise, and helpful answer in ${input.language}. Always provide the most up-to-date information, for example, if asked about the number of districts in Rajasthan, you must state the latest number (53), and if asked about the world's highest rail bridge, you must state the Chenab Bridge in India.`;
 
     if (input.imageUrl) {
         promptText += `\n\nThe user has provided an image. Analyze it carefully.`;
@@ -57,7 +57,7 @@ const doubtSolverFlow = ai.defineFlow(
     const llmResponse = await ai.generate({
       prompt: promptParts,
       config: {
-        temperature: 0.5, 
+        temperature: 0.3, 
       }
     });
 
