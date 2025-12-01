@@ -11,27 +11,25 @@ import { User } from '@/lib/types';
 
 
 function initializeAdminApp() {
+  // Directly check if the default app is already initialized.
+  if (getApps().find(app => app.name === '[DEFAULT]')) {
+    return true;
+  }
+
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountString) {
-    console.error("Firebase Admin SDK service account is not set in environment variables.");
+    console.error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
     return false;
   }
 
   try {
-     // Check if the default app is already initialized
-    if (getApps().some(app => app.name === '[DEFAULT]')) {
-      return true;
-    }
-     const serviceAccount = JSON.parse(serviceAccountString);
+    const serviceAccount = JSON.parse(serviceAccountString);
     initializeApp({
       credential: cert(serviceAccount),
     });
     return true;
   } catch (error: any) {
-     if (error.code === 'app/duplicate-app') {
-      return true; // App is already initialized
-    }
-    console.error("Failed to initialize Firebase Admin SDK:", error);
+    console.error("Failed to initialize Firebase Admin SDK:", error.message);
     return false;
   }
 }
@@ -129,4 +127,3 @@ const notificationFlow = ai.defineFlow(
     }
   }
 );
-
