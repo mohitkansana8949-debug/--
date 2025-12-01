@@ -16,6 +16,7 @@ import {
   Tooltip,
   Legend,
   ChartData,
+  ArcElement,
 } from 'chart.js';
 import { PolarArea, Radar } from 'react-chartjs-2';
 
@@ -25,7 +26,8 @@ ChartJS.register(
   LineElement,
   Filler,
   Tooltip,
-  Legend
+  Legend,
+  ArcElement
 );
 
 type ProgressData = {
