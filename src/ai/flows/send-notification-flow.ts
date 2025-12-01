@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -10,24 +9,32 @@ import { User } from '@/lib/types';
 
 
 function initializeAdminApp() {
-  if (admin.apps.length === 0) {
-    try {
-      const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-      if (!serviceAccountString) {
-        throw new Error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
-      }
-      // Parse the service account JSON from the environment variable
-      const serviceAccount = JSON.parse(serviceAccountString);
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (error: any) {
-      console.error("Failed to initialize Firebase Admin SDK:", error.message);
-      // Re-throw the error to be caught by the calling flow
-      throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
-    }
+  if (admin.apps.length > 0) {
+    return admin.app();
   }
-  return admin.app();
+  
+  try {
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountString) {
+      throw new Error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
+    }
+    
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountString);
+    } catch (parseError: any) {
+      // Throw a more specific error if parsing fails
+      throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
+    }
+
+    return admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (error: any) {
+    console.error("Failed to initialize Firebase Admin SDK:", error.message);
+    // Re-throw the error to be caught by the calling flow
+    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+  }
 }
 
 
