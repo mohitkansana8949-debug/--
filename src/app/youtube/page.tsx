@@ -104,8 +104,7 @@ export default function YouTubeExplorerPage() {
         ) : (
             <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
               <Tv className="mx-auto h-12 w-12" />
-              <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-              <p>Your search did not match any videos. Try clearing your search.</p>
+              <h3 className="mt-4 text-lg font-semibold">Video nahi dik raha hai</h3>
             </div>
         )}
       </div>
