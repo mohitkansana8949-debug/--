@@ -11,8 +11,8 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 
-const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
-const QUICKLY_STUDY_CHANNEL_URL = 'https://youtube.com/@quicklystudy01?si=4ykCGYaWGcvuISbh';
+const QUICKLY_STUDY_CHANNEL_ID = 'UCbZWBEpqXUViu5P3rFRMmGg';
+const QUICKLY_STUDY_CHANNEL_URL = 'https://youtube.com/channel/UCbZWBEpqXUViu5P3rFRMmGg';
 
 
 export default function YouTubeExplorerPage() {
@@ -38,7 +38,7 @@ export default function YouTubeExplorerPage() {
     
   const isLoading = channelLoading;
   const noVideosExistInDb = !isLoading && allVideos.length === 0;
-  const noSearchResults = !isLoading && debouncedSearchQuery && searchResults.length === 0;
+  const noSearchResults = !isLoading && !!debouncedSearchQuery && searchResults.length === 0;
 
 
   return (

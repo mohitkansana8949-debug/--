@@ -13,12 +13,12 @@ import { youtubeSyncFlow } from '@/ai/flows/youtube-search-flow';
 import { useFirebase } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
-const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
+const NEW_CHANNEL_ID = 'UCbZWBEpqXUViu5P3rFRMmGg';
 
 export default function ManageYoutubePage() {
     const { firestore } = useFirebase();
     const { toast } = useToast();
-    const [channelId, setChannelId] = useState(QUICKLY_STUDY_CHANNEL_ID);
+    const [channelId, setChannelId] = useState(NEW_CHANNEL_ID);
     const [isSyncing, setIsSyncing] = useState(false);
     
     const handleSync = async () => {
