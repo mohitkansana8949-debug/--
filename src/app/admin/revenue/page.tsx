@@ -1,9 +1,9 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useCollection, useUser } from '@/firebase';
-import { collection, getDocs, Timestamp, doc, setDoc, getDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCollection, useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, getDocs, Timestamp, doc, setDoc, getDoc, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   DollarSign,
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 
 const ADMIN_REVENUE_CODE = 'Quicklympohit089';
 
@@ -45,6 +46,12 @@ function EditRevenueDialog({ currentRevenue, onUpdate }: { currentRevenue: numbe
             toast({ title: 'Success', description: 'Revenue override has been updated.' });
             setOpen(false);
         } catch (error) {
+             const contextualError = new FirestorePermissionError({
+                operation: 'update',
+                path: 'settings/revenue',
+                requestResourceData: { overrideTotal: newRevenue },
+            });
+            errorEmitter.emit('permission-error', contextualError);
              toast({ variant: 'destructive', title: 'Error', description: 'Failed to update revenue.' });
         } finally {
             setIsSubmitting(false);
@@ -102,49 +109,61 @@ export default function AdminRevenuePage() {
 
   const revenueOverrideRef = useMemoFirebase(() => doc(firestore, 'settings', 'revenue'), [firestore]);
 
-  const fetchRevenueData = async () => {
-      if (!firestore) return;
-      setIsLoading(true);
+  // Use useCollection to get live updates on enrollments
+  const approvedEnrollmentsQuery = useMemoFirebase(() => query(collection(firestore, 'enrollments'), where('status', '==', 'approved')), [firestore]);
+  const deliveredOrdersQuery = useMemoFirebase(() => query(collection(firestore, 'bookOrders'), where('status', '==', 'Delivered')), [firestore]);
 
-      try {
-          const overrideDoc = await getDoc(revenueOverrideRef);
-          if (overrideDoc.exists() && overrideDoc.data().overrideTotal !== undefined) {
-              setTotalRevenue(overrideDoc.data().overrideTotal);
-          } else {
-              const collections = ['enrollments', 'bookOrders'];
-              const promises = collections.map(col => getDocs(collection(firestore, col)));
-              const snapshots = await Promise.all(promises);
+  const { data: approvedEnrollments, isLoading: enrollmentsLoading } = useCollection(approvedEnrollmentsQuery);
+  const { data: deliveredOrders, isLoading: ordersLoading } = useCollection(deliveredOrdersQuery);
 
-              const [enrollmentsSnap, bookOrdersSnap] = snapshots;
-              
-              let calculatedRevenue = 0;
-              enrollmentsSnap.forEach(doc => {
-                  calculatedRevenue += doc.data().itemPrice || 0;
-              });
-              bookOrdersSnap.forEach(doc => {
-                  calculatedRevenue += doc.data().total || 0;
-              });
-              
-              setTotalRevenue(calculatedRevenue);
-          }
+  const calculateAndSetRevenue = useCallback(async () => {
+    if (!firestore) return;
+    setIsLoading(true);
 
-      } catch (error) {
-          console.error("Failed to fetch revenue data", error);
-          toast({variant: 'destructive', title: 'Error', description: 'Could not load revenue data.'})
-      } finally {
-          setIsLoading(false);
-      }
-  };
+    try {
+        const overrideDoc = await getDoc(revenueOverrideRef);
+        if (overrideDoc.exists() && overrideDoc.data().overrideTotal !== undefined) {
+            setTotalRevenue(overrideDoc.data().overrideTotal);
+        } else {
+            // This calculation will now run whenever the dependencies (approvedEnrollments, deliveredOrders) change
+            let calculatedRevenue = 0;
+
+            approvedEnrollments?.forEach(enrollment => {
+                // Ensure itemPrice is a number before adding
+                if (typeof enrollment.itemPrice === 'number') {
+                    calculatedRevenue += enrollment.itemPrice;
+                }
+            });
+
+            deliveredOrders?.forEach(order => {
+                if (typeof order.total === 'number') {
+                    calculatedRevenue += order.total;
+                }
+            });
+
+            setTotalRevenue(calculatedRevenue);
+        }
+    } catch (error) {
+        console.error("Failed to fetch revenue data", error);
+        toast({variant: 'destructive', title: 'Error', description: 'Could not load revenue data.'})
+    } finally {
+        setIsLoading(false);
+    }
+  }, [firestore, revenueOverrideRef, approvedEnrollments, deliveredOrders, toast]);
 
   useEffect(() => {
-      fetchRevenueData();
-  }, [firestore, revenueOverrideRef]);
+      // Recalculate revenue when live data changes or on initial load
+      if (!enrollmentsLoading && !ordersLoading) {
+        calculateAndSetRevenue();
+      }
+  }, [enrollmentsLoading, ordersLoading, calculateAndSetRevenue]);
 
 
   const handleUpdateRevenue = async (newRevenue: number) => {
     if (!firestore) throw new Error("Firestore not available");
     await setDoc(revenueOverrideRef, { overrideTotal: newRevenue });
     setTotalRevenue(newRevenue); // Immediately update UI
+    toast({ title: 'Success!', description: 'Revenue override has been set.' });
   }
 
 
@@ -184,7 +203,7 @@ export default function AdminRevenuePage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">₹{totalRevenue.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">Total earnings before distribution.</p>
+                <p className="text-xs text-muted-foreground">Total earnings from approved enrollments.</p>
             </CardContent>
         </Card>
 
@@ -200,7 +219,7 @@ export default function AdminRevenuePage() {
                                 <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
                                 <Pie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                                     {revenueSplit.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Pie>
                             </RechartsPieChart>
@@ -226,3 +245,4 @@ export default function AdminRevenuePage() {
     </div>
   );
 }
+
