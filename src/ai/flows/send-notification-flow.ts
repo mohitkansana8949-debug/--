@@ -5,32 +5,33 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
-import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
-import { getMessaging } from 'firebase-admin/messaging';
+import admin from 'firebase-admin';
 import { User } from '@/lib/types';
 
 
 function initializeAdminApp() {
-  // Directly check if the default app is already initialized.
-  if (getApps().find(app => app.name === '[DEFAULT]')) {
-    return true;
+  // Check if the default app is already initialized to prevent re-initialization error.
+  if (admin.apps.length > 0) {
+    return admin.app();
   }
 
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountString) {
     console.error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
-    return false;
+    // Return null or throw an error to indicate failure
+    return null;
   }
 
   try {
     const serviceAccount = JSON.parse(serviceAccountString);
-    initializeApp({
-      credential: cert(serviceAccount),
+    // Initialize the app with the service account.
+    return admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
     });
-    return true;
   } catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error.message);
-    return false;
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT or initialize Firebase Admin SDK:", error.message);
+    // Return null or throw an error
+    return null;
   }
 }
 
@@ -61,8 +62,8 @@ const notificationFlow = ai.defineFlow(
     outputSchema: NotificationOutputSchema,
   },
   async ({ title, body, imageUrl }) => {
-    const isAdminAppInitialized = initializeAdminApp();
-    if (!isAdminAppInitialized) {
+    const adminApp = initializeAdminApp();
+    if (!adminApp) {
         const errorMsg = "Firebase Admin SDK is not initialized. Cannot send notifications. Ensure service account is configured.";
         console.error(errorMsg);
         return {
@@ -108,7 +109,7 @@ const notificationFlow = ai.defineFlow(
         },
       };
 
-      const response = await getMessaging().sendEachForMulticast(message);
+      const response = await admin.messaging().sendEachForMulticast(message);
       
       return {
         success: response.failureCount === 0,
@@ -127,3 +128,4 @@ const notificationFlow = ai.defineFlow(
     }
   }
 );
+

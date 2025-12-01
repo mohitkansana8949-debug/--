@@ -15,7 +15,7 @@ export function NotificationHandler() {
 
   useEffect(() => {
     const setupNotifications = async () => {
-      if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !firebaseApp || !user || !firestore) {
+      if (typeof window === 'undefined' || !firebaseApp || !user || !firestore) {
         return;
       }
       
@@ -37,10 +37,7 @@ export function NotificationHandler() {
             return;
           }
           
-          // Explicitly register the service worker
-          const swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-          const currentToken = await getToken(messaging, { vapidKey: vapidKey, serviceWorkerRegistration: swRegistration });
+          const currentToken = await getToken(messaging, { vapidKey: vapidKey });
 
           if (currentToken) {
             const userDocRef = doc(firestore, 'users', user.uid);
@@ -69,3 +66,4 @@ export function NotificationHandler() {
   // This component does not render anything.
   return null;
 }
+
