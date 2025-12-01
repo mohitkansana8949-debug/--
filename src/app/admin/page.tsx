@@ -19,7 +19,7 @@ import {
   PieChart,
 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer, Pie, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { Bar, XAxis, YAxis, CartesianGrid, BarChart as RechartsBarChart, ResponsiveContainer, Pie as RechartsPie, PieChart as RechartsPieChart, Cell } from 'recharts';
 import { subDays, format, startOfDay } from 'date-fns';
 
 const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollmentDate' | 'createdAt') => {
@@ -203,14 +203,18 @@ export default function AdminDashboardOverview() {
                 <CardContent className="h-[150px]">
                    <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
-                            <RechartsPieChart>
-                                <Pie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
-                                    {revenueSplit.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                            </RechartsPieChart>
+                             <ChartContainer config={{
+                                totalRevenue: { label: "Revenue", color: "hsl(var(--chart-1))" }
+                            }}>
+                                <RechartsPieChart>
+                                    <RechartsPie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
+                                        {revenueSplit.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </RechartsPie>
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                </RechartsPieChart>
+                            </ChartContainer>
                         )}
                    </ResponsiveContainer>
                 </CardContent>

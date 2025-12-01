@@ -33,6 +33,7 @@ import { useEffect, useState, useMemo } from 'react';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
+    { name: 'Live', icon: Clapperboard, href: '/live-lectures' },
     { name: 'Feed', href: '/feed', icon: Rss },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -188,7 +189,7 @@ export default function HomePage() {
         {footerItems.map(item => {
             const Icon = item.icon;
             return (
-                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/4 text-center relative">
+                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center relative">
                     <Icon className="h-5 w-5 mb-1"/> 
                     <span>{item.name}</span>
                 </Link>

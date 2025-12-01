@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy, Youtube, Gift, Instagram, Send, Facebook, BarChartHorizontal } from "lucide-react";
+import { Home, BookOpen, User, Shield, LogOut, Library, LifeBuoy, Youtube, Gift, Instagram, Send, Facebook, BarChartHorizontal, UserCheck } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -115,6 +115,7 @@ export function AppSidebar() {
     { href: "/courses", label: "कोर्स", icon: BookOpen, tooltip: "Courses" },
     { href: "/my-library", label: "मेरी लाइब्रेरी", icon: Library, tooltip: "My Library" },
     { href: "/my-progress", label: "My Progress", icon: BarChartHorizontal, tooltip: "My Progress" },
+    { href: "/submit-result", label: "Submit Result", icon: UserCheck, tooltip: "Submit Result" },
     ...(isAdminAuthenticated && isAdmin ? [{ href: "/admin", label: "एडमिन पैनल", icon: Shield, tooltip: "Admin Panel" }] : []),
     { href: "/support", label: "सहायता", icon: LifeBuoy, tooltip: "Support" },
   ];
