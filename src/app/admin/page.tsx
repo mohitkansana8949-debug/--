@@ -40,6 +40,13 @@ const processChartData = (items: any[] | null, dateKey: 'signUpDate' | 'enrollme
 };
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28'];
+const chartConfig = {
+    revenue: { label: 'Revenue' },
+    ashok: { label: 'Ashok (Quickly Study Owner)', color: '#0088FE' },
+    management: { label: 'App Management', color: '#00C49F' },
+    mohit: { label: 'Mohit (App Developer)', color: '#FFBB28' },
+};
+
 
 export default function AdminDashboardOverview() {
   const { firestore } = useFirebase();
@@ -100,23 +107,19 @@ export default function AdminDashboardOverview() {
           setIsDataLoading(true);
 
           try {
-              const collections = ['users', 'courses', 'ebooks', 'pyqs', 'tests', 'enrollments', 'bookOrders'];
+              const collections = ['users', 'courses', 'ebooks', 'pyqs', 'tests', 'enrollments'];
               const promises = collections.map(col => getDocs(collection(firestore, col)));
               const snapshots = await Promise.all(promises);
 
-              const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap, enrollmentsSnap, bookOrdersSnap] = snapshots;
+              const [usersSnap, coursesSnap, ebooksSnap, pyqsSnap, testsSnap, enrollmentsSnap] = snapshots;
 
               const usersData = usersSnap.docs.map(d => d.data());
               const enrollmentsData = enrollmentsSnap.docs.map(d => d.data());
-              const bookOrdersData = bookOrdersSnap.docs.map(d => d.data());
 
-              const bookRevenue = bookOrdersSnap.docs.reduce((acc, doc) => acc + (doc.data().total || 0), 0);
-              const enrollmentRevenue = enrollmentsSnap.docs.reduce((acc, doc) => {
-                  // Assuming itemPrice is stored, otherwise this needs adjustment
-                  const itemPrice = doc.data().itemPrice || 0; 
-                  return acc + itemPrice;
+              // Calculate revenue from enrollments
+              const revenue = enrollmentsSnap.docs.reduce((acc, doc) => {
+                  return acc + (doc.data().itemPrice || 0);
               }, 0);
-              const totalRevenue = bookRevenue + enrollmentRevenue;
 
 
               setStats({
@@ -126,14 +129,14 @@ export default function AdminDashboardOverview() {
                   pyqs: pyqsSnap.size,
                   tests: testsSnap.size,
                   enrollments: enrollmentsSnap.size,
-                  bookOrders: bookOrdersSnap.size,
-                  totalRevenue,
+                  bookOrders: 0, // Removed
+                  totalRevenue: revenue,
               });
 
               setChartData({
                   users: processChartData(usersData, 'signUpDate'),
                   enrollments: processChartData(enrollmentsData, 'enrollmentDate'),
-                  bookOrders: processChartData(bookOrdersData, 'createdAt')
+                  bookOrders: [], // Removed
               });
 
           } catch (error) {
@@ -203,16 +206,14 @@ export default function AdminDashboardOverview() {
                 <CardContent className="h-[150px]">
                    <ResponsiveContainer width="100%" height="100%">
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
-                             <ChartContainer config={{
-                                totalRevenue: { label: "Revenue", color: "hsl(var(--chart-1))" }
-                            }}>
+                             <ChartContainer config={chartConfig} className="mx-auto aspect-square h-full">
                                 <RechartsPieChart>
+                                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                                     <RechartsPie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
                                         {revenueSplit.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </RechartsPie>
-                                    <ChartTooltip content={<ChartTooltipContent />} />
                                 </RechartsPieChart>
                             </ChartContainer>
                         )}
