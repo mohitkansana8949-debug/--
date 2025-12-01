@@ -139,16 +139,12 @@ export default function AdminEnrollmentsPage() {
                             </TableCell>
                             <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
                             <TableCell className="space-x-2">
-                                {enrollment.status === 'pending' && (
-                                    <>
-                                     <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id}>
-                                        {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Approve'}
-                                    </Button>
-                                    <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')} disabled={updatingId === enrollment.id}>
-                                        {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Reject'}
-                                    </Button>
-                                    </>
-                                )}
+                                <Button size="sm" variant="success" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'approved')} disabled={updatingId === enrollment.id || enrollment.status === 'approved'}>
+                                    {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Approve'}
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleEnrollmentStatusChange(enrollment.id, 'rejected')} disabled={updatingId === enrollment.id || enrollment.status === 'rejected'}>
+                                    {updatingId === enrollment.id ? <Loader className="mr-2 h-4 w-4 animate-spin"/> : 'Reject'}
+                                </Button>
                             </TableCell>
                         </TableRow>
                     ))}

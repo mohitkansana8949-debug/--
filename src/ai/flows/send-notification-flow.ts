@@ -5,28 +5,35 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
-import { initializeApp, getApp, cert } from 'firebase-admin/app';
+import { initializeApp, getApps, getApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
 import { User } from '@/lib/types';
 
-// This is a simplified check. In a real app, you might have a more robust way
-// to handle service account credentials, e.g., using environment variables.
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-  : null;
 
-let isAdminAppInitialized = false;
-try {
-  getApp('firebase-admin');
-  isAdminAppInitialized = true;
-} catch (error) {
-  if (serviceAccount) {
+function initializeAdminApp() {
+  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccount) {
+    console.error("Firebase Admin SDK service account is not set in environment variables.");
+    return false;
+  }
+  try {
+     // Check if the default app is already initialized
+    if (getApps().some(app => app.name === '[DEFAULT]')) {
+      return true;
+    }
     initializeApp({
-      credential: cert(serviceAccount),
-    }, 'firebase-admin');
-    isAdminAppInitialized = true;
+      credential: cert(JSON.parse(serviceAccount)),
+    });
+    return true;
+  } catch (error: any) {
+     if (error.code === 'app/duplicate-app') {
+      return true; // App is already initialized
+    }
+    console.error("Failed to initialize Firebase Admin SDK:", error);
+    return false;
   }
 }
+
 
 const NotificationInputSchema = z.object({
   title: z.string(),
@@ -54,6 +61,7 @@ const notificationFlow = ai.defineFlow(
     outputSchema: NotificationOutputSchema,
   },
   async ({ title, body, imageUrl }) => {
+    const isAdminAppInitialized = initializeAdminApp();
     if (!isAdminAppInitialized) {
         const errorMsg = "Firebase Admin SDK is not initialized. Cannot send notifications. Ensure service account is configured.";
         console.error(errorMsg);
