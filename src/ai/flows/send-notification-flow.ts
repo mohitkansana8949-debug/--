@@ -77,7 +77,7 @@ const notificationFlow = ai.defineFlow(
         notification: {
           title,
           body,
-          ...(imageUrl && { imageUrl }),
+          imageUrl: imageUrl || "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
         },
         tokens,
         webpush: {
@@ -90,12 +90,30 @@ const notificationFlow = ai.defineFlow(
         },
       };
 
-      const response = await adminMessaging.sendEachForMulticast(message as any);
+      const response = await adminMessaging.sendEach(tokens.map(token => ({
+          token,
+          notification: {
+            title,
+            body,
+            imageUrl: imageUrl || undefined,
+          },
+           webpush: {
+            notification: {
+              icon: "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
+            },
+            fcmOptions: {
+              link: '/', 
+            },
+          },
+      })));
       
+      const successCount = response.responses.filter(r => r.success).length;
+      const failureCount = response.responses.length - successCount;
+
       return {
-        success: response.failureCount === 0,
-        successCount: response.successCount,
-        failureCount: response.failureCount,
+        success: failureCount === 0,
+        successCount: successCount,
+        failureCount: failureCount,
       };
 
     } catch (e: any) {
