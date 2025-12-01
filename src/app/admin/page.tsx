@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -208,12 +209,12 @@ export default function AdminDashboardOverview() {
                         {loading ? <div className="h-full flex justify-center items-center"><Loader className="animate-spin" /></div> : (
                              <ChartContainer config={chartConfig} className="mx-auto aspect-square h-full">
                                 <RechartsPieChart>
-                                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                                     <RechartsPie data={revenueSplit} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
                                         {revenueSplit.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </RechartsPie>
+                                    <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                                 </RechartsPieChart>
                             </ChartContainer>
                         )}
@@ -276,3 +277,5 @@ export default function AdminDashboardOverview() {
     </div>
   );
 }
+
+    
