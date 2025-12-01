@@ -5,8 +5,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminDB, adminMessaging } from '@/lib/firebaseAdmin';
 import { firestore } from 'firebase-admin';
-import { config } from 'dotenv';
-config();
 
 interface User {
   fcmToken?: string | null;
@@ -75,23 +73,6 @@ const notificationFlow = ai.defineFlow(
         };
       }
       
-      const message = {
-        notification: {
-          title,
-          body,
-          imageUrl: imageUrl || "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
-        },
-        tokens,
-        webpush: {
-          notification: {
-            icon: "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
-          },
-          fcmOptions: {
-            link: '/', 
-          },
-        },
-      };
-
       const response = await adminMessaging.sendEach(tokens.map(token => ({
           token,
           notification: {

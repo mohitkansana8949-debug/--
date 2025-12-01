@@ -26,6 +26,7 @@ import {
   TicketPercent,
   Bell,
   ShieldCheck,
+  BarChartHorizontal,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,10 +42,8 @@ const adminNavItems = [
   { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },
   { href: '/admin/pyqs', label: 'Manage PYQs', icon: FileQuestion },
   { href: '/admin/test-series', label: 'Manage Tests', icon: Newspaper },
-  { href: '/admin/books', label: 'Manage Books', icon: Package },
   { href: '/admin/posts', label: 'Manage Posts', icon: MessageSquare },
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
-  { href: '/admin/book-orders', label: 'Book Orders', icon: ShoppingBag },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
   { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
@@ -59,7 +58,6 @@ const creationNavItems = [
     { href: '/admin/create-ebook', label: 'Add E-book', icon: PlusCircle },
     { href: '/admin/create-pyq', label: 'Add PYQ', icon: PlusCircle },
     { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
-    { href: '/admin/create-book', label: 'Add Book', icon: PlusCircle },
     { href: '/admin/create-coupon', label: 'Add Coupon', icon: PlusCircle },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
 ]

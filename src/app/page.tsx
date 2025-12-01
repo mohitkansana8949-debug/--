@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,7 @@ import {
   Book as EbookIcon,
   FileQuestion,
   Youtube,
-  BarChart,
+  BarChartHorizontal,
   Clapperboard,
   Package,
   Wand2,
@@ -60,25 +61,17 @@ function PwaInstallCard() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
-      // Update UI to notify the user they can install the PWA
       setIsInstallable(true);
     };
-
-    const checkInstallState = () => {
-      // Check if the app is already installed.
-      if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
-        setIsInstallable(false);
-      } else {
-        // If not installed, listen for the prompt event.
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      }
-    };
     
-    checkInstallState();
+    // Check if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      // Already installed, do nothing
+    } else {
+       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    }
 
     return () => {
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -87,11 +80,8 @@ function PwaInstallCard() {
 
   const handleInstallClick = () => {
     if (!deferredPrompt) return;
-    // Hide the app provided install promotion
     setIsInstallable(false);
-    // Show the install prompt
     deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
     deferredPrompt.userChoice.then((choiceResult: any) => {
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
@@ -140,7 +130,7 @@ export default function HomePage() {
     let cards = [
       { title: 'कोर्सेस', href: '/courses', gradient: 'bg-gradient-to-br from-blue-500 to-purple-600', icon: BookOpen },
       { title: 'Live Classes', href: '/live-lectures', gradient: 'bg-gradient-to-br from-red-500 to-orange-500', icon: Clapperboard },
-      { title: 'Bookshala', href: '/bookshala', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: Package },
+      { title: 'My Progress', href: '/my-progress', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: BarChartHorizontal },
       { title: 'E-books', href: '/ebooks', gradient: 'bg-gradient-to-br from-teal-500 to-green-500', icon: EbookIcon },
       { title: 'PYQs', href: '/pyqs', gradient: 'bg-gradient-to-br from-yellow-500 to-amber-600', icon: FileQuestion },
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
@@ -151,12 +141,7 @@ export default function HomePage() {
     if (showYoutubeFeature) {
         cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
     } else {
-        cards.push({ title: 'Order Support', href: '/order-support', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: LifeBuoy });
-    }
-    
-    // Ensure it's always 9 cards for a clean grid
-    while (cards.length < 9) {
-        cards.push({ title: 'Explore', href: '/', gradient: 'bg-gradient-to-br from-gray-500 to-gray-600', icon: Star });
+        cards.push({ title: 'Order Support', href: '/my-purchases', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: LifeBuoy });
     }
     
     return cards.slice(0, 9);
