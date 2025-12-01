@@ -10,29 +10,22 @@ import { User } from '@/lib/types';
 
 
 function initializeAdminApp() {
-  // Check if the default app is already initialized to prevent re-initialization error.
-  if (admin.apps.length > 0) {
-    return admin.app();
+  if (admin.apps.length === 0) {
+    try {
+      const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+      if (!serviceAccountString) {
+        throw new Error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
+      }
+      const serviceAccount = JSON.parse(serviceAccountString);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch (error: any) {
+      console.error("Failed to initialize Firebase Admin SDK:", error.message);
+      return null;
+    }
   }
-
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-  if (!serviceAccountString) {
-    console.error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
-    // Return null or throw an error to indicate failure
-    return null;
-  }
-
-  try {
-    const serviceAccount = JSON.parse(serviceAccountString);
-    // Initialize the app with the service account.
-    return admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  } catch (error: any) {
-    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT or initialize Firebase Admin SDK:", error.message);
-    // Return null or throw an error
-    return null;
-  }
+  return admin.app();
 }
 
 
@@ -128,4 +121,3 @@ const notificationFlow = ai.defineFlow(
     }
   }
 );
-
