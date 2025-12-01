@@ -19,12 +19,12 @@ export function WebsiteSplashScreen() {
 
     const timer = setTimeout(() => {
       setIsFadingOut(true);
-    }, 2500); // Animation duration
+    }, 5500); // Animation duration (user wants 6 seconds)
 
     const fadeOutTimer = setTimeout(() => {
         setIsLoading(false);
         sessionStorage.setItem('hasVisitedQuicklyStudy', 'true');
-    }, 3000); // Animation duration + fade out time
+    }, 6000); // Animation duration + fade out time
     
     return () => {
         clearTimeout(timer);
@@ -46,7 +46,7 @@ export function WebsiteSplashScreen() {
     >
       <div className="text-center animate-fade-in-up">
         <p className="mb-4 text-sm font-medium tracking-widest uppercase opacity-75">
-          Made with in India
+          Made with ❤️ in India
         </p>
         <div className="flex flex-col items-center justify-center gap-4 mb-4">
             <GraduationCap className="h-16 w-16 text-primary animate-pulse" />
@@ -55,7 +55,7 @@ export function WebsiteSplashScreen() {
             </h1>
         </div>
         <p className="text-lg bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text font-display mt-2">
-            The Quickest Way of Study
+            The Quickest way of Study
         </p>
       </div>
 
