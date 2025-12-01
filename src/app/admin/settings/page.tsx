@@ -73,7 +73,7 @@ export default function AppSettingsPage() {
             setAppUrl(appSettings.appUrl || '');
             setYoutubeFeatureEnabled(appSettings.youtubeFeatureEnabled !== false);
             setAiDoubtSolverEnabled(appSettings.aiDoubtSolverEnabled === true);
-            setVapidKey(appSettings.vapidKey || '');
+            setVapidKey(appSettings.vapidKey || process.env.NEXT_PUBLIC_VAPID_KEY || '');
             setNotificationAccessKey(appSettings.notificationAccessKey || '');
         }
     }, [appSettings]);
@@ -213,11 +213,7 @@ export default function AppSettingsPage() {
                                     <h4 className="font-medium">Push Notifications</h4>
                                     <div className="space-y-2">
                                         <Label htmlFor="vapid-key">VAPID Key</Label>
-                                        <Input id="vapid-key" type="text" placeholder="Your FCM VAPID Key" value={vapidKey} onChange={e => setVapidKey(e.target.value)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="notification-access-key">Notification Access Key</Label>
-                                        <Input id="notification-access-key" type="password" placeholder="A secret key to send notifications" value={notificationAccessKey} onChange={e => setNotificationAccessKey(e.target.value)} />
+                                        <Input id="vapid-key" type="password" placeholder="Your FCM VAPID Key" value={vapidKey} onChange={e => setVapidKey(e.target.value)} />
                                     </div>
                                 </div>
                             </>

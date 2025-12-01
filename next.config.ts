@@ -7,7 +7,14 @@ const withPWA = createNextPwa({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  extendWebpack: false,
+  extendWebpack: (config) => {
+    config.watchOptions = {
+        ...config.watchOptions,
+        poll: 1000,
+        aggregateTimeout: 300,
+    }
+    return config;
+  },
 });
 
 
@@ -67,6 +74,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
+    NEXT_PUBLIC_VAPID_KEY: process.env.NEXT_PUBLIC_VAPID_KEY,
   },
   publicRuntimeConfig: {
     YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY,
