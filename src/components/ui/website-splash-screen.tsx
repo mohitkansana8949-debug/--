@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -39,22 +40,22 @@ export function WebsiteSplashScreen() {
   return (
     <div
       className={cn(
-        'fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 text-white transition-opacity duration-500',
+        'fixed inset-0 z-[100] flex flex-col items-center justify-center bg-gray-900 text-white transition-opacity duration-500',
         isFadingOut ? 'opacity-0' : 'opacity-100'
       )}
     >
       <div className="text-center animate-fade-in-up">
         <p className="mb-4 text-sm font-medium tracking-widest uppercase opacity-75">
-          Made with ❤️ in India
+          Made with in India
         </p>
-        <div className="flex items-center justify-center gap-4 mb-4">
+        <div className="flex flex-col items-center justify-center gap-4 mb-4">
             <GraduationCap className="h-16 w-16 text-primary animate-pulse" />
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter">
+            <h1 className="text-5xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-red-500 via-yellow-400 to-pink-500 text-transparent bg-clip-text">
                 Quickly Study
             </h1>
         </div>
-        <p className="text-lg text-white/80 font-display mt-2">
-            The Quickest way of Study
+        <p className="text-lg bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text font-display mt-2">
+            The Quickest Way of Study
         </p>
       </div>
 

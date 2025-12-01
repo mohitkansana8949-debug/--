@@ -57,7 +57,7 @@ export default function AdminCoursesPage() {
                                             <Link href={`/admin/content/${course.id}`}>Manage Content</Link>
                                         </Button>
                                         <Button asChild size="sm" variant="outline">
-                                            <Link href={`/courses/${course.id}`} target="_blank">View</Link>
+                                            <Link href={`/courses/${course.id}`}>View</Link>
                                         </Button>
                                     </TableCell>
                                 </TableRow>
