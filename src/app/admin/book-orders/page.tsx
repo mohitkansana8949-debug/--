@@ -105,8 +105,12 @@ export default function AdminBookOrdersPage() {
     useEffect(() => {
         const checkAdmin = async () => {
             if (user && firestore) {
-                 const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
-                 setIsAdmin(adminDoc.exists() || user.email?.toLowerCase() === 'qukly@study.com');
+                if (user.email?.toLowerCase() === 'qukly@study.com') {
+                    setIsAdmin(true);
+                } else {
+                    const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
+                    setIsAdmin(adminDoc.exists());
+                }
             } else {
                 setIsAdmin(false);
             }
@@ -136,7 +140,7 @@ export default function AdminBookOrdersPage() {
     };
 
     if (isLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader className="animate-spin" /></div>;
+        return <div className="flex h-full w-full items-center justify-center"><Loader className="animate-spin" /></div>;
     }
     
     if (!isAdmin) {
@@ -175,7 +179,7 @@ export default function AdminBookOrdersPage() {
                             {orders?.map(order => (
                                 <TableRow key={order.id}>
                                     <TableCell className='font-mono text-xs'>{order.id.substring(0, 6)}</TableCell>
-                                    <TableCell>{order.createdAt.toDate ? format(order.createdAt.toDate(), 'dd MMM yyyy') : 'N/A'}</TableCell>
+                                    <TableCell>{order.createdAt?.toDate ? format(order.createdAt.toDate(), 'dd MMM yyyy') : 'N/A'}</TableCell>
                                     <TableCell className="font-mono text-xs">{order.userId.substring(0, 6)}</TableCell>
                                     <TableCell>₹{order.total.toFixed(2)}</TableCell>
                                     <TableCell><Badge variant={getStatusVariant(order.status)}>{order.status}</Badge></TableCell>

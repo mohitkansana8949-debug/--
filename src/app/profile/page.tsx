@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users, Award, ChevronRight, Bell } from 'lucide-react';
+import { Pencil, ShieldCheck, Mail, Phone, User as UserIcon, MapPin, BookCopy, Trophy, BarChartHorizontal, Users, Award, ChevronRight, Bell, AlertTriangle } from 'lucide-react';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-
+import { NotificationHandler } from '@/components/notification-handler';
 
 // Helper function to get a color based on user ID
 const getColorForId = (id: string) => {
@@ -60,6 +60,7 @@ export default function ProfilePage() {
   const [isReferralLoading, setIsReferralLoading] = useState(true);
   
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [wantsNotifications, setWantsNotifications] = useState(false);
 
   const referralsQuery = useMemoFirebase(
       () => user ? query(collection(firestore, 'referrals'), where('referrerId', '==', user.uid)) : null,
@@ -106,7 +107,9 @@ export default function ProfilePage() {
       if (doc.exists()) {
         const data = doc.data();
         setUserData(data);
-        setNotificationsEnabled(!!data.fcmToken);
+        const hasToken = !!data.fcmToken;
+        setNotificationsEnabled(hasToken);
+        setWantsNotifications(hasToken);
       }
     });
 
@@ -117,25 +120,18 @@ export default function ProfilePage() {
 }, [user, firestore, isUserLoading]);
 
   const handleNotificationToggle = async (enabled: boolean) => {
-      if (!user || !firestore) return;
-      
-      const userRef = doc(firestore, 'users', user.uid);
-      
-      if (enabled) {
-          // Logic to request permission and get token is in NotificationHandler
-          // Here we just reflect the intended state, the handler will update fcmToken
-          toast({ title: 'Please allow notification permission in your browser.' });
-      } else {
-          // User wants to disable, so we remove the token
-          try {
-              await updateDoc(userRef, { fcmToken: null });
-              setNotificationsEnabled(false);
-              toast({ title: 'Notifications Disabled' });
-          } catch (error) {
-              console.error("Error disabling notifications:", error);
-              toast({ variant: 'destructive', title: 'Error', description: 'Could not disable notifications.' });
-          }
+    setWantsNotifications(enabled);
+    if (!enabled && user && firestore) {
+      try {
+          const userDocRef = doc(firestore, 'users', user.uid);
+          await updateDoc(userDocRef, { fcmToken: null });
+          setNotificationsEnabled(false);
+          toast({ title: 'Notifications Disabled' });
+      } catch (error) {
+          console.error("Error disabling notifications:", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not disable notifications.' });
       }
+    }
   }
 
   const getInitials = (name: string | null | undefined) => {
@@ -186,6 +182,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6">
+      {wantsNotifications && <NotificationHandler />}
        <div className="min-w-0">
         <h1 className="text-3xl font-bold truncate">My Profile</h1>
         <p className="text-muted-foreground truncate">View and manage your profile information.</p>
@@ -226,15 +223,30 @@ export default function ProfilePage() {
         <CardHeader>
             <CardTitle className="flex items-center"><Bell className="mr-2 h-5 w-5 text-primary"/>Notifications</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
              <div className="flex items-center justify-between">
-                <Label htmlFor="notif-toggle" className="font-medium">Receive Push Notifications</Label>
+                <Label htmlFor="notif-toggle" className="font-medium pr-4">Receive Push Notifications</Label>
                 <Switch
                     id="notif-toggle"
-                    checked={notificationsEnabled}
+                    checked={wantsNotifications}
                     onCheckedChange={handleNotificationToggle}
                 />
             </div>
+            {notificationsEnabled && userData?.fcmToken && (
+                <div className="p-3 bg-muted rounded-md text-xs break-all">
+                    <p className="font-bold">Your Notification Token:</p>
+                    <p className="font-mono">{userData.fcmToken}</p>
+                </div>
+            )}
+             {wantsNotifications && !notificationsEnabled && (
+                <div className="p-3 text-destructive-foreground bg-destructive rounded-md text-sm flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0" />
+                    <div>
+                        <p className="font-bold">Permission Required</p>
+                        <p>Please allow notification permission in your browser to enable this feature.</p>
+                    </div>
+                </div>
+            )}
         </CardContent>
       </Card>
       
