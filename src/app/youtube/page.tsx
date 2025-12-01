@@ -50,7 +50,7 @@ export default function YouTubeExplorerPage() {
         </p>
       </div>
       
-      {isLoading ? <div className="flex h-32 items-center justify-center"><Loader className="animate-spin" /></div> : channelData ? (
+      {channelData && (
           <Card className="overflow-hidden bg-muted/50">
             <div className="flex flex-col md:flex-row items-center gap-4 p-4">
                 <Image
@@ -69,12 +69,6 @@ export default function YouTubeExplorerPage() {
                 </a>
             </div>
           </Card>
-      ): (
-        <Card className="text-center p-8">
-            <CardTitle>Channel Not Synced</CardTitle>
-            <CardDescription>The YouTube channel has not been synced yet. Please go to the admin panel to sync it.</CardDescription>
-            <Button asChild className="mt-4"><Link href="/admin/youtube">Go to Admin Panel</Link></Button>
-        </Card>
       )}
 
 
@@ -90,7 +84,9 @@ export default function YouTubeExplorerPage() {
       </div>
       
       <div className="space-y-8">
-         {searchResults.length > 0 ? (
+         {isLoading ? (
+            <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>
+         ) : searchResults.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {searchResults.map((video: any) => (
                     <Link href={`/courses/watch/${video.videoId}`} key={video.videoId}>
@@ -105,11 +101,11 @@ export default function YouTubeExplorerPage() {
                     </Link>
                 ))}
              </div>
-        ) : !isLoading && (
+        ) : (
             <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
               <Tv className="mx-auto h-12 w-12" />
               <h3 className="mt-4 text-lg font-semibold">No Videos Found</h3>
-              <p>Your search did not match any videos from our channel.</p>
+              <p>Your search did not match any videos. Try clearing your search.</p>
             </div>
         )}
       </div>
