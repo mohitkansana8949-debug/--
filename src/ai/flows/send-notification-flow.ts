@@ -4,12 +4,16 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminDB, adminMessaging } from '@/lib/firebaseAdmin';
-import { User } from '@/lib/types';
+
+interface User {
+  fcmToken?: string | null;
+  // other user properties
+}
 
 const NotificationInputSchema = z.object({
   title: z.string(),
   body: z.string(),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().url().optional().or(z.literal('')),
 });
 export type NotificationInput = z.infer<typeof NotificationInputSchema>;
 
@@ -35,8 +39,7 @@ const notificationFlow = ai.defineFlow(
     
     try {
       const usersRef = adminDB.collection('users');
-      const q = usersRef.where('fcmToken', '!=', null);
-      const usersSnapshot = await q.get();
+      const usersSnapshot = await usersRef.where('fcmToken', '!=', null).get();
 
       if (usersSnapshot.empty) {
         return {
@@ -59,23 +62,20 @@ const notificationFlow = ai.defineFlow(
           error: "No users with valid tokens found.",
         };
       }
-
+      
       const message: admin.messaging.MulticastMessage = {
         notification: {
           title,
           body,
+          ...(imageUrl && { imageUrl }),
         },
-        tokens: tokens,
+        tokens,
         webpush: {
           fcmOptions: {
             link: '/', 
           },
         },
       };
-
-      if (imageUrl) {
-        message.notification!.imageUrl = imageUrl;
-      }
 
       const response = await adminMessaging.sendEachForMulticast(message);
       
@@ -87,16 +87,11 @@ const notificationFlow = ai.defineFlow(
 
     } catch (e: any) {
       console.error("Error in sendNotificationFlow:", e);
-      // Construct a more informative error message
-      let errorMessage = "An unexpected error occurred.";
-      if (e.code === 'messaging/invalid-argument') {
+      let errorMessage = e.message || "An unexpected error occurred.";
+       if (e.code === 'messaging/invalid-argument') {
         errorMessage = "Invalid argument provided to messaging service. Check tokens and message payload.";
-      } else if (e.message.includes("Credential")) {
-        errorMessage = "Firebase Admin SDK initialization failed. Check your service account configuration.";
-      } else {
-        errorMessage = e.message;
       }
-
+      
       return {
         success: false,
         successCount: 0,

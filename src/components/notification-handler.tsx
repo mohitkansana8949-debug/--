@@ -33,30 +33,35 @@ export function NotificationHandler() {
           const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
           if (!vapidKey) {
             console.error("VAPID key is not set in environment variables.");
-            toast({ variant: 'destructive', title: 'Configuration Error', description: 'Cannot enable notifications due to a server configuration issue.' });
             return;
           }
           
-          const currentToken = await getToken(messaging, { vapidKey: vapidKey });
+          const currentToken = await getToken(messaging, { 
+            vapidKey: vapidKey,
+            serviceWorkerRegistration: await navigator.serviceWorker.register('/firebase-messaging-sw.js')
+          });
 
           if (currentToken) {
             const userDocRef = doc(firestore, 'users', user.uid);
             await updateDoc(userDocRef, { fcmToken: currentToken });
-            toast({ title: 'Notifications Enabled!' });
+            // No toast on success to avoid being annoying
           } else {
             console.log('No registration token available. Request permission to generate one.');
-            toast({ variant: 'destructive', title: 'Could not get token', description: 'Please ensure notifications are not blocked for this site.' });
           }
         } else {
-          toast({ variant: 'destructive', title: 'Permission Denied', description: 'You will not receive notifications.' });
+            console.log('Notification permission not granted.');
         }
       } catch (error: any) {
         console.error('An error occurred while retrieving token. ', error);
-        let description = 'Could not enable notifications. Please try again later.';
-        if (error instanceof FirebaseError) {
-          description = error.message;
+        if (error instanceof FirebaseError && error.code.includes('failed-service-worker-registration')) {
+            console.error("Service worker registration failed. This can happen in development environments or if the service worker file is not found.");
+        } else {
+            let description = 'Could not enable notifications. Please try again later.';
+            if (error instanceof FirebaseError) {
+                description = error.message;
+            }
+            toast({ variant: 'destructive', title: 'Notification Error', description });
         }
-        toast({ variant: 'destructive', title: 'Notification Error', description });
       }
     };
 
@@ -66,4 +71,3 @@ export function NotificationHandler() {
   // This component does not render anything.
   return null;
 }
-

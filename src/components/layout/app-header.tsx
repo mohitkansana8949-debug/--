@@ -2,7 +2,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Moon, Sun, LogOut, ShoppingCart, ShieldCheck } from "lucide-react";
+import { Moon, Sun, LogOut, ShoppingCart, ShieldCheck, Bell } from "lucide-react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,6 @@ import Link from "next/link";
 import { useMemo, useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { useCart } from "@/hooks/use-cart";
 
 
 // Helper function to get a color based on user ID
@@ -47,7 +46,6 @@ const getColorForId = (id: string) => {
 
 export function AppHeader() {
   const { user } = useUser();
-  const { cart } = useCart();
   
   if (!user) {
      return (
@@ -65,16 +63,9 @@ export function AppHeader() {
         {/* Future search bar can go here */}
       </div>
       <ThemeToggle />
-      <Button asChild variant="ghost" size="icon" className="relative">
-        <Link href="/cart">
-            <ShoppingCart className="h-5 w-5" />
-            <span className="sr-only">Shopping Cart</span>
-            {cart.length > 0 && (
-                <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                    {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                </span>
-            )}
-        </Link>
+      <Button variant="ghost" size="icon">
+        <Bell className="h-5 w-5" />
+        <span className="sr-only">Notifications</span>
       </Button>
       <UserMenu />
     </header>
