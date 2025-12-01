@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -32,6 +31,7 @@ export function NotificationHandler() {
           const vapidKey = process.env.NEXT_PUBLIC_VAPID_KEY;
           if (!vapidKey) {
             console.error("VAPID key is not set in environment variables (NEXT_PUBLIC_VAPID_KEY).");
+            toast({ variant: 'destructive', title: 'Configuration Error', description: 'Notification service is not configured correctly.' });
             return;
           }
           
@@ -44,14 +44,17 @@ export function NotificationHandler() {
             const userDocRef = doc(firestore, 'users', user.uid);
             const userDoc = await getDoc(userDocRef);
             // Only update if the token is new or different
-            if (userDoc.exists() && userDoc.data().fcmToken !== currentToken) {
+            if (!userDoc.exists() || userDoc.data().fcmToken !== currentToken) {
                 await updateDoc(userDocRef, { fcmToken: currentToken });
+                 toast({ title: 'Notifications Enabled', description: 'You will now receive notifications.' });
             }
           } else {
             console.log('No registration token available. Request permission to generate one.');
+             toast({ variant: 'destructive', title: 'Token Error', description: 'Could not retrieve notification token.' });
           }
         } else {
             console.log('Notification permission not granted.');
+             toast({ variant: 'destructive', title: 'Permission Denied', description: 'You have not granted permission for notifications.' });
         }
       } catch (error: any) {
         console.error('An error occurred while retrieving token. ', error);

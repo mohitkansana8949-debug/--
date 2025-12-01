@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -61,35 +60,47 @@ function PwaInstallCard() {
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
+      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      setIsInstallable(true);
+      // Stash the event so it can be triggered later.
       setDeferredPrompt(e);
+      // Update UI to notify the user they can install the PWA
+      setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    const checkInstallState = () => {
+      // Check if the app is already installed.
+      if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+        setIsInstallable(false);
+      } else {
+        // If not installed, listen for the prompt event.
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      }
+    };
+    
+    checkInstallState();
+
+    return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
 
   const handleInstallClick = () => {
     if (!deferredPrompt) return;
+    // Hide the app provided install promotion
+    setIsInstallable(false);
+    // Show the install prompt
     deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
     deferredPrompt.userChoice.then((choiceResult: any) => {
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
       } else {
         console.log('User dismissed the install prompt');
       }
-      setIsInstallable(false);
       setDeferredPrompt(null);
     });
   };
-  
-  // Also check if app is already installed
-  useEffect(() => {
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstallable(false);
-    }
-  }, []);
 
   if (!isInstallable) return null;
 
