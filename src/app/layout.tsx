@@ -61,8 +61,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
+            <WebsiteSplashScreen />
             <Suspense>
-              <WebsiteSplashScreen />
               <AuthGate>
                 {children}
               </AuthGate>
