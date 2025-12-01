@@ -25,12 +25,6 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: APP_DEFAULT_TITLE,
-    startupImage: [
-        {
-            url: "https://i.supaimg.com/666f0c51-e68b-44ff-93fe-f7366ef31930.jpg",
-            media: "(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)",
-        }
-    ]
   },
   formatDetection: {
     telephone: false,
