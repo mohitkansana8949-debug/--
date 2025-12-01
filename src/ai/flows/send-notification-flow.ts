@@ -3,42 +3,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, collection, getDocs, query, where } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
-import admin from 'firebase-admin';
+import { adminDB, adminMessaging } from '@/lib/firebaseAdmin';
 import { User } from '@/lib/types';
-import { config } from 'dotenv';
-
-config();
-
-
-function initializeAdminApp() {
-  if (admin.apps.length > 0) {
-    return admin.app();
-  }
-  
-  try {
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountString) {
-      throw new Error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
-    }
-    
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(serviceAccountString);
-    } catch (parseError: any) {
-      throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT JSON: ${parseError.message}`);
-    }
-
-    return admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  } catch (error: any) {
-    console.error("Failed to initialize Firebase Admin SDK:", error.message);
-    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
-  }
-}
-
 
 const NotificationInputSchema = z.object({
   title: z.string(),
@@ -68,12 +34,18 @@ const notificationFlow = ai.defineFlow(
   async ({ title, body, imageUrl }) => {
     
     try {
-      initializeAdminApp();
-      const { firestore } = initializeFirebase();
+      const usersRef = adminDB.collection('users');
+      const q = usersRef.where('fcmToken', '!=', null);
+      const usersSnapshot = await q.get();
 
-      const usersRef = collection(firestore, 'users');
-      const q = query(usersRef, where('fcmToken', '!=', null));
-      const usersSnapshot = await getDocs(q);
+      if (usersSnapshot.empty) {
+        return {
+          success: true,
+          successCount: 0,
+          failureCount: 0,
+          error: "No users have subscribed to notifications.",
+        };
+      }
 
       const tokens = usersSnapshot.docs
         .map(doc => (doc.data() as User).fcmToken)
@@ -84,15 +56,14 @@ const notificationFlow = ai.defineFlow(
           success: true,
           successCount: 0,
           failureCount: 0,
-          error: "No users have subscribed to notifications.",
+          error: "No users with valid tokens found.",
         };
       }
 
-      const message = {
+      const message: admin.messaging.MulticastMessage = {
         notification: {
           title,
           body,
-          ...(imageUrl && { imageUrl }),
         },
         tokens: tokens,
         webpush: {
@@ -102,7 +73,11 @@ const notificationFlow = ai.defineFlow(
         },
       };
 
-      const response = await admin.messaging().sendEachForMulticast(message);
+      if (imageUrl) {
+        message.notification!.imageUrl = imageUrl;
+      }
+
+      const response = await adminMessaging.sendEachForMulticast(message);
       
       return {
         success: response.failureCount === 0,
@@ -112,11 +87,21 @@ const notificationFlow = ai.defineFlow(
 
     } catch (e: any) {
       console.error("Error in sendNotificationFlow:", e);
+      // Construct a more informative error message
+      let errorMessage = "An unexpected error occurred.";
+      if (e.code === 'messaging/invalid-argument') {
+        errorMessage = "Invalid argument provided to messaging service. Check tokens and message payload.";
+      } else if (e.message.includes("Credential")) {
+        errorMessage = "Firebase Admin SDK initialization failed. Check your service account configuration.";
+      } else {
+        errorMessage = e.message;
+      }
+
       return {
         success: false,
         successCount: 0,
         failureCount: 0,
-        error: e.message || "An unexpected error occurred.",
+        error: errorMessage,
       };
     }
   }
