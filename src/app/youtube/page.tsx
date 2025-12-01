@@ -12,7 +12,7 @@ import { useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase
 import { collection, doc } from 'firebase/firestore';
 
 const QUICKLY_STUDY_CHANNEL_ID = 'UCF2s8P3t1-x9-g_X0d-jC-g';
-const QUICKLY_STUDY_CHANNEL_URL = 'https://youtube.com/@quicklystudy01';
+const QUICKLY_STUDY_CHANNEL_URL = 'https://youtube.com/@quicklystudy01?si=4ykCGYaWGcvuISbh';
 
 
 export default function YouTubeExplorerPage() {
@@ -36,7 +36,10 @@ export default function YouTubeExplorerPage() {
     [debouncedSearchQuery, allVideos]
   );
     
-  const isLoading = channelLoading && !channelData;
+  const isLoading = channelLoading;
+  const noVideosExistInDb = !isLoading && allVideos.length === 0;
+  const noSearchResults = !isLoading && debouncedSearchQuery && searchResults.length === 0;
+
 
   return (
     <div className="container mx-auto p-4 space-y-8">
@@ -86,6 +89,13 @@ export default function YouTubeExplorerPage() {
       <div className="space-y-8">
          {isLoading ? (
             <div className="flex h-64 items-center justify-center"><Loader className="animate-spin" /></div>
+         ) : (noVideosExistInDb || noSearchResults) ? (
+            <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
+              <Tv className="mx-auto h-12 w-12" />
+              <h3 className="mt-4 text-lg font-semibold">Video nahi dik raha hai</h3>
+              {noSearchResults && <p>Your search did not match any videos. Try clearing your search.</p>}
+              {noVideosExistInDb && <p>No videos have been synced from the admin panel yet.</p>}
+            </div>
          ) : searchResults.length > 0 ? (
              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {searchResults.map((video: any) => (
@@ -101,12 +111,7 @@ export default function YouTubeExplorerPage() {
                     </Link>
                 ))}
              </div>
-        ) : (
-            <div className="text-center text-muted-foreground mt-16 border rounded-lg p-8">
-              <Tv className="mx-auto h-12 w-12" />
-              <h3 className="mt-4 text-lg font-semibold">Video nahi dik raha hai</h3>
-            </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
