@@ -16,13 +16,15 @@ function initializeAdminApp() {
       if (!serviceAccountString) {
         throw new Error("Firebase Admin SDK service account is not set in environment variables (FIREBASE_SERVICE_ACCOUNT).");
       }
+      // Parse the service account JSON from the environment variable
       const serviceAccount = JSON.parse(serviceAccountString);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
       });
     } catch (error: any) {
       console.error("Failed to initialize Firebase Admin SDK:", error.message);
-      return null;
+      // Re-throw the error to be caught by the calling flow
+      throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
     }
   }
   return admin.app();
@@ -55,20 +57,11 @@ const notificationFlow = ai.defineFlow(
     outputSchema: NotificationOutputSchema,
   },
   async ({ title, body, imageUrl }) => {
-    const adminApp = initializeAdminApp();
-    if (!adminApp) {
-        const errorMsg = "Firebase Admin SDK is not initialized. Cannot send notifications. Ensure service account is configured.";
-        console.error(errorMsg);
-        return {
-            success: false,
-            successCount: 0,
-            failureCount: 0,
-            error: errorMsg,
-        };
-    }
-    const { firestore } = initializeFirebase();
-
+    
     try {
+      initializeAdminApp();
+      const { firestore } = initializeFirebase();
+
       // 1. Fetch all users who have an FCM token
       const usersRef = collection(firestore, 'users');
       const q = query(usersRef, where('fcmToken', '!=', null));
