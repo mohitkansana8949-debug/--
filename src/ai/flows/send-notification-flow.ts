@@ -39,15 +39,16 @@ const notificationFlow = ai.defineFlow(
   async ({ title, body, imageUrl }) => {
     
     try {
-      // Save notification to a global collection for history
+      // 1. Save notification to a global collection for history
       const notificationHistoryRef = adminDB.collection('notifications').doc();
       await notificationHistoryRef.set({
         title,
         body,
-        imageUrl,
+        imageUrl: imageUrl || "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
 
+      // 2. Fetch all users who have a valid FCM token
       const usersRef = adminDB.collection('users');
       const usersSnapshot = await usersRef.where('fcmToken', '!=', null).get();
 
@@ -73,8 +74,8 @@ const notificationFlow = ai.defineFlow(
         };
       }
       
-      const response = await adminMessaging.sendEach(tokens.map(token => ({
-          token,
+      // 3. Send notifications to all valid tokens
+      const message = {
           notification: {
             title,
             body,
@@ -88,10 +89,13 @@ const notificationFlow = ai.defineFlow(
               link: '/', 
             },
           },
-      })));
+          tokens: tokens,
+      };
+
+      const response = await adminMessaging.sendEachForMulticast(message);
       
-      const successCount = response.responses.filter(r => r.success).length;
-      const failureCount = response.responses.length - successCount;
+      const successCount = response.successCount;
+      const failureCount = response.failureCount;
 
       return {
         success: failureCount === 0,

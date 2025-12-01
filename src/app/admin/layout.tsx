@@ -48,7 +48,7 @@ const adminNavItems = [
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
   { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
-  { href: '/admin/notifications', label: 'Send Notification', icon: Bell },
+  { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/live-content', label: 'Live Content', icon: Radio },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
 ];
@@ -60,6 +60,7 @@ const creationNavItems = [
     { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
     { href: '/admin/create-coupon', label: 'Add Coupon', icon: PlusCircle },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
+    { href: '/admin/create-notification', label: 'Send Notification', icon: Bell },
 ]
 
 export default function AdminLayout({
