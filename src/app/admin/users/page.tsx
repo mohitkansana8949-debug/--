@@ -3,7 +3,7 @@
 import { useCollection, useMemoFirebase, useFirebase } from '@/firebase';
 import { collection, doc, deleteDoc, setDoc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader, Edit, Trash2 } from 'lucide-react';
+import { Loader, Edit, Trash2, ShoppingBag } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -34,40 +34,44 @@ export default function AdminUsersPage() {
 
     const adminsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'roles_admin') : null), [firestore]);
     const { data: admins, isLoading: adminsLoading } = useCollection(adminsQuery);
+
+    const bookManagersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'roles_book_manager') : null), [firestore]);
+    const { data: bookManagers, isLoading: bookManagersLoading } = useCollection(bookManagersQuery);
     
     const adminUids = useMemoFirebase(() => new Set(admins?.map(admin => admin.id)), [admins]);
+    const bookManagerUids = useMemoFirebase(() => new Set(bookManagers?.map(manager => manager.id)), [bookManagers]);
 
-    const handleAdminToggle = async (userId: string, currentIsAdmin: boolean) => {
+    const handleRoleToggle = async (userId: string, role: 'admin' | 'book_manager', currentIsRole: boolean) => {
         if (!firestore) return;
         
-        const adminDocRef = doc(firestore, 'roles_admin', userId);
+        const roleCollectionName = `roles_${role}`;
+        const roleDocRef = doc(firestore, roleCollectionName, userId);
+        const roleName = role === 'admin' ? 'Admin' : 'Book Manager';
         
-        if (currentIsAdmin) {
-            // Revoke admin: delete the document
-            deleteDoc(adminDocRef)
+        if (currentIsRole) {
+            deleteDoc(roleDocRef)
                 .then(() => {
-                    toast({ title: 'Admin Revoked', description: 'User is no longer an admin.' });
+                    toast({ title: 'Role Revoked', description: `User is no longer a ${roleName}.` });
                 })
                 .catch((error) => {
-                    console.error("Error revoking admin status:", error);
+                    console.error(`Error revoking ${roleName} status:`, error);
                     const contextualError = new FirestorePermissionError({
                         operation: 'delete',
-                        path: adminDocRef.path
+                        path: roleDocRef.path
                     });
                     errorEmitter.emit('permission-error', contextualError);
                 });
         } else {
-            // Grant admin: create the document
-            const roleData = { role: 'admin' };
-            setDoc(adminDocRef, roleData)
+            const roleData = { role: role, assignedAt: new Date() };
+            setDoc(roleDocRef, roleData)
                 .then(() => {
-                    toast({ title: 'Admin Granted', description: 'User is now an admin.' });
+                    toast({ title: 'Role Granted', description: `User is now a ${roleName}.` });
                 })
                 .catch((error) => {
-                    console.error("Error granting admin status:", error);
+                    console.error(`Error granting ${roleName} status:`, error);
                     const contextualError = new FirestorePermissionError({
                         operation: 'create',
-                        path: adminDocRef.path,
+                        path: roleDocRef.path,
                         requestResourceData: roleData
                     });
                     errorEmitter.emit('permission-error', contextualError);
@@ -75,7 +79,7 @@ export default function AdminUsersPage() {
         }
     };
 
-    const isLoading = usersLoading || adminsLoading;
+    const isLoading = usersLoading || adminsLoading || bookManagersLoading;
 
     return (
         <Card>
@@ -87,7 +91,7 @@ export default function AdminUsersPage() {
                             <TableHead>Name</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Admin</TableHead>
+                            <TableHead>Roles</TableHead>
                             <TableHead>Actions</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -95,6 +99,7 @@ export default function AdminUsersPage() {
                         {isLoading && <TableRow><TableCell colSpan={5} className="text-center"><Loader className="mx-auto animate-spin" /></TableCell></TableRow>}
                         {users?.map(user => {
                             const isCurrentUserAdmin = adminUids.has(user.id);
+                            const isCurrentUserBookManager = bookManagerUids.has(user.id);
                             return (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{user.name || 'N/A'}</TableCell>
@@ -105,14 +110,26 @@ export default function AdminUsersPage() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center space-x-2">
-                                            <Switch
-                                                id={`admin-switch-${user.id}`}
-                                                checked={isCurrentUserAdmin}
-                                                onCheckedChange={() => handleAdminToggle(user.id, isCurrentUserAdmin)}
-                                                disabled={user.email === 'Qukly@study.com'}
-                                            />
-                                            <Label htmlFor={`admin-switch-${user.id}`}>{isCurrentUserAdmin ? 'Admin' : 'User'}</Label>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center space-x-2">
+                                                <Switch
+                                                    id={`admin-switch-${user.id}`}
+                                                    checked={isCurrentUserAdmin}
+                                                    onCheckedChange={() => handleRoleToggle(user.id, 'admin', isCurrentUserAdmin)}
+                                                    disabled={user.email?.toLowerCase() === 'qukly@study.com'}
+                                                    className="data-[state=checked]:bg-destructive"
+                                                />
+                                                <Label htmlFor={`admin-switch-${user.id}`}>Admin</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <Switch
+                                                    id={`book-manager-switch-${user.id}`}
+                                                    checked={isCurrentUserBookManager}
+                                                    onCheckedChange={() => handleRoleToggle(user.id, 'book_manager', isCurrentUserBookManager)}
+                                                    className="data-[state=checked]:bg-blue-600"
+                                                />
+                                                <Label htmlFor={`book-manager-switch-${user.id}`}>Book Manager</Label>
+                                            </div>
                                         </div>
                                     </TableCell>
                                     <TableCell className="space-x-2">

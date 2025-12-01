@@ -373,6 +373,17 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["doubt", "userId", "userName", "answer", "createdAt"]
+    },
+    "BookManager": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BookManager",
+      "type": "object",
+      "description": "Indicates book manager status by document existence.",
+      "properties": {
+        "role": { "type": "string", "const": "book_manager" },
+        "assignedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "assignedAt"]
     }
   },
   "auth": {
@@ -556,6 +567,22 @@
         }
       },
       {
+        "path": "/roles_book_manager/{userId}",
+        "definition": {
+          "entityName": "BookManager",
+          "schema": {
+            "$ref": "#/backend/entities/BookManager"
+          },
+          "description": "Indicates book manager status by document existence. Grants permission to manage book orders.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
         "path": "/chats/{chatId}/messages/{messageId}",
         "definition": {
           "entityName": "ChatMessage",
@@ -603,6 +630,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `Enrollment` collection includes both `userId` and `itemId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/enrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `Enrollment` collection includes both `userId` and `itemId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/enrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}` and `/roles_book_manager/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
   }
 }

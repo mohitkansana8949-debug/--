@@ -1,7 +1,7 @@
 
 'use client';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, doc, updateDoc, getDoc, getDocs, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader, Package, ChevronRight, ShoppingBag, Eye } from 'lucide-react';
@@ -99,25 +99,32 @@ function UpdateOrderDialog({ order }: { order: any }) {
 export default function AdminBookOrdersPage() {
     const { user, isUserLoading } = useUser();
     const { firestore } = useFirestore();
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isAdminLoading, setIsAdminLoading] = useState(true);
+    const [hasPermission, setHasPermission] = useState(false);
+    const [isPermissionLoading, setIsPermissionLoading] = useState(true);
 
     useEffect(() => {
-        const checkAdmin = async () => {
+        const checkPermissions = async () => {
             if (user && firestore) {
-                if (user.email?.toLowerCase() === 'qukly@study.com') {
-                    setIsAdmin(true);
+                const adminRef = doc(firestore, 'roles_admin', user.uid);
+                const bookManagerRef = doc(firestore, 'roles_book_manager', user.uid);
+                
+                const [adminDoc, bookManagerDoc] = await Promise.all([
+                    getDoc(adminRef),
+                    getDoc(bookManagerRef)
+                ]);
+
+                if (adminDoc.exists() || bookManagerDoc.exists()) {
+                    setHasPermission(true);
                 } else {
-                    const adminDoc = await getDoc(doc(firestore, 'roles_admin', user.uid));
-                    setIsAdmin(adminDoc.exists());
+                    setHasPermission(false);
                 }
             } else {
-                setIsAdmin(false);
+                setHasPermission(false);
             }
-            setIsAdminLoading(false);
+            setIsPermissionLoading(false);
         }
         if(!isUserLoading) {
-            checkAdmin();
+            checkPermissions();
         }
     }, [user, firestore, isUserLoading]);
 
@@ -128,7 +135,7 @@ export default function AdminBookOrdersPage() {
 
     const { data: orders, isLoading: ordersLoading } = useCollection(ordersQuery);
     
-    const isLoading = isUserLoading || isAdminLoading;
+    const isLoading = isUserLoading || isPermissionLoading;
 
     const getStatusVariant = (status: string) => {
         switch (status) {
@@ -143,7 +150,7 @@ export default function AdminBookOrdersPage() {
         return <div className="flex h-full w-full items-center justify-center"><Loader className="animate-spin" /></div>;
     }
     
-    if (!isAdmin) {
+    if (!hasPermission) {
         return (
             <Card>
                 <CardHeader>
