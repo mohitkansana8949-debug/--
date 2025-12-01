@@ -37,7 +37,7 @@ import { useCart } from '@/hooks/use-cart';
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Purchases', href: '/my-purchases', icon: ShoppingBag },
+    { name: 'Cart', href: '/cart', icon: ShoppingCart },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
@@ -160,21 +160,17 @@ export default function HomePage() {
         {footerItems.map(item => {
             const Icon = item.icon;
             return (
-                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center">
+                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/4 text-center relative">
+                    {item.name === 'Cart' && cart.length > 0 && (
+                        <span className="absolute top-0 right-3 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                            {cart.reduce((acc, item) => acc + item.quantity, 0)}
+                        </span>
+                    )}
                     <Icon className="h-5 w-5 mb-1"/> 
                     <span>{item.name}</span>
                 </Link>
             )
         })}
-        <Link href="/cart" className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center relative">
-            <ShoppingCart className="h-5 w-5 mb-1"/> 
-            <span>Cart</span>
-             {cart.length > 0 && (
-                <span className="absolute top-0 right-3 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-                    {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                </span>
-            )}
-        </Link>
       </footer>
 
     </div>

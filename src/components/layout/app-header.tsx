@@ -22,6 +22,7 @@ import Link from "next/link";
 import { useMemo, useState, useEffect } from 'react';
 import { useFirebase } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { NotificationDrawer } from '@/components/notification-drawer';
 
 
 // Helper function to get a color based on user ID
@@ -63,10 +64,7 @@ export function AppHeader() {
         {/* Future search bar can go here */}
       </div>
       <ThemeToggle />
-      <Button variant="ghost" size="icon">
-        <Bell className="h-5 w-5" />
-        <span className="sr-only">Notifications</span>
-      </Button>
+      <NotificationDrawer />
       <UserMenu />
     </header>
   );

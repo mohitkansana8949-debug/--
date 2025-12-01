@@ -4,6 +4,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { adminDB, adminMessaging } from '@/lib/firebaseAdmin';
+import { firestore } from 'firebase-admin';
+
 
 interface User {
   fcmToken?: string | null;
@@ -38,6 +40,15 @@ const notificationFlow = ai.defineFlow(
   async ({ title, body, imageUrl }) => {
     
     try {
+      // Save notification to a global collection for history
+      const notificationHistoryRef = adminDB.collection('notifications').doc();
+      await notificationHistoryRef.set({
+        title,
+        body,
+        imageUrl,
+        createdAt: firestore.FieldValue.serverTimestamp(),
+      });
+
       const usersRef = adminDB.collection('users');
       const usersSnapshot = await usersRef.where('fcmToken', '!=', null).get();
 
@@ -63,7 +74,7 @@ const notificationFlow = ai.defineFlow(
         };
       }
       
-      const message: admin.messaging.MulticastMessage = {
+      const message = {
         notification: {
           title,
           body,
@@ -71,13 +82,16 @@ const notificationFlow = ai.defineFlow(
         },
         tokens,
         webpush: {
+          notification: {
+            icon: "https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg",
+          },
           fcmOptions: {
             link: '/', 
           },
         },
       };
 
-      const response = await adminMessaging.sendEachForMulticast(message);
+      const response = await adminMessaging.sendEachForMulticast(message as any);
       
       return {
         success: response.failureCount === 0,
