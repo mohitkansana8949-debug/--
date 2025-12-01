@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,7 +21,6 @@ const resultSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   examName: z.string().min(1, 'Exam name is required'),
   rollNumber: z.string().min(1, 'Roll number is required'),
-  photoUrl: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   mobile: z.string().length(10, 'Mobile number must be 10 digits'),
 });
 
@@ -39,7 +39,6 @@ export default function SubmitResultPage() {
       name: user?.displayName || '',
       examName: '',
       rollNumber: '',
-      photoUrl: '',
       mobile: '',
     },
   });
@@ -123,14 +122,6 @@ export default function SubmitResultPage() {
                     <FormItem>
                         <FormLabel>Mobile Number</FormLabel>
                         <FormControl><Input type="tel" maxLength={10} placeholder="Your 10-digit mobile number" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}/>
-                 <FormField control={form.control} name="photoUrl" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Your Photo URL (Optional)</FormLabel>
-                        <FormControl><Input placeholder="https://example.com/your-photo.jpg" {...field} /></FormControl>
-                        <FormDescription>A link to your passport-size photograph.</FormDescription>
                         <FormMessage />
                     </FormItem>
                 )}/>

@@ -10,7 +10,6 @@ import {
   Library,
   Newspaper,
   Loader,
-  ShoppingBag,
   Star,
   Home,
   Bell,
@@ -23,37 +22,20 @@ import {
   Youtube,
   BarChartHorizontal,
   Clapperboard,
-  Package,
-  Wand2,
-  LifeBuoy,
-  ShoppingCart,
   UserCheck,
+  LifeBuoy,
+  MessageCircle,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
-import { useCart } from '@/hooks/use-cart';
 
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Bookshala', href: '/bookshala', icon: Package },
+    { name: 'Feed', href: '/feed', icon: Rss },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
-
-function AiDoubtSolverCard() {
-    return (
-        <Link href="/ai-doubt-solver" className="block">
-            <div className="relative p-4 rounded-lg overflow-hidden bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-gradient-xy">
-                <div className="text-white text-center">
-                    <Wand2 className="mx-auto h-8 w-8 mb-2" />
-                    <h2 className="text-xl font-bold mb-1">Quickly Study Doubt Solver</h2>
-                     <Button variant="secondary" size="sm" className="mt-1">Start Now</Button>
-                </div>
-            </div>
-        </Link>
-    );
-}
 
 function PwaInstallCard() {
   const [isInstallable, setIsInstallable] = useState(false);
@@ -110,28 +92,9 @@ function PwaInstallCard() {
   );
 }
 
-function SubmitResultCard() {
-     return (
-        <Link href="/submit-result" className="block">
-            <Card className="bg-gradient-to-br from-green-500 to-teal-600 text-white transition-transform hover:scale-105">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <UserCheck /> Submit Your Result
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>Did you clear an exam with our help? Share your success with us!</p>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}
-
-
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
-  const { cart } = useCart();
 
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
@@ -140,7 +103,6 @@ export default function HomePage() {
   const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
 
   const showYoutubeFeature = useMemo(() => appSettings?.youtubeFeatureEnabled !== false, [appSettings]);
-  const showAiDoubtSolver = useMemo(() => appSettings?.aiDoubtSolverEnabled === true, [appSettings]);
   
   const featureCards = useMemo(() => {
     let cards = [
@@ -152,11 +114,16 @@ export default function HomePage() {
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
       { title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library },
-      { title: 'Bookshala', href: '/bookshala', gradient: 'bg-gradient-to-br from-slate-500 to-gray-600', icon: Package },
     ];
     
+     if (showYoutubeFeature) {
+      cards.push({ title: 'YouTube', href: '/youtube', gradient: 'bg-gradient-to-br from-rose-500 to-red-600', icon: Youtube });
+    } else {
+      cards.push({ title: 'Submit Result', href: '/submit-result', gradient: 'bg-gradient-to-br from-green-500 to-teal-600', icon: UserCheck });
+    }
+    
     return cards;
-}, []);
+}, [showYoutubeFeature]);
 
 
   if (isUserLoading || settingsLoading) {
@@ -182,18 +149,6 @@ export default function HomePage() {
 
       <PwaInstallCard />
 
-      {showYoutubeFeature ? (
-          <Link href="/youtube" className="block">
-            <Card className="bg-gradient-to-br from-rose-500 to-red-600 text-white">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Youtube /> YouTube</CardTitle>
-                </CardHeader>
-            </Card>
-          </Link>
-      ) : (
-          <SubmitResultCard />
-      )}
-
       <div className="grid grid-cols-3 gap-4">
         {featureCards.map((card, index) => (
           <Link href={card.href} key={index}>
@@ -207,8 +162,6 @@ export default function HomePage() {
         ))}
       </div>
       
-      {showAiDoubtSolver && <AiDoubtSolverCard />}
-
        <div>
         <h2 className="text-2xl font-bold mb-4 flex items-center"><Users className="mr-2 h-6 w-6" /> हमारे एजुकेटर्स</h2>
          {educatorsLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (educators && educators.length > 0) ? (

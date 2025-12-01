@@ -20,13 +20,12 @@ import {
   Youtube,
   Clapperboard,
   MessageSquare,
-  ShoppingBag,
-  Package,
   TicketPercent,
   Bell,
   ShieldCheck,
   BarChartHorizontal,
   PieChart,
+  UserCheck,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +50,7 @@ const adminNavItems = [
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
   { href: '/admin/live-content', label: 'Live Content', icon: Radio },
+  { href: '/admin/results', label: 'Submitted Results', icon: UserCheck },
   { href: '/admin/settings', label: 'सेटिंग्स', icon: Settings },
 ];
 

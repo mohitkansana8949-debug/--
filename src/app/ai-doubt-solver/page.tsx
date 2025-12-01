@@ -1,19 +1,14 @@
 'use client';
-import { useState, useRef } from 'react';
-import { useUser, useFirebase } from '@/firebase';
+import { useState } from 'react';
+import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader, Wand2, User, Bot, Image as ImageIcon, X } from 'lucide-react';
+import { Loader, Wand2, Bot } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { solveDoubt } from '@/ai/flows/doubt-solver-flow';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import Image from 'next/image';
-import { FirebaseError } from 'firebase/app';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
 export default function AiDoubtSolverPage() {
     const { user } = useUser();
