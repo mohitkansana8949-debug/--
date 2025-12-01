@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useCollection, useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useUser, useFirebase, useMemoFirebase } from '@/firebase';
 import { collection, getDocs, Timestamp, doc, setDoc, getDoc, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -107,11 +107,11 @@ export default function AdminRevenuePage() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
-  const revenueOverrideRef = useMemoFirebase(() => doc(firestore, 'settings', 'revenue'), [firestore]);
+  const revenueOverrideRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'revenue') : null, [firestore]);
 
   // Use useCollection to get live updates on enrollments
-  const approvedEnrollmentsQuery = useMemoFirebase(() => query(collection(firestore, 'enrollments'), where('status', '==', 'approved')), [firestore]);
-  const deliveredOrdersQuery = useMemoFirebase(() => query(collection(firestore, 'bookOrders'), where('status', '==', 'Delivered')), [firestore]);
+  const approvedEnrollmentsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'enrollments'), where('status', '==', 'approved')) : null, [firestore]);
+  const deliveredOrdersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'bookOrders'), where('status', '==', 'Delivered')) : null, [firestore]);
 
   const { data: approvedEnrollments, isLoading: enrollmentsLoading } = useCollection(approvedEnrollmentsQuery);
   const { data: deliveredOrders, isLoading: ordersLoading } = useCollection(deliveredOrdersQuery);

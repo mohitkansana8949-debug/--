@@ -5,11 +5,13 @@ import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useDoc, useFirebase, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { Progress } from '@/components/ui/progress';
 
 export function WebsiteSplashScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [progress, setProgress] = useState(0);
   const { firestore } = useFirebase();
 
   const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
@@ -33,18 +35,31 @@ export function WebsiteSplashScreen() {
       return;
     }
 
-    const timer = setTimeout(() => {
-      setIsFadingOut(true);
-    }, 9500); 
+    const DURATION = 20000; // 20 seconds
+
+    const progressInterval = setInterval(() => {
+        setProgress(prev => {
+            if (prev >= 100) {
+                clearInterval(progressInterval);
+                return 100;
+            }
+            return prev + (100 / (DURATION / 100));
+        });
+    }, 100);
 
     const fadeOutTimer = setTimeout(() => {
+      setIsFadingOut(true);
+    }, DURATION - 500); 
+
+    const unmountTimer = setTimeout(() => {
         setIsLoading(false);
         sessionStorage.setItem('hasVisitedQuicklyStudy', 'true');
-    }, 10000);
+    }, DURATION);
     
     return () => {
-        clearTimeout(timer);
+        clearInterval(progressInterval);
         clearTimeout(fadeOutTimer);
+        clearTimeout(unmountTimer);
     }
 
   }, [isMounted]);
@@ -69,6 +84,9 @@ export function WebsiteSplashScreen() {
       )}
     >
        {settingsLoading ? null : <CustomSplashScreen url={customSplashUrl} />}
+       <div className="absolute bottom-10 w-11/12 max-w-sm">
+           <Progress value={progress} className="h-2 [&>div]:bg-white/50" />
+       </div>
        
        <style jsx>{`
         @keyframes fall-in {
@@ -80,5 +98,3 @@ export function WebsiteSplashScreen() {
     </div>
   );
 }
-
-    
