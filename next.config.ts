@@ -1,25 +1,12 @@
 
 import type {NextConfig} from 'next';
-import createNextPwa from '@ducanh2912/next-pwa';
+import createNextPwa from '@next/pwa';
 
 const withPWA = createNextPwa({
   dest: 'public',
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  cacheStartUrl: true,
-  cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
-  reloadOnOnline: true,
-  workboxOptions: {
-    disableDevLogs: true,
-  },
-  extendDefaultRuntimeCaching: true,
-  fallbacks: {
-    document: "/_offline",
-  },
-  customWorkerSrc: "src/worker",
-  appStartUrl: "/",
 });
 
 
