@@ -1,6 +1,6 @@
 
 import type {NextConfig} from 'next';
-import createNextPwa from '@next/pwa';
+import createNextPwa from '@ducanh2912/next-pwa';
 
 const withPWA = createNextPwa({
   dest: 'public',
