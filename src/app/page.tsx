@@ -35,8 +35,6 @@ import { cn } from '@/lib/utils';
 
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Library', icon: Library, href: '/my-library' },
-    { name: 'Live', icon: Clapperboard, href: '/live-lectures' },
     { name: 'Feed', href: '/feed', icon: Rss },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
@@ -98,16 +96,14 @@ function PwaInstallCard() {
 
 function AiDoubtSolverCard() {
     return (
-        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-1">
-            <div className="flex flex-col sm:flex-row items-center justify-between h-full w-full bg-background/80 dark:bg-background/50 rounded-md p-6 gap-4">
-                <div className="text-center sm:text-left">
-                    <h3 className="text-xl font-bold flex items-center gap-2 text-white">
-                        <Wand2 />
-                        Quickly Study Doubt Solver
-                    </h3>
-                    <p className="text-sm text-white/80 mt-1">Stuck on a question? Get instant answers from our AI tutor.</p>
-                </div>
-                <Button asChild variant="secondary" className="w-full sm:w-auto flex-shrink-0">
+        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-1 relative overflow-hidden">
+            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/50 rounded-md p-4 gap-4">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-white">
+                    <Wand2 />
+                    Quickly Study Doubt Solver
+                </h3>
+                <p className="text-sm text-white/80">Stuck on a question? Get instant answers from our AI tutor.</p>
+                <Button asChild variant="secondary" className="w-full mt-2">
                     <Link href="/ai-doubt-solver">Ask a Doubt</Link>
                 </Button>
             </div>
@@ -166,7 +162,7 @@ export default function HomePage() {
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to Quickly Study</h1>
             <p className="text-sm text-muted-foreground">The quickest way to study.</p>
         </div>
-        <Button variant="outline" asChild>
+        <Button variant="default" asChild className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white">
           <Link href="/support">Support</Link>
         </Button>
       </div>
@@ -217,7 +213,7 @@ export default function HomePage() {
         {footerItems.map(item => {
             const Icon = item.icon;
             return (
-                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center relative">
+                <Link href={item.href} key={item.name} className="flex flex-col items-center text-xs text-muted-foreground w-1/5 text-center relative" onClick={() => {}}>
                     <Icon className="h-5 w-5 mb-1"/> 
                     <span>{item.name}</span>
                 </Link>
