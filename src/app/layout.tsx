@@ -6,7 +6,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { FirebaseClientProvider } from '@/firebase';
 import { AuthGate } from '@/components/layout/auth-gate';
 import { Suspense } from 'react';
-import { WebsiteSplashScreen } from '@/components/ui/website-splash-screen';
 
 
 const APP_NAME = "Quickly Study";
@@ -61,7 +60,6 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            <WebsiteSplashScreen />
             <Suspense>
               <AuthGate>
                 {children}
