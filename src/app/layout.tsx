@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     apple: 'https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg',
   },
   other: {
-    "google-site-verification": "tpxyguMPSQqy1W6/..."
+    "google-site-verification": "tpxyguMPSOqv1W6Aj42I4lhHQB-Ky5tA2SjqoP66LtI"
   }
 };
 
