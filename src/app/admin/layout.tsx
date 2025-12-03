@@ -27,6 +27,7 @@ import {
   PieChart,
   UserCheck,
   Trophy,
+  Wand2,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,7 +62,7 @@ const creationNavItems = [
     { href: '/admin/create-ebook', label: 'Add E-book', icon: PlusCircle },
     { href: '/admin/create-pyq', label: 'Add PYQ', icon: PlusCircle },
     { href: '/admin/create-test', label: 'Add Test', icon: PlusCircle },
-    { href: '/admin/create-coupon', label: 'Add Coupon', icon: PlusCircle },
+    { href: '/admin/create-coupon', label: 'Add Coupon', icon: TicketPercent },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
     { href: '/admin/create-notification', label: 'Send Notification', icon: Bell },
 ]
@@ -115,7 +116,7 @@ export default function AdminLayout({
           <nav className="flex flex-col gap-2">
             <h3 className="px-4 text-lg font-semibold tracking-tight mb-2">Management</h3>
             {adminNavItems.map((item) => {
-              const isChildRouteOfItem = pathname.startsWith(item.href) && item.href !== '/admin';
+              const isChildRouteOfItem = item.href !== '/admin' && pathname.startsWith(item.href);
               return (
                 <Button
                   key={item.href}

@@ -4,7 +4,7 @@ import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader, PackagePlus, Newspaper, Trash2 } from 'lucide-react';
+import { Loader, PackagePlus, Newspaper, Trash2, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -172,7 +172,7 @@ export default function AdminTestSeriesPage() {
                                     <TableCell>{test.bundledCourseId ? coursesMap.get(test.bundledCourseId) : 'None'}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button asChild size="sm" variant="outline">
-                                            <Link href={`/take-test/${test.id}`}>View Test</Link>
+                                            <Link href={`/admin/edit-test/${test.id}`}><Edit className="mr-2 h-4 w-4" />Edit</Link>
                                         </Button>
                                         <AddTestToCourseDialog testId={test.id} testName={test.name} />
                                         <AlertDialog>

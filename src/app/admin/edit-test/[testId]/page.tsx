@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,17 +13,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { useFirebase, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Loader, ArrowLeft } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Link from 'next/link';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const testSchema = z.object({
   name: z.string().min(1, 'नाम आवश्यक है'),
   description: z.string().min(1, 'विवरण आवश्यक है'),
-  language: z.enum(['hindi', 'english']).default('hindi'),
   duration: z.coerce.number().min(1, 'अवधि कम से कम 1 मिनट होनी चाहिए'),
   price: z.coerce.number().min(0, 'कीमत 0 या उससे ज़्यादा होनी चाहिए'),
   isFree: z.boolean().default(false),
@@ -49,31 +47,24 @@ const jsonExample = `[
       "चेन्नई"
     ],
     "answer": "नई दिल्ली"
-  },
-  {
-    "question": "सूर्य किस दिशा में उगता है?",
-    "options": [
-      "पूर्व",
-      "पश्चिम",
-      "उत्तर",
-      "दक्षिण"
-    ],
-    "answer": "पूर्व"
   }
 ]`;
 
-export default function CreateTestPage() {
+export default function EditTestPage() {
   const router = useRouter();
+  const { testId } = useParams();
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const testRef = useMemoFirebase(() => (firestore && testId ? doc(firestore, 'tests', testId as string) : null), [firestore, testId]);
+  const { data: testData, isLoading: isTestLoading } = useDoc(testRef);
 
   const form = useForm<TestFormValues>({
     resolver: zodResolver(testSchema),
     defaultValues: {
       name: '',
       description: '',
-      language: 'hindi',
       duration: 30,
       price: 0,
       isFree: false,
@@ -81,62 +72,71 @@ export default function CreateTestPage() {
     },
   });
 
+  useEffect(() => {
+    if (testData) {
+      form.reset({
+        ...testData,
+        questions: JSON.stringify(testData.questions || [], null, 2),
+      });
+    }
+  }, [testData, form]);
+
   const onSubmit = async (values: TestFormValues) => {
-    if (!firestore) return;
+    if (!firestore || !testRef) return;
     setIsSubmitting(true);
 
     try {
-      const testData = {
+      const updatedData = {
         name: values.name,
         description: values.description,
-        language: values.language,
         duration: values.duration,
         price: values.isFree ? 0 : values.price,
         isFree: values.isFree,
         questions: JSON.parse(values.questions),
-        createdAt: serverTimestamp(),
       };
       
-      const testsCollection = collection(firestore, 'tests');
-      
-      await addDoc(testsCollection, testData);
+      await updateDoc(testRef, updatedData);
       
       toast({
           title: 'सफलता!',
-          description: 'नई टेस्ट सीरीज़ बना दी गई है।',
+          description: 'टेस्ट सीरीज़ सफलतापूर्वक अपडेट हो गई है।',
       });
       router.push(`/admin/test-series`);
 
     } catch (error: any) {
-        console.error("Test creation error:", error);
+        console.error("Test update error:", error);
         const contextualError = new FirestorePermissionError({
-            operation: 'create',
-            path: 'tests',
+            operation: 'update',
+            path: `tests/${testId}`,
             requestResourceData: values,
         });
         errorEmitter.emit('permission-error', contextualError);
-        toast({ variant: 'destructive', title: 'त्रुटि', description: 'टेस्ट सीरीज़ बनाने में एक अप्रत्याशित त्रुटि हुई।' });
+        toast({ variant: 'destructive', title: 'त्रुटि', description: 'टेस्ट सीरीज़ अपडेट करने में एक अप्रत्याशित त्रुटि हुई।' });
     } finally {
         setIsSubmitting(false);
     }
   };
+  
+  if (isTestLoading) {
+      return <div className="flex h-full w-full justify-center items-center"><Loader className="animate-spin" /></div>
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background">
        <header className="p-4 border-b flex items-center gap-4">
         <Button asChild variant="outline">
-          <Link href="/admin">
+          <Link href="/admin/test-series">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
+            Back to Test Series
           </Link>
         </Button>
-        <h1 className="text-xl font-semibold">Create New Test Series</h1>
+        <h1 className="text-xl font-semibold">Edit Test Series</h1>
       </header>
       <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle>Test Series Details</CardTitle>
-            <CardDescription>Enter the test series information.</CardDescription>
+            <CardDescription>Edit the test series information.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -146,17 +146,6 @@ export default function CreateTestPage() {
                 )} />
                 <FormField control={form.control} name="description" render={({ field }) => (
                   <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief summary of the test" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                 <FormField control={form.control} name="language" render={({ field }) => (
-                  <FormItem className="space-y-3"><FormLabel>Language</FormLabel>
-                      <FormControl>
-                          <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4">
-                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="hindi" /></FormControl><FormLabel className="font-normal">Hindi</FormLabel></FormItem>
-                              <FormItem className="flex items-center space-x-2"><FormControl><RadioGroupItem value="english" /></FormControl><FormLabel className="font-normal">English</FormLabel></FormItem>
-                          </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                  </FormItem>
                 )} />
                  <FormField control={form.control} name="duration" render={({ field }) => (
                   <FormItem><FormLabel>Duration (in minutes)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -187,7 +176,7 @@ export default function CreateTestPage() {
                   </FormItem>
                 )} />
                 <Button type="submit" disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> Creating...</> : 'Save Test Series'}
+                  {isSubmitting ? <><Loader className="mr-2 h-4 w-4 animate-spin" /> Updating...</> : 'Save Changes'}
                 </Button>
               </form>
             </Form>
