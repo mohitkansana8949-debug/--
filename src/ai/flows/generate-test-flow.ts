@@ -59,7 +59,7 @@ const testGeneratorFlow = ai.defineFlow(
       prompt: prompt,
       config: {
         temperature: 0.5,
-        responseFormat: "json"
+        response_mime_type: "application/json"
       }
     });
 

@@ -43,7 +43,7 @@ const bookSummaryFlow = ai.defineFlow(
       prompt: prompt,
       config: {
         temperature: 0.7,
-        responseFormat: "json"
+        response_mime_type: "application/json"
       }
     });
 
