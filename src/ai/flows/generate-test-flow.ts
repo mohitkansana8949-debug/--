@@ -64,8 +64,8 @@ const testGeneratorFlow = ai.defineFlow(
     });
 
     const structuredResponse = llmResponse.output;
-    if (!structuredResponse) {
-        throw new Error("AI did not return a valid JSON object.");
+    if (!structuredResponse || !structuredResponse.questions) {
+        throw new Error("AI did not return a valid JSON object with questions.");
     }
     
     // Pass the duration and language from the input to the output
