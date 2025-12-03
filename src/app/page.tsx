@@ -32,10 +32,13 @@ import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
 import { useEffect, useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 const footerItems = [
     { name: 'Home', href: '/', icon: Home },
+    { name: 'Library', href: '/my-library', icon: Library },
     { name: 'Feed', href: '/feed', icon: Rss },
+    { name: 'Refer', href: '/refer', icon: Gift },
     { name: 'Profile', icon: Users, href: '/profile' },
 ];
 
@@ -96,8 +99,8 @@ function PwaInstallCard() {
 
 function AiDoubtSolverCard() {
     return (
-        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-1 relative overflow-hidden">
-            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/50 rounded-md p-4 gap-4">
+        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-0.5 relative overflow-hidden">
+            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/80 rounded-md p-4 gap-2 items-center text-center">
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                     <Wand2 />
                     Quickly Study Doubt Solver
@@ -114,6 +117,7 @@ function AiDoubtSolverCard() {
 export default function HomePage() {
   const { user, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const router = useRouter();
 
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
@@ -131,12 +135,13 @@ export default function HomePage() {
     let cards = [
       { title: 'कोर्सेस', href: '/courses', gradient: 'bg-gradient-to-br from-blue-500 to-purple-600', icon: BookOpen },
       { title: 'Live Classes', href: '/live-lectures', gradient: 'bg-gradient-to-br from-red-500 to-orange-500', icon: Clapperboard },
-      { title: 'My Progress', href: '/my-progress', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: BarChartHorizontal },
+      { title: 'AI Test', href: '/ai-test', gradient: 'bg-gradient-to-br from-indigo-500 to-violet-500', icon: Wand2 },
       { title: 'E-books', href: '/ebooks', gradient: 'bg-gradient-to-br from-teal-500 to-green-500', icon: EbookIcon },
       { title: 'PYQs', href: '/pyqs', gradient: 'bg-gradient-to-br from-yellow-500 to-amber-600', icon: FileQuestion },
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
+      { title: 'Current Affairs', href: '/current-affairs', gradient: 'bg-gradient-to-br from-sky-400 to-cyan-400', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
-      { title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library },
+      { title: 'My Progress', href: '/my-progress', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: BarChartHorizontal },
     ];
     
      if (showYoutubeFeature) {
@@ -144,6 +149,8 @@ export default function HomePage() {
     } else {
       cards.push({ title: 'Submit Result', href: '/submit-result', gradient: 'bg-gradient-to-br from-green-500 to-teal-600', icon: UserCheck });
     }
+     cards.push({ title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library });
+     cards.push({ title: 'Support', href: '/support', gradient: 'bg-gradient-to-br from-lime-500 to-emerald-500', icon: LifeBuoy });
     
     return cards;
 }, [showYoutubeFeature]);
@@ -155,6 +162,10 @@ export default function HomePage() {
         <Loader className="animate-spin" />
       </div>
     );
+  }
+
+  const handleCardClick = (path: string) => {
+    router.push(path);
   }
 
   return (
@@ -172,19 +183,12 @@ export default function HomePage() {
 
       <PwaInstallCard />
       
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-2.5">
         {featureCards.map((card, index) => (
-          <Link href={card.href} key={index}>
-            <Card
-              className={cn(
-                "flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105",
-                card.gradient
-              )}
-            >
-              <card.icon className="mb-2 h-6 w-6 md:h-8 md:w-8" />
-              <span className="font-semibold text-xs md:text-sm">{card.title}</span>
-            </Card>
-          </Link>
+          <div key={index} onClick={() => handleCardClick(card.href)} className={cn("flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 rounded-lg cursor-pointer", card.gradient)}>
+              <card.icon className="mb-1 h-5 w-5 md:h-6 md:w-6" />
+              <span className="font-semibold text-[10px] md:text-xs leading-tight">{card.title}</span>
+          </div>
         ))}
       </div>
 
@@ -195,7 +199,7 @@ export default function HomePage() {
          {educatorsLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (educators && educators.length > 0) ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {educators.map(educator => (
-                <Card key={educator.id} className="text-center overflow-hidden transition-transform hover:scale-105">
+                <Card key={educator.id} className="text-center overflow-hidden transition-transform hover:scale-105 cursor-pointer" onClick={() => handleCardClick(`/educators/${educator.id}`)}>
                   {educator.imageUrl ? 
                     <Image src={educator.imageUrl} alt={educator.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>
                     : <div className="w-full h-32 bg-secondary flex items-center justify-center"><Users className="h-12 w-12 text-muted-foreground"/></div>
@@ -217,7 +221,7 @@ export default function HomePage() {
          {toppersLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (toppers && toppers.length > 0) ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {toppers.map(topper => (
-                <Card key={topper.id} className="text-center overflow-hidden transition-transform hover:scale-105">
+                <Card key={topper.id} className="text-center overflow-hidden transition-transform hover:scale-105 cursor-pointer" onClick={() => handleCardClick(`/toppers/${topper.id}`)}>
                   {topper.imageUrl ? 
                     <Image src={topper.imageUrl} alt={topper.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>
                     : <div className="w-full h-32 bg-secondary flex items-center justify-center"><Trophy className="h-12 w-12 text-muted-foreground"/></div>

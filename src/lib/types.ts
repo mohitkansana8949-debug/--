@@ -28,6 +28,7 @@ export interface User {
   state?: string;
   class?: string;
   fcmToken?: string | null;
+  aiTestCount?: number;
 }
 
 export type CourseContent = {
@@ -54,7 +55,7 @@ export interface Enrollment {
   id: string;
   userId: string;
   itemId: string; // Can be courseId, ebookId, testId, etc.
-  itemType: 'course' | 'ebook' | 'pyq' | 'test';
+  itemType: 'course' | 'ebook' | 'pyq' | 'test' | 'ai_test';
   itemName: string; // Denormalized for easier display
   itemPrice?: number; // Denormalized for revenue calculation
   enrollmentDate: Timestamp;
@@ -188,4 +189,12 @@ export interface Coupon {
   maxUses?: number;
   uses?: number;
   createdAt: Timestamp;
+}
+
+export interface CurrentAffair {
+    id: string;
+    title: string;
+    imageUrl: string;
+    link: string;
+    createdAt: Timestamp;
 }

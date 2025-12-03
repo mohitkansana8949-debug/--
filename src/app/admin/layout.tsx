@@ -41,6 +41,7 @@ const adminNavItems = [
   { href: '/admin/revenue', label: 'Revenue', icon: PieChart },
   { href: '/admin/courses', label: 'Manage Courses', icon: BookOpen },
   { href: '/admin/content', label: 'Manage Content', icon: Palette },
+  { href: '/admin/current-affairs', label: 'Current Affairs', icon: Newspaper },
   { href: '/admin/ebooks', label: 'Manage E-books', icon: Book },
   { href: '/admin/pyqs', label: 'Manage PYQs', icon: FileQuestion },
   { href: '/admin/test-series', label: 'Manage Tests', icon: Newspaper },
