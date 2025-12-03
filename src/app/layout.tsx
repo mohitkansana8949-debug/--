@@ -32,6 +32,9 @@ export const metadata: Metadata = {
   icons: {
     icon: 'https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg',
     apple: 'https://i.supaimg.com/6f2c48a1-5943-4025-9203-d0712fa34d7b.jpg',
+  },
+  other: {
+    "google-site-verification": "tpxyguMPSQqy1W6/..."
   }
 };
 
