@@ -102,14 +102,14 @@ function PwaInstallCard() {
 
 function AiDoubtSolverCard() {
     return (
-        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-0.5 relative overflow-hidden">
-            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/80 rounded-md p-4 gap-2 items-center text-center">
+        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-0.5 relative overflow-hidden h-28">
+            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/80 rounded-md p-4 gap-2 items-center text-center justify-center">
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                     <Wand2 />
                     Quickly Study Doubt Solver
                 </h3>
                 <p className="text-sm text-white/80">Stuck on a question? Get instant answers from our AI tutor.</p>
-                <Button asChild variant="secondary" className="w-full mt-2">
+                <Button asChild variant="secondary" className="w-full mt-2" size="sm">
                     <Link href="/ai-doubt-solver">Ask a Doubt</Link>
                 </Button>
             </div>
@@ -144,8 +144,6 @@ export default function HomePage() {
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
       { title: 'Current Affairs', href: '/current-affairs', gradient: 'bg-gradient-to-br from-sky-400 to-cyan-400', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
-      { title: 'My Progress', href: '/my-progress', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: BarChartHorizontal },
-      { title: 'Feed', href: '/feed', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: Rss },
     ];
     
      if (showYoutubeFeature) {
@@ -153,7 +151,6 @@ export default function HomePage() {
     } else {
       cards.push({ title: 'Submit Result', href: '/submit-result', gradient: 'bg-gradient-to-br from-green-500 to-teal-600', icon: UserCheck });
     }
-     cards.push({ title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library });
     
     return cards;
 }, [showYoutubeFeature]);

@@ -30,6 +30,7 @@ import {
   Trophy,
   Wand2,
   FileSearch,
+  BrainCircuit,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

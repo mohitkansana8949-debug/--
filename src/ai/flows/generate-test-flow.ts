@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const GenerateTestInputSchema = z.object({
   topic: z.string().describe('The topic for the test.'),
-  numQuestions: z.number().min(1).max(20).describe('The number of questions to generate.'),
+  numQuestions: z.number().min(1).max(50).describe('The number of questions to generate.'),
   language: z.enum(['english', 'hindi']).default('hindi').describe('The language for the test questions and options.'),
   duration: z.number().min(1).max(60).describe('The duration of the test in minutes.'),
   userId: z.string().describe('The ID of the user requesting the test.'),
@@ -30,6 +30,7 @@ export async function generateTestFlow(input: GenerateTestInput): Promise<Genera
   return await testGeneratorFlow(input);
 }
 
+
 const testGeneratorFlow = ai.defineFlow(
   {
     name: 'testGeneratorFlow',
@@ -38,7 +39,11 @@ const testGeneratorFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const prompt = `You are an expert test creator for students. Your task is to generate a multiple-choice quiz based on the provided topic.
+    const prompt = ai.definePrompt({
+        name: "testGeneratorPrompt",
+        input: { schema: GenerateTestInputSchema },
+        output: { schema: GenerateTestOutputSchema },
+        prompt: `You are an expert test creator for students. Your task is to generate a multiple-choice quiz based on the provided topic.
 
     **Topic:** "${input.topic}"
     **Number of Questions:** ${input.numQuestions}
@@ -50,21 +55,15 @@ const testGeneratorFlow = ai.defineFlow(
     3.  The entire output (questions, options, and answers) must be in the **${input.language}** language.
     4.  The 'answer' field for each question must be one of the strings from the 'options' array.
     5.  Ensure the questions are relevant to the topic and are at a standard competitive exam level.
-    6.  Format the output as a valid JSON object matching the provided schema. Do not include any extra text or explanations outside the JSON structure.`;
-    
-    const testPrompt = ai.definePrompt({
-        name: "testGeneratorPrompt",
-        input: { schema: GenerateTestInputSchema },
-        output: { schema: GenerateTestOutputSchema },
-        prompt: prompt,
+    6.  Format the output as a valid JSON object matching the provided schema. Do not include any extra text or explanations outside the JSON structure.`,
         config: {
           temperature: 0.5,
         }
     });
 
-    const { output } = await testPrompt(input);
+    const { output } = await prompt(input);
 
-    if (!output) {
+    if (!output || !output.questions) {
         throw new Error("AI did not return a valid JSON object with questions.");
     }
     
