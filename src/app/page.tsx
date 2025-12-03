@@ -184,7 +184,7 @@ export default function HomePage() {
         <CardContent className="p-3 bg-background/80 rounded-md">
           <div className="flex items-center justify-center gap-3">
             <BrainCircuit className="h-6 w-6 text-primary" />
-            <h3 className="text-base font-semibold text-white">AI Trick Generator</h3>
+            <h3 className="text-base font-semibold text-white">Quickly Study Trick Generator</h3>
           </div>
         </CardContent>
       </Card>
