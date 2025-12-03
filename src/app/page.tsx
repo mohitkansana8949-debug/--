@@ -102,13 +102,12 @@ function PwaInstallCard() {
 
 function AiDoubtSolverCard() {
     return (
-        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-0.5 relative overflow-hidden h-28">
-            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/80 rounded-md p-4 gap-2 items-center text-center justify-center">
+        <Card className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white animate-gradient-xy p-0.5 relative overflow-hidden">
+            <div className="flex flex-col h-full w-full bg-background/80 dark:bg-background/80 rounded-md p-4 gap-4 items-center text-center justify-center">
                 <h3 className="text-lg font-bold flex items-center gap-2 text-white">
                     <Wand2 />
                     Quickly Study Doubt Solver
                 </h3>
-                <p className="text-sm text-white/80">Stuck on a question? Get instant answers from our AI tutor.</p>
                 <Button asChild variant="secondary" className="w-full mt-2" size="sm">
                     <Link href="/ai-doubt-solver">Ask a Doubt</Link>
                 </Button>
@@ -144,6 +143,7 @@ export default function HomePage() {
       { title: 'टेस्ट सीरीज', href: '/test-series', gradient: 'bg-gradient-to-br from-purple-500 to-pink-500', icon: Newspaper },
       { title: 'Current Affairs', href: '/current-affairs', gradient: 'bg-gradient-to-br from-sky-400 to-cyan-400', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
+      { title: 'Feed', href: '/feed', gradient: 'bg-gradient-to-br from-rose-400 to-red-500', icon: Rss },
     ];
     
      if (showYoutubeFeature) {
@@ -183,11 +183,11 @@ export default function HomePage() {
 
       <PwaInstallCard />
       
-      <Card className="cursor-pointer hover:shadow-lg" onClick={() => router.push('/ai-trick-generator')}>
-        <CardContent className="p-3">
+      <Card className="cursor-pointer hover:shadow-lg bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-white animate-gradient-xy p-0.5" onClick={() => router.push('/ai-trick-generator')}>
+        <CardContent className="p-3 bg-background/80 rounded-md">
           <div className="flex items-center justify-center gap-3">
             <BrainCircuit className="h-6 w-6 text-primary" />
-            <h3 className="text-base font-semibold">AI Trick Generator</h3>
+            <h3 className="text-base font-semibold text-white">AI Trick Generator</h3>
           </div>
         </CardContent>
       </Card>
@@ -263,5 +263,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    

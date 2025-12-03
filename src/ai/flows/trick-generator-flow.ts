@@ -11,7 +11,7 @@ export type TrickInput = z.infer<typeof TrickInputSchema>;
 
 const TrickOutputSchema = z.object({
   trick: z.string().describe('A creative and memorable trick, mnemonic, or short story to remember the topic. It should be in Hindi if the topic is in Hindi, otherwise in English.'),
-  context: z.string().describe('A brief explanation of what the trick helps to remember, e.g., "This trick helps you remember all 50 districts of Rajasthan."'),
+  context: z.string().describe('A brief explanation of what the trick helps to remember, including a breakdown of the mnemonic if applicable. For example: "This trick helps you remember all 50 districts of Rajasthan. G means Ganganagar, B means Banswara..."'),
 });
 export type TrickOutput = z.infer<typeof TrickOutputSchema>;
 
@@ -39,14 +39,14 @@ const trickGeneratorFlow = ai.defineFlow(
         *   A short, funny, or weird story that connects the elements of the topic.
     3.  If the topic is in Hindi (like "राजस्थान के जिले"), the trick **MUST** also be in Hinglish or Hindi. Otherwise, create it in English.
     4.  If the list is very long, feel free to break it down and create multiple smaller tricks.
-    5.  First, provide the trick itself.
-    6.  Then, provide a one-sentence context explaining what the trick is for. For example: "यह ट्रिक आपको राजस्थान के सभी 50 जिलों को याद करने में मदद करती है।" or "This trick helps you remember the planets in order from the sun."
+    5.  First, provide the trick itself in the 'trick' field.
+    6.  Then, in the 'context' field, provide a one-sentence explanation of what the trick is for, followed by a breakdown of how the trick works. For example: "यह ट्रिक आपको गुहिल राजवंश के शासकों को याद करने में मदद करती है। G का मतलब गुहिल है, B का मतलब बप्पा रावल है..." or "This trick helps you remember the planets in order from the sun. My = Mercury, Very = Venus, Eager = Earth...".
     7.  The final output must be a valid JSON object matching the provided schema, containing both the 'trick' and the 'context'. Do not include any extra text or explanations.
     
-    **Example for "Planets in order":**
+    **Example for "Guhil Dynasty":**
     {
-      "trick": "My Very Eager Mother Just Served Us Noodles",
-      "context": "This trick helps remember the planets in order from the sun (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune)."
+      "trick": "Guhil Bapa Nag Khum Ratan, Tej Singh ne Samant ko Haraya",
+      "context": "यह ट्रिक आपको गुहिल वंश के शासकों को क्रम में याद रखने में मदद करती है। Guhil से गुहिल, Bapa से बप्पा रावल, Nag से नागदा..."
     }`;
     
     const llmResponse = await ai.generate({

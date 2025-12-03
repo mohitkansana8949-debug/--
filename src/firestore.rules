@@ -40,7 +40,13 @@ service cloud.firestore {
      match /educators/{educatorId} {
       allow read, list: if true;
     }
+     match /toppers/{topperId} {
+      allow read, list: if true;
+    }
     match /books/{bookId} {
+      allow read, list: if true;
+    }
+     match /current_affairs/{affairId} {
       allow read, list: if true;
     }
     match /posts/{postId} {
