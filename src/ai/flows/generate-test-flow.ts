@@ -3,9 +3,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
 
 const GenerateTestInputSchema = z.object({
   topic: z.string().describe('The topic for the test.'),
@@ -55,24 +52,22 @@ const testGeneratorFlow = ai.defineFlow(
     5.  Ensure the questions are relevant to the topic and are at a standard competitive exam level.
     6.  Format the output as a valid JSON object matching the provided schema. Do not include any extra text or explanations outside the JSON structure.`;
     
-    const llmResponse = await ai.generate({
-      prompt: prompt,
-      config: {
-        temperature: 0.5,
-        response_mime_type: "application/json"
-      }
+    const testPrompt = ai.definePrompt({
+        name: "testGeneratorPrompt",
+        input: { schema: GenerateTestInputSchema },
+        output: { schema: GenerateTestOutputSchema },
+        prompt: prompt,
+        config: {
+          temperature: 0.5,
+        }
     });
 
-    const structuredResponse = llmResponse.output;
-    if (!structuredResponse || !structuredResponse.questions) {
+    const { output } = await testPrompt(input);
+
+    if (!output) {
         throw new Error("AI did not return a valid JSON object with questions.");
     }
     
-    // Pass the duration and language from the input to the output
-    return {
-        questions: structuredResponse.questions,
-        duration: input.duration,
-        language: input.language,
-    };
+    return output;
   }
 );
