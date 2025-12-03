@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateTestFlow, type GenerateTestInput } from '@/ai/flows/generate-test-flow';
 import { Progress } from '@/components/ui/progress';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import Link from 'next/link';
 
 type TestQuestion = {
   question: string;
@@ -33,7 +34,7 @@ export default function AiTestPage() {
     const [step, setStep] = useState<'config' | 'generating' | 'taking' | 'finished'>('config');
     const [config, setConfig] = useState<Omit<GenerateTestInput, 'userId'>>({
         topic: '',
-        numQuestions: 5,
+        numQuestions: 25,
         language: 'hindi',
         duration: 10,
     });
@@ -104,7 +105,26 @@ export default function AiTestPage() {
         setScore(finalScore);
         setStep('finished');
 
-        // Optional: Save certificate if score is good
+        const percentage = (finalScore / generatedTest.questions.length) * 100;
+        if (user && firestore && percentage >= 50) {
+            try {
+                const certificatesRef = collection(firestore, `users/${user.uid}/certificates`);
+                await addDoc(certificatesRef, {
+                    userId: user.uid,
+                    userName: user.displayName,
+                    itemName: `AI Test: ${config.topic}`,
+                    itemType: 'test',
+                    completionDate: serverTimestamp(),
+                    grade: percentage
+                });
+                toast({
+                    title: "Congratulations!",
+                    description: "You've earned a certificate!",
+                });
+            } catch (error) {
+                console.error("Failed to create certificate:", error);
+            }
+        }
     };
 
     const formatTime = (seconds: number) => {
@@ -131,11 +151,11 @@ export default function AiTestPage() {
                          <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="numQuestions">Number of Questions</Label>
-                                <Input id="numQuestions" type="number" value={config.numQuestions} onChange={e => setConfig(c => ({ ...c, numQuestions: Number(e.target.value) }))} min="1" max="20" />
+                                <Input id="numQuestions" type="number" value={config.numQuestions} onChange={e => setConfig(c => ({ ...c, numQuestions: Number(e.target.value) }))} min="1" max="50" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="duration">Duration (Minutes)</Label>
-                                <Input id="duration" type="number" value={config.duration} onChange={e => setConfig(c => ({ ...c, duration: Number(e.target.value) }))} min="1" max="60" />
+                                <Input id="duration" type="number" value={config.duration} onChange={e => setConfig(c => ({ ...c, duration: Number(e.target.value) }))} min="1" max="120" />
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -203,6 +223,12 @@ export default function AiTestPage() {
                         <div className="space-y-2">
                            <p className="text-muted-foreground">Your Score</p>
                            <p className="text-6xl font-bold">{score} / {generatedTest.questions.length}</p>
+                           {(score / generatedTest.questions.length) * 100 >= 50 && (
+                               <div className="flex justify-center items-center gap-2 text-green-500 pt-2">
+                                   <Award className="h-6 w-6" />
+                                   <span className="font-semibold">Certificate Earned! View in Profile.</span>
+                               </div>
+                           )}
                         </div>
                         <Button onClick={() => setStep('config')}>Take Another Test</Button>
                      </CardContent>

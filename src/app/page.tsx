@@ -28,6 +28,7 @@ import {
   MessageCircle,
   Wand2,
   Trophy,
+  BrainCircuit,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
@@ -184,6 +185,15 @@ export default function HomePage() {
       </div>
 
       <PwaInstallCard />
+      
+      <Card className="cursor-pointer hover:shadow-lg" onClick={() => router.push('/ai-trick-generator')}>
+        <CardContent className="p-3">
+          <div className="flex items-center justify-center gap-3">
+            <BrainCircuit className="h-6 w-6 text-primary" />
+            <h3 className="text-base font-semibold">AI Trick Generator</h3>
+          </div>
+        </CardContent>
+      </Card>
       
       <div className="grid grid-cols-3 gap-2.5">
         {featureCards.map((card, index) => (

@@ -4,13 +4,13 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore, useUser } from '@/firebase';
 import { doc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { Loader, AlertTriangle, ArrowLeft, Award } from 'lucide-react';
+import { Loader, AlertTriangle, ArrowLeft, Award, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,9 +25,33 @@ export default function TakeTestPage() {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [isFinished, setIsFinished] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [timeLeft, setTimeLeft] = useState(0);
 
     const testRef = useMemoFirebase(() => firestore && testId ? doc(firestore, 'tests', testId as string) : null, [firestore, testId]);
     const { data: testData, isLoading } = useDoc(testRef);
+    
+    useEffect(() => {
+        if (testData?.duration) {
+            setTimeLeft(testData.duration * 60);
+        }
+    }, [testData]);
+    
+    useEffect(() => {
+        if (isFinished || timeLeft <= 0 || !testData) return;
+
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    handleSubmit();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [isFinished, timeLeft, testData]);
 
     const questions = useMemo(() => testData?.questions || [], [testData]);
     const currentQuestion = questions[currentQuestionIndex];
@@ -56,7 +80,7 @@ export default function TakeTestPage() {
     };
     
     const handleSubmit = async () => {
-        if (isSubmitting) return;
+        if (isSubmitting || isFinished) return;
         setIsSubmitting(true);
         setIsFinished(true); // Show results immediately
 
@@ -90,6 +114,12 @@ export default function TakeTestPage() {
             }
         }
         setIsSubmitting(false);
+    }
+    
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
     if (isLoading) {
@@ -158,7 +188,10 @@ export default function TakeTestPage() {
         <div className="container mx-auto p-4 max-w-2xl">
             <Card>
                 <CardHeader>
-                    <CardTitle>{testData.name}</CardTitle>
+                    <CardTitle className="flex justify-between items-center">
+                        <span>{testData.name}</span>
+                        <span className="flex items-center text-base font-mono bg-destructive text-destructive-foreground px-2 py-1 rounded-md"><Clock className="mr-2 h-4 w-4" />{formatTime(timeLeft)}</span>
+                    </CardTitle>
                     <CardDescription>{testData.description}</CardDescription>
                     <div className="pt-2">
                         <Progress value={((currentQuestionIndex + 1) / questions.length) * 100} />
