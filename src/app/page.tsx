@@ -1,4 +1,3 @@
-
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,7 @@ import {
   LifeBuoy,
   MessageCircle,
   Wand2,
+  Trophy,
 } from 'lucide-react';
 import Image from 'next/image';
 import { collection, doc } from 'firebase/firestore';
@@ -117,6 +117,9 @@ export default function HomePage() {
 
   const educatorsQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'educators') : null), [firestore]);
   const { data: educators, isLoading: educatorsLoading } = useCollection(educatorsQuery);
+  
+  const toppersQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'toppers') : null), [firestore]);
+  const { data: toppers, isLoading: toppersLoading } = useCollection(toppersQuery);
 
   const appSettingsRef = useMemoFirebase(() => (firestore ? doc(firestore, 'settings', 'app') : null), [firestore]);
   const { data: appSettings, isLoading: settingsLoading } = useDoc(appSettingsRef);
@@ -208,6 +211,29 @@ export default function HomePage() {
             </div>
          ) : <p className="text-muted-foreground">अभी कोई एजुकेटर नहीं है।</p>}
        </div>
+
+        <div>
+        <h2 className="text-2xl font-bold mb-4 flex items-center"><Trophy className="mr-2 h-6 w-6 text-yellow-500" /> Our Toppers</h2>
+         {toppersLoading ? <Card className="p-8 flex justify-center items-center"><Loader className="animate-spin" /></Card> : (toppers && toppers.length > 0) ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {toppers.map(topper => (
+                <Card key={topper.id} className="text-center overflow-hidden transition-transform hover:scale-105">
+                  {topper.imageUrl ? 
+                    <Image src={topper.imageUrl} alt={topper.name} width={200} height={200} className="w-full h-32 object-cover object-top"/>
+                    : <div className="w-full h-32 bg-secondary flex items-center justify-center"><Trophy className="h-12 w-12 text-muted-foreground"/></div>
+                  }
+                  <CardHeader className="p-2">
+                      <CardTitle className="text-sm font-semibold truncate">{topper.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-2 pt-0">
+                      <p className="text-xs text-muted-foreground truncate">{topper.achievement}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+         ) : <p className="text-muted-foreground">अभी कोई टॉपर नहीं है।</p>}
+       </div>
+
 
       <footer className="fixed bottom-0 left-0 right-0 bg-card border-t p-2 flex justify-around md:hidden">
         {footerItems.map(item => {

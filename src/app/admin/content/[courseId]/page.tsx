@@ -1,14 +1,13 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirebase, useCollection } from '@/firebase';
-import { doc, updateDoc, arrayUnion, collection } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, collection } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileQuestion, ClipboardCheck } from 'lucide-react';
+import { Loader, ArrowLeft, PlusCircle, Youtube, Video, FileText, FileQuestion, ClipboardCheck, Trash2 } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +19,17 @@ import { getYouTubeID } from '@/lib/youtube';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 type ContentType = 'youtube' | 'video' | 'pdf' | 'pyq' | 'test';
 
@@ -161,6 +171,23 @@ export default function EditCourseContentPage() {
       });
   };
 
+  const handleDeleteContent = async (contentItem: any) => {
+    if (!firestore || !courseRef) return;
+     updateDoc(courseRef, { content: arrayRemove(contentItem) })
+      .then(() => {
+        toast({ title: 'सफलता!', description: 'कंटेंट सफलतापूर्वक हटा दिया गया है।' });
+      })
+      .catch((error) => {
+        console.error("Content delete error:", error);
+        const contextualError = new FirestorePermissionError({
+          operation: 'update',
+          path: courseRef.path,
+          requestResourceData: { content: arrayRemove(contentItem) },
+        });
+        errorEmitter.emit('permission-error', contextualError);
+      });
+  };
+
   const courseContent = (course?.content && Array.isArray(course.content)) ? course.content : [];
 
   return (
@@ -290,8 +317,22 @@ export default function EditCourseContentPage() {
                       courseContent.map((item: any, index: number) => (
                         <Card key={item.id || index}>
                             <CardContent className="p-3 flex justify-between items-center">
-                                <p className="font-medium">{item.title} <span className="text-xs text-muted-foreground ml-2">({item.type})</span></p>
-                                {/* TODO: Add edit/delete functionality */}
+                                <p className="font-medium flex-1">{item.title} <span className="text-xs text-muted-foreground ml-2">({item.type})</span></p>
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete "{item.title}" from this course.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteContent(item)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </CardContent>
                         </Card>
                       ))

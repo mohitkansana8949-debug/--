@@ -26,6 +26,7 @@ import {
   BarChartHorizontal,
   PieChart,
   UserCheck,
+  Trophy,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,6 +47,7 @@ const adminNavItems = [
   { href: '/admin/enrollments', label: 'एनरोलमेंट्स', icon: CreditCard },
   { href: '/admin/users', label: 'यूज़र्स', icon: Users },
   { href: '/admin/educators', label: 'एजुकेटर्स', icon: UserPlus },
+  { href: '/admin/toppers', label: 'Manage Toppers', icon: Trophy },
   { href: '/admin/youtube', label: 'YouTube Channels', icon: Youtube },
   { href: '/admin/coupons', label: 'Manage Coupons', icon: TicketPercent },
   { href: '/admin/notifications', label: 'Notifications', icon: Bell },
