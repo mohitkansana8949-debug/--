@@ -1,3 +1,4 @@
+
 'use client';
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -142,6 +143,7 @@ export default function HomePage() {
       { title: 'Current Affairs', href: '/current-affairs', gradient: 'bg-gradient-to-br from-sky-400 to-cyan-400', icon: Newspaper },
       { title: 'फ्री कोर्सेस', href: '/courses?filter=free', gradient: 'bg-gradient-to-br from-orange-400 to-red-500', icon: Gift },
       { title: 'My Progress', href: '/my-progress', gradient: 'bg-gradient-to-br from-indigo-500 to-purple-500', icon: BarChartHorizontal },
+      { title: 'Feed', href: '/feed', gradient: 'bg-gradient-to-br from-rose-500 to-pink-600', icon: Rss },
     ];
     
      if (showYoutubeFeature) {
@@ -150,7 +152,6 @@ export default function HomePage() {
       cards.push({ title: 'Submit Result', href: '/submit-result', gradient: 'bg-gradient-to-br from-green-500 to-teal-600', icon: UserCheck });
     }
      cards.push({ title: 'लाइब्रेरी', href: '/my-library', gradient: 'bg-gradient-to-br from-cyan-500 to-blue-500', icon: Library });
-     cards.push({ title: 'Support', href: '/support', gradient: 'bg-gradient-to-br from-lime-500 to-emerald-500', icon: LifeBuoy });
     
     return cards;
 }, [showYoutubeFeature]);
@@ -176,7 +177,7 @@ export default function HomePage() {
             <h1 className="text-2xl font-semibold tracking-tight">Welcome to Quickly Study</h1>
             <p className="text-sm text-muted-foreground">The quickest way to study.</p>
         </div>
-        <Button variant="default" asChild className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white">
+        <Button asChild className="bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white">
           <Link href="/support">Support</Link>
         </Button>
       </div>

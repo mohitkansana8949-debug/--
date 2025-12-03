@@ -1,3 +1,4 @@
+
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -28,6 +29,7 @@ import {
   UserCheck,
   Trophy,
   Wand2,
+  FileSearch,
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,6 +68,7 @@ const creationNavItems = [
     { href: '/admin/create-coupon', label: 'Add Coupon', icon: TicketPercent },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
     { href: '/admin/create-notification', label: 'Send Notification', icon: Bell },
+    { href: '/admin/ai-book-summary', label: 'AI Book Summary', icon: FileSearch },
 ]
 
 export default function AdminLayout({

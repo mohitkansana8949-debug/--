@@ -35,7 +35,7 @@ const getColorForId = (id: string) => {
 const truncateEmail = (email: string | null | undefined) => {
     if (!email) return null;
     const atIndex = email.indexOf('@');
-    if (atIndex < 3) return email;
+    if (atIndex < 3 || atIndex === -1) return email;
     const name = email.substring(0, atIndex);
     const domain = email.substring(atIndex);
     return `${name.substring(0, 2)}*****${domain}`;
@@ -97,7 +97,7 @@ export default function ProfilePage() {
     // Check Admin Status
     const adminRef = doc(firestore, 'roles_admin', user.uid);
     const unsubAdmin = onSnapshot(adminRef, (doc) => {
-        setIsAdmin(doc.exists() && doc.data().role === 'admin');
+        setIsAdmin(doc.exists());
         setIsAdminLoading(false);
     });
     
