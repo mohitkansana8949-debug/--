@@ -63,7 +63,7 @@ const testGeneratorFlow = ai.defineFlow(
       }
     });
 
-    const structuredResponse = llmResponse.output();
+    const structuredResponse = llmResponse.output;
     if (!structuredResponse) {
         throw new Error("AI did not return a valid JSON object.");
     }
