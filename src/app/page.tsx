@@ -82,17 +82,18 @@ function PwaInstallCard() {
   if (!isInstallable) return null;
 
   return (
-    <Card className="bg-primary text-primary-foreground">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Download /> Install Quickly Study App
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p>Get a better experience by installing our app on your device. It's fast and free!</p>
-        <Button onClick={handleInstallClick} variant="secondary" className="mt-4 w-full">
-          Install App
-        </Button>
+    <Card className="bg-gradient-to-tr from-blue-500 to-cyan-400 text-white border-0">
+        <CardContent className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <Download className="h-8 w-8" />
+                <div>
+                    <h3 className="font-bold">Install Quickly Study</h3>
+                    <p className="text-xs">For a better experience.</p>
+                </div>
+            </div>
+            <Button onClick={handleInstallClick} variant="secondary" size="sm">
+            Install
+            </Button>
       </CardContent>
     </Card>
   );
@@ -184,7 +185,7 @@ export default function HomePage() {
 
       <PwaInstallCard />
       
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-3 gap-2.5">
         {featureCards.map((card, index) => (
           <div key={index} onClick={() => handleCardClick(card.href)} className={cn("flex flex-col items-center justify-center p-2 text-center aspect-square text-white transition-transform hover:scale-105 rounded-lg cursor-pointer", card.gradient)}>
               <card.icon className="mb-1 h-5 w-5 md:h-6 md:w-6" />
@@ -255,3 +256,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

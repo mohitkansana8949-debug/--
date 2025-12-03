@@ -4,7 +4,7 @@ import { useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader, Trash2, Book } from 'lucide-react';
+import { Loader, Trash2, Book, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -63,7 +63,7 @@ export default function AdminEbooksPage() {
                                     <TableCell>{ebook.isFree ? 'Free' : `₹${ebook.price}`}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button asChild size="sm" variant="outline">
-                                            <Link href={`/pdf-viewer?url=${encodeURIComponent(ebook.pdfUrl)}`}>View</Link>
+                                            <Link href={`/admin/edit-ebook/${ebook.id}`}><Edit className="mr-2 h-4 w-4"/>Edit</Link>
                                         </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
@@ -98,3 +98,5 @@ export default function AdminEbooksPage() {
         </Card>
     )
 }
+
+    

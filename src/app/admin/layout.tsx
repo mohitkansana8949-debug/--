@@ -68,7 +68,6 @@ const creationNavItems = [
     { href: '/admin/create-coupon', label: 'Add Coupon', icon: TicketPercent },
     { href: '/admin/live-lectures', label: 'Add Live Lecture', icon: Clapperboard },
     { href: '/admin/create-notification', label: 'Send Notification', icon: Bell },
-    { href: '/admin/ai-book-summary', label: 'AI Book Summary', icon: FileSearch },
 ]
 
 export default function AdminLayout({
@@ -156,3 +155,5 @@ export default function AdminLayout({
     </div>
   );
 }
+
+    
