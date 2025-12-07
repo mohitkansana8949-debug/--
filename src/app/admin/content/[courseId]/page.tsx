@@ -72,7 +72,7 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
   // Test specific state
   const [testJson, setTestJson] = useState('');
 
-  // Common state
+  // Common state (now only for non-YouTube types)
   const [title, setTitle] = useState('');
 
   const youtubeApiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
@@ -102,8 +102,7 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
         title: snippet.title,
         thumbnailUrl: snippet.thumbnails.high?.url || snippet.thumbnails.default.url,
       });
-      // Auto-fill the title
-      setTitle(snippet.title);
+      // Title is now auto-fetched, no need for manual input for YT
     } catch (error: any) {
       console.error("Fetch error:", error);
       toast({ variant: 'destructive', title: 'Error fetching details', description: error.message });
@@ -116,8 +115,11 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
     if (!courseRef) return;
     
     let contentTitle = title;
-    // For YouTube, title is auto-fetched, so it should exist if details are fetched
-    if (type === 'youtube' && fetchedYTDetails) {
+    if (type === 'youtube') {
+        if (!fetchedYTDetails) {
+            toast({ variant: 'destructive', title: 'त्रुटि', description: 'Please fetch YouTube video details first.' });
+            return;
+        }
         contentTitle = fetchedYTDetails.title;
     }
 
@@ -216,16 +218,17 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
           <TabsTrigger value="test"><ClipboardCheck className="mr-1 h-4 w-4" />Test</TabsTrigger>
       </TabsList>
       <div className="space-y-4 pt-6">
-          <div className="space-y-2">
-              <Label htmlFor="content-title">Content Title</Label>
-              <Input 
-                id="content-title" 
-                placeholder={activeTab === 'youtube' ? 'Auto-fetched from YouTube' : 'e.g., Chapter 1: Introduction'}
-                value={title} 
-                onChange={(e) => setTitle(e.target.value)} 
-                disabled={activeTab === 'youtube'}
-              />
-          </div>
+          {activeTab !== 'youtube' && (
+            <div className="space-y-2">
+                <Label htmlFor="content-title">Content Title</Label>
+                <Input 
+                  id="content-title" 
+                  placeholder="e.g., Chapter 1: Introduction"
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+            </div>
+          )}
           <TabsContent value="youtube" className="space-y-4 m-0">
               <div className="space-y-2">
                   <Label htmlFor="youtube-url">YouTube Video URL</Label>
