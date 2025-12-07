@@ -1,4 +1,3 @@
-
 'use client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useDoc, useMemoFirebase, useUser } from '@/firebase';
@@ -116,6 +115,7 @@ function BookPaymentComponent() {
         const orderData: Omit<BookOrder, 'id'> = {
             userId: user.uid,
             items: cart,
+            address: shippingAddress,
             subtotal,
             discount,
             total,
