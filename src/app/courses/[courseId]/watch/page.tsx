@@ -4,7 +4,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye, Trash2 } from 'lucide-react';
+import { Loader, Video, FileText, AlertTriangle, ArrowLeft, Newspaper, Youtube, Book, ClipboardCheck, PlayCircle, Eye, Trash2, Wand2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -125,11 +125,12 @@ export default function WatchCoursePage() {
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="videos" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                     <TabsTrigger value="videos">Videos</TabsTrigger>
                     <TabsTrigger value="notes">Notes</TabsTrigger>
                     <TabsTrigger value="pyqs">PYQs</TabsTrigger>
-                    <TabsTrigger value="tests">Tests</TabsTrigger>
+                    <TabsTrigger value="manual_tests">Tests</TabsTrigger>
+                    <TabsTrigger value="ai_test">AI Test</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="videos" className="mt-4 space-y-3">
@@ -150,10 +151,28 @@ export default function WatchCoursePage() {
                     )) : <p className="text-center text-muted-foreground p-8">No PYQs in this course.</p>}
                 </TabsContent>
 
-                <TabsContent value="tests" className="mt-4 space-y-3">
+                <TabsContent value="manual_tests" className="mt-4 space-y-3">
                     {tests.length > 0 ? tests.map((item: any) => (
                         <ContentItem key={item.id} item={item} courseId={courseId as string} />
                     )) : <p className="text-center text-muted-foreground p-8">No tests in this course.</p>}
+                </TabsContent>
+                 <TabsContent value="ai_test" className="mt-4 space-y-3">
+                    <Card className="bg-primary/10 border-primary/50">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Wand2 />
+                          AI Test Generator
+                        </CardTitle>
+                        <CardDescription>
+                          Create unlimited practice tests on any topic related to this course.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <Button asChild className="w-full">
+                          <Link href="/ai-test">Generate New Test</Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </CardContent>

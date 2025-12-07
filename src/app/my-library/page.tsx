@@ -57,7 +57,7 @@ export default function MyLibraryPage() {
                 }, {} as Record<string, string[]>);
                 
                 const fetchPromises = Object.entries(itemIdsByType).map(async ([type, ids]) => {
-                    if (ids.length === 0) return [];
+                    if (ids.length === 0 || type === 'ai_test') return []; // Ignore ai_test enrollments
                     const collectionName = type + 's'; // courses, ebooks, tests, pyqs
                     const itemsRef = collection(firestore, collectionName);
                     // Firestore 'in' queries are limited to 30 items. If you have more, you need to batch.

@@ -203,7 +203,7 @@
         "itemType": {
           "type": "string",
           "description": "The type of item enrolled in.",
-          "enum": ["course", "ebook", "pyq", "test"]
+          "enum": ["course", "ebook", "pyq", "test", "ai_test"]
         },
         "enrollmentDate": {
           "type": "string",

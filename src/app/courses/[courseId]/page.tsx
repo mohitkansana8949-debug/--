@@ -99,6 +99,8 @@ export default function CourseDetailPage() {
         "Certificate of Completion"
     ];
 
+    const demoContent = (course.demoContent && Array.isArray(course.demoContent) && course.demoContent.length > 0) ? course.demoContent : null;
+
     return (
         <div className="container mx-auto p-4 space-y-8">
             <Card>
@@ -124,6 +126,27 @@ export default function CourseDetailPage() {
                         ))}
                     </ul>
                 </CardContent>
+                 {demoContent && (
+                    <>
+                        <Separator />
+                        <CardHeader>
+                             <CardTitle className="text-xl">Course Demo</CardTitle>
+                             <CardDescription>Check out some sample content from this course.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {demoContent.map((item: any) => (
+                                <Link key={item.id} href={item.type === 'youtube' ? `/courses/watch/${getYouTubeID(item.url)}?live=false` : `/pdf-viewer?url=${encodeURIComponent(item.url)}`} target="_blank">
+                                    <Card className="hover:bg-muted/50 cursor-pointer">
+                                        <CardContent className="p-3 flex items-center gap-3">
+                                            {item.type === 'youtube' ? <Youtube className="h-5 w-5 text-red-500"/> : <FileText className="h-5 w-5"/>}
+                                            <p className="font-medium text-sm line-clamp-1">{item.title}</p>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </CardContent>
+                    </>
+                )}
                 <CardFooter className="flex justify-between items-center">
                      <p className="text-2xl font-bold">{course.isFree ? 'फ्री' : `₹${course.price}`}</p>
                      {isEnrolled ? (
