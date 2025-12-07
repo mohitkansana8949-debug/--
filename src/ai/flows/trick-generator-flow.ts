@@ -27,26 +27,27 @@ const trickGeneratorFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const prompt = `You are a creative teacher who excels at creating memorable tricks, mnemonics, and short, funny stories to help students remember complex topics.
+    const prompt = `You are an exceptionally creative teacher from India, renowned for crafting unforgettable and often humorous tricks, mnemonics, and short stories (kahaniya) to help students in India remember complex topics for competitive exams.
 
     **Topic to create a trick for:** "${input.topic}"
 
     **Your Task:**
-    1.  Analyze the topic. It could be a list of items, a sequence of events, a complex concept, or anything else.
-    2.  Create a simple, effective, and creative trick to help remember it. This can be:
+    1.  Analyze the topic. It could be a list of items (like districts, kings, rivers), a sequence of historical events, a scientific concept, or anything else.
+    2.  Create a simple, highly effective, and very creative trick to help remember it. The trick should be catchy and easy to recall. This can be:
         *   An acronym (like VIBGYOR for rainbow colors).
-        *   A memorable sentence or phrase.
-        *   A short, funny, or weird story that connects the elements of the topic.
-    3.  If the topic is in Hindi (like "राजस्थान के जिले"), the trick **MUST** also be in Hinglish or Hindi. Otherwise, create it in English.
-    4.  If the list is very long, feel free to break it down and create multiple smaller tricks.
-    5.  First, provide the trick itself in the 'trick' field.
-    6.  Then, in the 'context' field, provide a one-sentence explanation of what the trick is for, followed by a breakdown of how the trick works. For example: "यह ट्रिक आपको गुहिल राजवंश के शासकों को याद करने में मदद करती है। G का मतलब गुहिल है, B का मतलब बप्पा रावल है..." or "This trick helps you remember the planets in order from the sun. My = Mercury, Very = Venus, Eager = Earth...".
-    7.  The final output must be a valid JSON object matching the provided schema, containing both the 'trick' and the 'context'. Do not include any extra text or explanations.
+        *   A memorable, rhythmic, or funny sentence/phrase (like a Bollywood dialogue or a simple rhyme).
+        *   A short, imaginative, and funny story that logically connects all the elements of the topic.
+    3.  **Language:** If the topic is in Hindi or related to Indian context (like "गुहिल राजवंश" or "राजस्थान के जिले"), the trick and context **MUST** also be in Hinglish or pure Hindi. Otherwise, create it in English.
+    4.  **Breakdown is CRUCIAL:** If the list is long, feel free to break it down into smaller, manageable tricks. For each trick, provide a clear breakdown.
+    5.  **Output Structure:**
+        *   **'trick' field:** Provide the main trick itself. This should be the core mnemonic, sentence, or story.
+        *   **'context' field:** First, provide a one-sentence explanation of what the trick is for. Then, provide a detailed breakdown of how the trick works, explaining what each part of the mnemonic stands for. For example: "यह ट्रिक आपको गुहिल राजवंश के शासकों को क्रम में याद रखने में मदद करती है। **Guhil** से गुहिल, **Bapa** से बप्पा रावल, **Nag** से नागदा..." or "This trick helps you remember the planets in order from the sun. **My** = Mercury, **Very** = Venus, **Eager** = Earth...". Make the breakdown very clear.
+    6.  The final output must be a valid JSON object matching the provided schema, containing both the 'trick' and the 'context'. Do not include any extra text, explanations, or markdown formatting outside the JSON structure.
     
     **Example for "Guhil Dynasty":**
     {
-      "trick": "Guhil Bapa Nag Khum Ratan, Tej Singh ne Samant ko Haraya",
-      "context": "यह ट्रिक आपको गुहिल वंश के शासकों को क्रम में याद रखने में मदद करती है। Guhil से गुहिल, Bapa से बप्पा रावल, Nag से नागदा..."
+      "trick": "गुहिल बापा नाग पर बैठकर खुमान-रतन के संग, तेज समर में हार गए।",
+      "context": "यह ट्रिक आपको गुहिल वंश के महत्वपूर्ण शासकों को क्रम में याद रखने में मदद करती है। **गुहिल** से गुहिल, **बापा** से बप्पा रावल, **नाग** से नागभट्ट, **खुमान-रतन** से खुमान और रतनसिंह, **तेज** से तेजसिंह, और **समर** से समरसिंह।"
     }`;
     
     const llmResponse = await ai.generate({

@@ -8,7 +8,7 @@ import { doc, updateDoc, arrayUnion, arrayRemove, collection } from 'firebase/fi
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader, ArrowLeft, PlusCircle, Youtube, FileText, FileQuestion, ClipboardCheck, Trash2, Video } from 'lucide-react';
+import { Loader, ArrowLeft, PlusCircle, Youtube, FileText, FileQuestion, ClipboardCheck, Trash2, Video, Wand2 } from 'lucide-react';
 import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -48,44 +48,94 @@ const jsonTestExample = `[
   }
 ]`;
 
+type FetchedYouTubeDetails = {
+  title: string;
+  thumbnailUrl: string;
+};
+
 function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { courseRef: any, pyqs: any[], pyqsLoading: boolean, onContentAdded: () => void }) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // YouTube specific state
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [youtubeThumbnail, setYoutubeThumbnail] = useState('');
-  const [pdfUrl, setPdfUrl] = useState('');
-  const [selectedPyq, setSelectedPyq] = useState('');
-  const [testJson, setTestJson] = useState('');
-  const [title, setTitle] = useState('');
+  const [isFetchingYT, setIsFetchingYT] = useState(false);
+  const [fetchedYTDetails, setFetchedYTDetails] = useState<FetchedYouTubeDetails | null>(null);
   const [isLive, setIsLive] = useState(false);
+  
+  // PDF specific state
+  const [pdfUrl, setPdfUrl] = useState('');
+  
+  // PYQ specific state
+  const [selectedPyq, setSelectedPyq] = useState('');
+  
+  // Test specific state
+  const [testJson, setTestJson] = useState('');
 
-  useEffect(() => {
-    if (youtubeUrl) {
-      const videoId = getYouTubeID(youtubeUrl);
-      if (videoId) {
-        setYoutubeThumbnail(`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`);
-      }
-    } else {
-        setYoutubeThumbnail('');
+  // Common state
+  const [title, setTitle] = useState('');
+
+  const youtubeApiKey = process.env.NEXT_PUBLIC_YOUTUBE_API_KEY;
+
+  const handleFetchYouTubeDetails = async () => {
+    const videoId = getYouTubeID(youtubeUrl);
+    if (!videoId) {
+      toast({ variant: 'destructive', title: 'Invalid URL', description: 'Could not extract Video ID from the URL.' });
+      return;
     }
-  }, [youtubeUrl]);
+    if (!youtubeApiKey) {
+      toast({ variant: 'destructive', title: 'API Key Missing', description: 'YouTube API key is not configured.' });
+      return;
+    }
+
+    setIsFetchingYT(true);
+    setFetchedYTDetails(null);
+    try {
+      const detailsUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtubeApiKey}`;
+      const response = await fetch(detailsUrl);
+      const data = await response.json();
+      if (!response.ok || data.items.length === 0) {
+        throw new Error(data.error?.message || 'Video not found or API error.');
+      }
+      const snippet = data.items[0].snippet;
+      setFetchedYTDetails({
+        title: snippet.title,
+        thumbnailUrl: snippet.thumbnails.high?.url || snippet.thumbnails.default.url,
+      });
+      // Auto-fill the title
+      setTitle(snippet.title);
+    } catch (error: any) {
+      console.error("Fetch error:", error);
+      toast({ variant: 'destructive', title: 'Error fetching details', description: error.message });
+    } finally {
+      setIsFetchingYT(false);
+    }
+  };
 
   const handleAddContent = async (type: ContentType, isDemo = false) => {
-    if (!courseRef || !title.trim()) {
+    if (!courseRef) return;
+    
+    let contentTitle = title;
+    // For YouTube, title is auto-fetched, so it should exist if details are fetched
+    if (type === 'youtube' && fetchedYTDetails) {
+        contentTitle = fetchedYTDetails.title;
+    }
+
+    if (!contentTitle.trim()) {
         toast({ variant: 'destructive', title: 'त्रुटि', description: 'कृपया कंटेंट के लिए एक शीर्षक दर्ज करें।' });
         return;
     };
 
-    let contentData: any = { type, title, id: Date.now().toString() };
+    let contentData: any = { type, title: contentTitle, id: Date.now().toString() };
     
     switch (type) {
         case 'youtube':
-            if (!youtubeUrl.trim()) {
-                toast({ variant: 'destructive', title: 'त्रुटि', description: 'कृपया यूट्यूब URL दर्ज करें।' });
+            if (!youtubeUrl.trim() || !fetchedYTDetails) {
+                toast({ variant: 'destructive', title: 'त्रुटि', description: 'Please fetch YouTube video details first.' });
                 return;
             }
             contentData.url = youtubeUrl;
-            contentData.thumbnail = youtubeThumbnail;
+            contentData.thumbnail = fetchedYTDetails.thumbnailUrl;
             contentData.isLive = isLive;
             break;
         case 'pdf':
@@ -139,6 +189,7 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
         setSelectedPyq('');
         setTestJson('');
         setIsLive(false);
+        setFetchedYTDetails(null);
       })
       .catch((error) => {
         console.error("Content update error:", error);
@@ -154,6 +205,8 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
       });
   };
 
+  const activeTab = document.querySelector<HTMLButtonElement>('[data-state="active"]')?.value as ContentType | undefined;
+
   return (
     <Tabs defaultValue="youtube" className="w-full">
       <TabsList className="grid w-full grid-cols-4">
@@ -165,18 +218,35 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
       <div className="space-y-4 pt-6">
           <div className="space-y-2">
               <Label htmlFor="content-title">Content Title</Label>
-              <Input id="content-title" placeholder="e.g., Chapter 1: Introduction" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input 
+                id="content-title" 
+                placeholder={activeTab === 'youtube' ? 'Auto-fetched from YouTube' : 'e.g., Chapter 1: Introduction'}
+                value={title} 
+                onChange={(e) => setTitle(e.target.value)} 
+                disabled={activeTab === 'youtube'}
+              />
           </div>
           <TabsContent value="youtube" className="space-y-4 m-0">
               <div className="space-y-2">
                   <Label htmlFor="youtube-url">YouTube Video URL</Label>
-                  <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
+                  <div className="flex items-center gap-2">
+                    <Input id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)} />
+                    <Button type="button" onClick={handleFetchYouTubeDetails} disabled={isFetchingYT || !youtubeUrl} size="sm">
+                      {isFetchingYT ? <Loader className="animate-spin" /> : <Wand2 />}
+                    </Button>
+                  </div>
               </div>
+              {isFetchingYT && <Skeleton className="h-28 w-full" />}
+              {fetchedYTDetails && (
+                <Card className="p-3 bg-muted/50 flex items-center gap-4">
+                  <Image src={fetchedYTDetails.thumbnailUrl} alt="YouTube Thumbnail" width={120} height={68} className="rounded-md border aspect-video object-cover" />
+                  <p className="text-sm font-semibold line-clamp-2">{fetchedYTDetails.title}</p>
+                </Card>
+              )}
               <div className="flex items-center space-x-2">
                   <Switch id="yt-live-switch" checked={isLive} onCheckedChange={setIsLive} />
                   <Label htmlFor="yt-live-switch">Set as Live</Label>
               </div>
-              {youtubeThumbnail && <Image src={youtubeThumbnail} alt="YouTube Thumbnail" width={240} height={135} className="rounded-md border" />}
           </TabsContent>
           <TabsContent value="pdf" className="space-y-4 m-0">
                <div className="space-y-2">
@@ -213,10 +283,10 @@ function AddContentForm({ courseRef, pyqs, pyqsLoading, onContentAdded }: { cour
           </TabsContent>
 
           <div className="flex gap-4 pt-4">
-            <Button onClick={() => handleAddContent(document.querySelector<HTMLButtonElement>('[data-state="active"]')?.value as ContentType, false)} disabled={isSubmitting} className="w-full">
+            <Button onClick={() => handleAddContent(activeTab || 'youtube', false)} disabled={isSubmitting} className="w-full">
                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add to Full Course'}
             </Button>
-            <Button onClick={() => handleAddContent(document.querySelector<HTMLButtonElement>('[data-state="active"]')?.value as ContentType, true)} disabled={isSubmitting} variant="secondary" className="w-full">
+            <Button onClick={() => handleAddContent(activeTab || 'youtube', true)} disabled={isSubmitting} variant="secondary" className="w-full">
                 {isSubmitting ? <Loader className="animate-spin" /> : 'Add as Demo'}
             </Button>
           </div>
