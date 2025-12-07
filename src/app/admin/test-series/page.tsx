@@ -159,6 +159,7 @@ export default function AdminTestSeriesPage() {
                                 <TableHead>Test Name</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Questions</TableHead>
+                                <TableHead>Duration</TableHead>
                                 <TableHead>Bundled With</TableHead>
                                 <TableHead>Actions</TableHead>
                             </TableRow>
@@ -169,6 +170,7 @@ export default function AdminTestSeriesPage() {
                                     <TableCell className='font-medium'>{test.name}</TableCell>
                                     <TableCell>{test.isFree ? 'Free' : `₹${test.price}`}</TableCell>
                                     <TableCell>{test.questions?.length || 0}</TableCell>
+                                    <TableCell>{test.duration} mins</TableCell>
                                     <TableCell>{test.bundledCourseId ? coursesMap.get(test.bundledCourseId) : 'None'}</TableCell>
                                     <TableCell className="space-x-2">
                                         <Button asChild size="sm" variant="outline">
@@ -195,7 +197,7 @@ export default function AdminTestSeriesPage() {
                             ))}
                             {!testsLoading && tests?.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center text-muted-foreground p-8">
+                                    <TableCell colSpan={6} className="text-center text-muted-foreground p-8">
                                        <Newspaper className="mx-auto h-12 w-12" />
                                        <p className="mt-4">No tests found.</p>
                                     </TableCell>

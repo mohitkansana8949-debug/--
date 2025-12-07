@@ -84,6 +84,7 @@ export interface TestSeries {
   isFree: boolean;
   questions: TestQuestion[];
   bundledCourseId?: string | null;
+  createdAt: Timestamp;
 }
 
 export interface Ebook {
@@ -94,6 +95,7 @@ export interface Ebook {
   isFree: boolean;
   pdfUrl: string;
   thumbnailUrl?: string;
+  createdAt: Timestamp;
 }
 
 export interface PYQ {
@@ -104,6 +106,7 @@ export interface PYQ {
     isFree: boolean;
     pdfUrl: string;
     thumbnailUrl?: string;
+    createdAt: Timestamp;
 }
 
 export interface Post {

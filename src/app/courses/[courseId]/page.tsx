@@ -59,6 +59,7 @@ export default function CourseDetailPage() {
                 itemId: course.id,
                 itemType: 'course',
                 itemName: course.name,
+                itemPrice: course.price,
                 enrollmentDate: serverTimestamp(),
                 paymentMethod: 'free',
                 paymentTransactionId: 'N/A',
@@ -88,16 +89,15 @@ export default function CourseDetailPage() {
         router.push(`/payment?itemId=${courseId}&itemType=course`);
     }
     
-    const getIcon = (type: string) => {
-        switch(type) {
-            case 'youtube': return <Youtube className="h-5 w-5 shrink-0 text-red-500" />;
-            case 'pdf': return <FileText className="h-5 w-5 shrink-0" />;
-            case 'pyq': return <Newspaper className="h-5 w-5 shrink-0" />;
-            case 'test': return <ClipboardCheck className="h-5 w-5 shrink-0 text-blue-500" />;
-            default: return <Book className="h-5 w-5 shrink-0" />;
-        }
-    };
-
+    const fixedFeatures = [
+        "Live & Recorded Classes",
+        "Class Notes & PDFs",
+        "Previous Year Questions",
+        "Topic-wise Test Series",
+        "AI Doubt Solver Access",
+        "Offline Video Download",
+        "Certificate of Completion"
+    ];
 
     return (
         <div className="container mx-auto p-4 space-y-8">
@@ -118,17 +118,11 @@ export default function CourseDetailPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="font-bold text-lg mb-2">इस कोर्स में क्या है?</p>
-                    <div className="prose dark:prose-invert max-w-none">
-                        {course.content?.length > 0 ? (
-                            <ul className="list-disc pl-5 space-y-1">
-                                {course.content.map((item: any) => (
-                                    <li key={item.id}>{item.title}</li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-muted-foreground">कंटेंट जल्द ही जोड़ा जाएगा।</p>
-                        )}
-                    </div>
+                    <ul className="list-disc pl-5 space-y-1 text-sm text-muted-foreground">
+                        {fixedFeatures.map((feature, index) => (
+                            <li key={index}>{feature}</li>
+                        ))}
+                    </ul>
                 </CardContent>
                 <CardFooter className="flex justify-between items-center">
                      <p className="text-2xl font-bold">{course.isFree ? 'फ्री' : `₹${course.price}`}</p>
@@ -149,34 +143,6 @@ export default function CourseDetailPage() {
                      )}
                 </CardFooter>
             </Card>
-
-            {course.demoContent?.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><PlayCircle className="h-6 w-6 text-primary"/>Course Demo</CardTitle>
-                        <CardDescription>Get a preview of what's inside the course.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                         <div className="p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center gap-3 text-blue-800 dark:text-blue-200">
-                             <Info className="h-5 w-5 shrink-0" />
-                             <p className="text-sm font-medium">This is a demo. Purchase the course to get access to all content.</p>
-                         </div>
-                         <Separator />
-                        {course.demoContent.map((item: any) => (
-                             <a href={item.url} target="_blank" rel="noopener noreferrer" className="block" key={item.id}>
-                                 <Card className="cursor-pointer hover:bg-muted/50">
-                                     <CardContent className="p-3">
-                                         <div className="flex gap-3 items-center">
-                                             {getIcon(item.type)}
-                                             <p className="font-semibold text-sm line-clamp-2">{item.title}</p>
-                                         </div>
-                                     </CardContent>
-                                 </Card>
-                            </a>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
         </div>
     );
 }

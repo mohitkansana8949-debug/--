@@ -47,7 +47,10 @@ export default function MyLibraryPage() {
         setIsLoading(true);
         try {
             if (enrollments.length > 0) {
-                const itemIdsByType = enrollments.reduce((acc, e) => {
+                // Deduplicate enrollments by itemId to avoid fetching the same item multiple times
+                const uniqueEnrollments = Array.from(new Map(enrollments.map(e => [e.itemId, e])).values());
+
+                const itemIdsByType = uniqueEnrollments.reduce((acc, e) => {
                     if (!acc[e.itemType]) acc[e.itemType] = [];
                     acc[e.itemType].push(e.itemId);
                     return acc;
@@ -57,13 +60,26 @@ export default function MyLibraryPage() {
                     if (ids.length === 0) return [];
                     const collectionName = type + 's'; // courses, ebooks, tests, pyqs
                     const itemsRef = collection(firestore, collectionName);
-                    const itemsQuery = query(itemsRef, where('__name__', 'in', ids));
-                    const itemSnapshots = await getDocs(itemsQuery);
-                    return itemSnapshots.docs.map(docSnap => ({
-                        id: docSnap.id,
-                        type,
-                        ...docSnap.data()
-                    }));
+                    // Firestore 'in' queries are limited to 30 items. If you have more, you need to batch.
+                    const batches = [];
+                    for (let i = 0; i < ids.length; i += 30) {
+                        batches.push(ids.slice(i, i + 30));
+                    }
+
+                    const batchPromises = batches.map(batch => 
+                        getDocs(query(itemsRef, where('__name__', 'in', batch)))
+                    );
+
+                    const allSnapshots = await Promise.all(batchPromises);
+                    
+                    const itemsData = allSnapshots.flatMap(snapshot => 
+                        snapshot.docs.map(docSnap => ({
+                            id: docSnap.id,
+                            type,
+                            ...docSnap.data()
+                        }))
+                    );
+                    return itemsData;
                 });
 
                 const allItemsNested = await Promise.all(fetchPromises);
