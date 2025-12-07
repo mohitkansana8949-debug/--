@@ -13,7 +13,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { errorEmitter, FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter, FirestorePermissionError } from '@/firebase';
 import type { Coupon, Address, CartItem, BookOrder } from '@/lib/types';
 import { useCart } from '@/hooks/use-cart';
 
