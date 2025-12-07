@@ -49,6 +49,7 @@ export interface Course {
   thumbnailUrl: string;
   isFree: boolean;
   content: CourseContent[];
+  demoContent?: CourseContent[];
 }
 
 export interface Enrollment {

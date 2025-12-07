@@ -1,31 +1,42 @@
 
 'use client';
 import { useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader } from 'lucide-react';
+import { Loader, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminCoursesPage() {
     const { firestore } = useFirebase();
+    const { toast } = useToast();
     const coursesQuery = useMemoFirebase(() => (firestore ? collection(firestore, 'courses') : null), [firestore]);
     const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
+    
+    const handleDeleteCourse = async (courseId: string) => {
+        if (!firestore) return;
+        try {
+            await deleteDoc(doc(firestore, 'courses', courseId));
+            toast({ title: "Success", description: "Course deleted successfully." });
+        } catch (error) {
+            console.error("Error deleting course:", error);
+            toast({ variant: "destructive", title: "Error", description: "Failed to delete the course." });
+        }
+    };
     
     return (
         <Card>
@@ -57,8 +68,23 @@ export default function AdminCoursesPage() {
                                             <Link href={`/admin/content/${course.id}`}>Manage Content</Link>
                                         </Button>
                                         <Button asChild size="sm" variant="outline">
-                                            <Link href={`/courses/${course.id}`}>View</Link>
+                                            <Link href={`/admin/edit-course/${course.id}`}><Edit className="mr-2 h-4 w-4"/>Edit</Link>
                                         </Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button size="icon" variant="destructive"><Trash2 className="h-4 w-4"/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This action cannot be undone. This will permanently delete this course and all its content.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleDeleteCourse(course.id)}>Continue</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     </TableCell>
                                 </TableRow>
                             ))}

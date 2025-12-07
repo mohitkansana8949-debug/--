@@ -1,0 +1,641 @@
+
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the QuklyStudy application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "name": {
+          "type": "string",
+          "description": "User's full name."
+        },
+        "signUpDate": {
+          "type": "string",
+          "description": "Date and time the user signed up.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the user account.",
+          "enum": ["active", "suspended"]
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "name",
+        "signUpDate"
+      ]
+    },
+    "Flashcard": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Flashcard",
+      "type": "object",
+      "description": "Represents a single flashcard with a question and answer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the flashcard entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Flashcard)"
+        },
+        "question": {
+          "type": "string",
+          "description": "The question on the flashcard."
+        },
+        "answer": {
+          "type": "string",
+          "description": "The answer to the question on the flashcard."
+        },
+        "deckId": {
+          "type": "string",
+          "description": "Reference to Deck. (Relationship: Deck 1:N Flashcard)"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "question",
+        "answer",
+        "deckId"
+      ]
+    },
+    "Deck": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Deck",
+      "type": "object",
+      "description": "Represents a collection of flashcards.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the deck entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Deck)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the flashcard deck."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the flashcard deck."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "description"
+      ]
+    },
+    "Course": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Course",
+      "type": "object",
+      "description": "Represents a course offered on the platform.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the course entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the course."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the course."
+        },
+        "price": {
+          "type": "number",
+          "description": "Price of the course."
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "URL of the course thumbnail image.",
+          "format": "uri"
+        },
+        "isFree": {
+          "type": "boolean",
+          "description": "Indicates if the course is free or paid."
+        },
+        "content": {
+          "type": "array",
+          "description": "Full course content available after enrollment.",
+          "items": { "type": "object" }
+        },
+        "demoContent": {
+          "type": "array",
+          "description": "Publicly visible demo content for the course.",
+          "items": { "type": "object" }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "price",
+        "thumbnailUrl",
+        "isFree",
+        "content"
+      ]
+    },
+    "Test": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Test",
+      "type": "object",
+      "description": "Represents a test or quiz.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "number", "description": "Duration of the test in minutes." },
+        "price": { "type": "number" },
+        "isFree": { "type": "boolean" },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "answer": { "type": "string" }
+            },
+            "required": ["question", "options", "answer"]
+          }
+        }
+      },
+      "required": ["name", "description", "duration", "price", "isFree", "questions"]
+    },
+    "Enrollment": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Enrollment",
+      "type": "object",
+      "description": "Represents a user's enrollment in a course, ebook, or test.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the enrollment."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User."
+        },
+        "itemId": {
+          "type": "string",
+          "description": "Reference to the Course, Ebook, or Test."
+        },
+        "itemType": {
+          "type": "string",
+          "description": "The type of item enrolled in.",
+          "enum": ["course", "ebook", "pyq", "test"]
+        },
+        "enrollmentDate": {
+          "type": "string",
+          "description": "Date and time of enrollment.",
+          "format": "date-time"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method used."
+        },
+        "paymentTransactionId": {
+          "type": "string",
+          "description": "Transaction ID of the payment."
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the enrollment.",
+          "enum": ["pending", "approved", "rejected"]
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "itemId",
+        "itemType",
+        "enrollmentDate",
+        "status"
+      ]
+    },
+    "ChatMessage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChatMessage",
+      "type": "object",
+      "description": "Represents a single message in a chat.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "userName": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "text",
+        "userId",
+        "userName",
+        "createdAt"
+      ]
+    },
+    "Ebook": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Ebook",
+      "type": "object",
+      "description": "Represents a single E-book.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "isFree": {
+          "type": "boolean"
+        },
+        "pdfUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["name", "description", "price", "isFree", "pdfUrl"]
+    },
+    "PYQ": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PYQ",
+      "type": "object",
+      "description": "Represents a single Previous Year Question paper.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "isFree": {
+          "type": "boolean"
+        },
+        "pdfUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["name", "description", "price", "isFree", "pdfUrl"]
+    },
+    "Referral": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Referral",
+      "type": "object",
+      "description": "Represents a referral action.",
+      "properties": {
+        "referrerId": { "type": "string", "description": "The UID of the user who referred." },
+        "referredId": { "type": "string", "description": "The UID of the user who was referred." },
+        "referredName": { "type": "string", "description": "The name of the user who was referred." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referrerId", "referredId", "createdAt"]
+    },
+    "ReferralPoints": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ReferralPoints",
+      "type": "object",
+      "description": "Stores the total referral points for a user.",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user." },
+        "points": { "type": "number", "description": "Total accumulated points." }
+      },
+      "required": ["userId", "points"]
+    },
+    "Certificate": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Certificate",
+      "type": "object",
+      "description": "Represents a certificate earned by a user.",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who earned the certificate." },
+        "userName": { "type": "string", "description": "The name of the user." },
+        "itemName": { "type": "string", "description": "The name of the test or course completed." },
+        "itemType": { "type": "string", "enum": ["test", "course"] },
+        "completionDate": { "type": "string", "format": "date-time" },
+        "grade": { "type": "number", "description": "The percentage score achieved." }
+      },
+      "required": ["userId", "userName", "itemName", "itemType", "completionDate", "grade"]
+    },
+    "Doubt": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Doubt",
+      "type": "object",
+      "description": "Represents a doubt asked by a user and the AI's answer.",
+      "properties": {
+        "doubt": { "type": "string", "description": "The question asked by the user." },
+        "userId": { "type": "string", "description": "The UID of the user." },
+        "userName": { "type": "string", "description": "The name of the user." },
+        "answer": { "type": "string", "description": "The answer provided by the AI." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["doubt", "userId", "userName", "answer", "createdAt"]
+    },
+    "BookManager": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BookManager",
+      "type": "object",
+      "description": "Indicates book manager status by document existence.",
+      "properties": {
+        "role": { "type": "string", "const": "book_manager" },
+        "assignedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "assignedAt"]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Path-based ownership ensures only the user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/certificates/{certificateId}",
+        "definition": {
+          "entityName": "Certificate",
+          "schema": {
+            "$ref": "#/backend/entities/Certificate"
+          },
+          "description": "Stores certificates earned by a user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "certificateId",
+              "description": "The unique identifier of the certificate."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/decks/{deckId}",
+        "definition": {
+          "entityName": "Deck",
+          "schema": {
+            "$ref": "#/backend/entities/Deck"
+          },
+          "description": "Stores flashcard decks owned by a user. Path-based ownership: only the user can access decks under their ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "deckId",
+              "description": "The unique identifier of the deck."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/flashcards/{flashcardId}",
+        "definition": {
+          "entityName": "Flashcard",
+          "schema": {
+            "$ref": "#/backend/entities/Flashcard"
+          },
+          "description": "Stores flashcards owned by a user, belonging to a specific deck. Path-based ownership: only the user can access flashcards under their ID.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "flashcardId",
+              "description": "The unique identifier of the flashcard."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/courses/{courseId}",
+        "definition": {
+          "entityName": "Course",
+          "schema": {
+            "$ref": "#/backend/entities/Course"
+          },
+          "description": "Stores course information. Admin-only access for creation/modification.  No user-specific data here, enabling secure list operations.",
+          "params": [
+            {
+              "name": "courseId",
+              "description": "The unique identifier of the course."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/ebooks/{ebookId}",
+        "definition": {
+          "entityName": "Ebook",
+          "schema": {
+            "$ref": "#/backend/entities/Ebook"
+          },
+          "description": "Stores E-book information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "ebookId",
+              "description": "The unique identifier of the ebook."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/pyqs/{pyqId}",
+        "definition": {
+          "entityName": "PYQ",
+          "schema": {
+            "$ref": "#/backend/entities/PYQ"
+          },
+          "description": "Stores Previous Year Question paper information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "pyqId",
+              "description": "The unique identifier of the PYQ."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/tests/{testId}",
+        "definition": {
+          "entityName": "Test",
+          "schema": {
+            "$ref": "#/backend/entities/Test"
+          },
+          "description": "Stores Test Series information. Admin-only access for creation/modification.",
+          "params": [
+            {
+              "name": "testId",
+              "description": "The unique identifier of the test."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/enrollments/{enrollmentId}",
+        "definition": {
+          "entityName": "Enrollment",
+          "schema": {
+            "$ref": "#/backend/entities/Enrollment"
+          },
+          "description": "Stores enrollment information for courses, e-books, and PYQs. Includes denormalized 'userId' and 'itemId' for authorization independence.",
+          "params": [
+            {
+              "name": "enrollmentId",
+              "description": "The unique identifier of the enrollment."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Indicates admin status by document existence. Authorization relies solely on request.auth.uid. Existence over Content.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_book_manager/{userId}",
+        "definition": {
+          "entityName": "BookManager",
+          "schema": {
+            "$ref": "#/backend/entities/BookManager"
+          },
+          "description": "Indicates book manager status by document existence. Grants permission to manage book orders.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/chats/{chatId}/messages/{messageId}",
+        "definition": {
+          "entityName": "ChatMessage",
+          "schema": {
+            "$ref": "#/backend/entities/ChatMessage"
+          },
+          "description": "Stores messages for a specific chat room (e.g., a course). Logged-in users can read and write.",
+          "params": [
+            {
+              "name": "chatId",
+              "description": "The identifier for the chat room, typically a course ID."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier for the chat message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/referrals/{referralId}",
+        "definition": {
+          "entityName": "Referral",
+          "schema": { "$ref": "#/backend/entities/Referral" },
+          "description": "Stores a record of each successful referral.",
+          "params": [{ "name": "referralId", "description": "The unique identifier of the referral." }]
+        }
+      },
+      {
+        "path": "/referralPoints/{userId}",
+        "definition": {
+          "entityName": "ReferralPoints",
+          "schema": { "$ref": "#/backend/entities/ReferralPoints" },
+          "description": "Stores the referral point totals for each user.",
+          "params": [{ "name": "userId", "description": "The UID of the user." }]
+        }
+      },
+       {
+        "path": "/doubts/{doubtId}",
+        "definition": {
+          "entityName": "Doubt",
+          "schema": { "$ref": "#/backend/entities/Doubt" },
+          "description": "Stores questions asked by users to the AI.",
+          "params": [{ "name": "doubtId", "description": "The unique identifier for the doubt." }]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure security, scalability, and ease of debugging, adhering to the core design principles of Authorization Independence, Clarity of Intent, DBAC (Database-Based Access Control), and QAPs (Rules are not Filters). Authorization Independence is achieved through denormalization. For instance, the `Enrollment` collection includes both `userId` and `itemId`, effectively denormalizing the relationship and avoiding the need for server-side lookups to validate access. The design implements structural segregation to maintain homogeneous security postures. User-specific data is stored under `/users/{userId}`, while courses are stored in a top-level `/courses` collection, with enrollment details managed in the `/enrollments` collection. Global roles are managed via the existence of documents in `/roles_admin/{uid}` and `/roles_book_manager/{uid}`. This structure supports secure `list` operations (QAPs) by ensuring that collections only contain documents with similar access control requirements. For example, users can only list their own decks and flashcards under `/users/{userId}/decks` and `/users/{userId}/flashcards` respectively. The Membership Map pattern is not directly applicable in this scenario, as collaborative data access is not a primary feature. Instead, ownership is enforced via path-based rules for user-owned data and admin roles for course management."
+  }
+}

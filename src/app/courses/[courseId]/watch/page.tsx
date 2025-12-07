@@ -35,7 +35,6 @@ function ContentItem({ item, courseId }: ContentItemProps) {
          let path = '#';
          switch (item.type) {
             case 'youtube':
-            case 'video':
                  const videoId = getYouTubeID(item.url);
                  if (videoId) {
                     path = `/courses/watch/${videoId}?live=${item.isLive}&chatId=${courseId}`;
@@ -92,7 +91,7 @@ export default function WatchCoursePage() {
 
   const courseContent = useMemo(() => (course?.content && Array.isArray(course.content)) ? course.content : [], [course]);
 
-  const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube' || item.type === 'video'), [courseContent]);
+  const videos = useMemo(() => courseContent.filter(item => item.type === 'youtube'), [courseContent]);
   const documents = useMemo(() => courseContent.filter(item => item.type === 'pdf'), [courseContent]);
   const pyqs = useMemo(() => courseContent.filter(item => item.type === 'pyq'), [courseContent]);
   const tests = useMemo(() => courseContent.filter(item => item.type === 'test'), [courseContent]);
@@ -127,10 +126,10 @@ export default function WatchCoursePage() {
         <CardContent>
             <Tabs defaultValue="videos" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="videos">Videos ({videos.length})</TabsTrigger>
-                    <TabsTrigger value="notes">Notes ({documents.length})</TabsTrigger>
-                    <TabsTrigger value="pyqs">PYQs ({pyqs.length})</TabsTrigger>
-                    <TabsTrigger value="tests">Tests ({tests.length})</TabsTrigger>
+                    <TabsTrigger value="videos">Videos</TabsTrigger>
+                    <TabsTrigger value="notes">Notes</TabsTrigger>
+                    <TabsTrigger value="pyqs">PYQs</TabsTrigger>
+                    <TabsTrigger value="tests">Tests</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="videos" className="mt-4 space-y-3">
