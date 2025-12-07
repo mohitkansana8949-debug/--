@@ -10,10 +10,15 @@ import {
   Loader,
   Users,
   PieChart as PieChartIcon,
-  Edit
+  Edit,
+  BookOpen,
+  Book as EbookIcon,
+  FileQuestion,
+  Newspaper,
+  Package,
 } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { Pie, PieChart as RechartsPieChart, ResponsiveContainer, Cell } from 'recharts';
+import { Pie, PieChart as RechartsPieChart, ResponsiveContainer, Cell, Bar, XAxis, YAxis, CartesianGrid, BarChart } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -105,6 +110,13 @@ export default function AdminRevenuePage() {
   const { firestore } = useFirebase();
   const { toast } = useToast();
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [revenueBreakdown, setRevenueBreakdown] = useState({
+    course: 0,
+    ebook: 0,
+    pyq: 0,
+    test: 0,
+    book: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const revenueOverrideRef = useMemoFirebase(() => firestore ? doc(firestore, 'settings', 'revenue') : null, [firestore]);
@@ -124,24 +136,32 @@ export default function AdminRevenuePage() {
         const overrideDoc = await getDoc(revenueOverrideRef);
         if (overrideDoc.exists() && overrideDoc.data().overrideTotal !== undefined) {
             setTotalRevenue(overrideDoc.data().overrideTotal);
+            // In override mode, breakdown is not available
+            setRevenueBreakdown({ course: 0, ebook: 0, pyq: 0, test: 0, book: 0 });
         } else {
-            // This calculation will now run whenever the dependencies (approvedEnrollments, deliveredOrders) change
             let calculatedRevenue = 0;
+            const breakdown = { course: 0, ebook: 0, pyq: 0, test: 0, book: 0 };
 
             approvedEnrollments?.forEach(enrollment => {
                 const itemPrice = enrollment.itemPrice || 0;
                 const discount = enrollment.appliedCoupon?.discountAmount || 0;
-                calculatedRevenue += (itemPrice - discount);
+                const finalPrice = itemPrice - discount;
+                calculatedRevenue += finalPrice;
+                if (breakdown.hasOwnProperty(enrollment.itemType)) {
+                  breakdown[enrollment.itemType as keyof typeof breakdown] += finalPrice;
+                }
             });
 
             deliveredOrders?.forEach(order => {
                 // Book orders already have a 'total' which is subtotal - discount
                 if (typeof order.total === 'number') {
                     calculatedRevenue += order.total;
+                    breakdown.book += order.total;
                 }
             });
 
             setTotalRevenue(calculatedRevenue);
+            setRevenueBreakdown(breakdown);
         }
     } catch (error) {
         console.error("Failed to fetch revenue data", error);
@@ -163,6 +183,7 @@ export default function AdminRevenuePage() {
     if (!firestore) throw new Error("Firestore not available");
     await setDoc(revenueOverrideRef, { overrideTotal: newRevenue });
     setTotalRevenue(newRevenue); // Immediately update UI
+    setRevenueBreakdown({ course: 0, ebook: 0, pyq: 0, test: 0, book: 0 }); // Clear breakdown in override mode
     toast({ title: 'Success!', description: 'Revenue override has been set.' });
   }
 
@@ -171,6 +192,20 @@ export default function AdminRevenuePage() {
       { name: 'Ashok (Quickly Study Owner)', value: totalRevenue * 0.80, percentage: 80, color: '#0088FE' },
       { name: 'App Management', value: totalRevenue * 0.15, percentage: 15, color: '#00C49F' },
       { name: 'Mohit (App Developer)', value: totalRevenue * 0.05, percentage: 5, color: '#FFBB28' },
+  ];
+  
+  const sourceChartData = Object.entries(revenueBreakdown).map(([name, value]) => ({
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      revenue: value,
+      fill: `hsl(var(--chart-${Object.keys(revenueBreakdown).indexOf(name) + 1}))`
+  }));
+  
+  const breakdownCards = [
+    { title: "Courses", value: revenueBreakdown.course, icon: BookOpen },
+    { title: "E-Books", value: revenueBreakdown.ebook, icon: EbookIcon },
+    { title: "PYQs", value: revenueBreakdown.pyq, icon: FileQuestion },
+    { title: "Tests", value: revenueBreakdown.test, icon: Newspaper },
+    { title: "Book Sales", value: revenueBreakdown.book, icon: Package },
   ];
 
   const chartConfig = {
@@ -203,7 +238,46 @@ export default function AdminRevenuePage() {
             </CardHeader>
             <CardContent>
                 <div className="text-2xl font-bold">₹{totalRevenue.toFixed(2)}</div>
-                <p className="text-xs text-muted-foreground">Total earnings from approved enrollments.</p>
+                <p className="text-xs text-muted-foreground">Total earnings from approved enrollments and delivered book orders.</p>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Revenue Sources</CardTitle>
+                <CardDescription>Breakdown of revenue by content type.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                         <ChartContainer config={chartConfig}>
+                            <BarChart data={sourceChartData} margin={{ top: 20, right: 20, left: -10, bottom: 5 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} fontSize={12} />
+                                <YAxis />
+                                <ChartTooltip content={<ChartTooltipContent />} />
+                                <Bar dataKey="revenue" radius={4}>
+                                    {sourceChartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ChartContainer>
+                    </ResponsiveContainer>
+                </div>
+                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    {breakdownCards.map(item => (
+                        <Card key={item.title}>
+                            <CardHeader className="flex flex-row items-center justify-between p-3 pb-0">
+                                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                                <item.icon className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent className="p-3 pt-1">
+                                <div className="text-xl font-bold">₹{item.value.toFixed(2)}</div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
             </CardContent>
         </Card>
 
