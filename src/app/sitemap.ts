@@ -1,7 +1,15 @@
 
 import { MetadataRoute } from 'next'
 import { collection, getDocs, query } from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { firebaseConfig } from '@/firebase/config';
+
+// Ensure Firebase is initialized for the server environment
+if (!getApps().length) {
+    initializeApp(firebaseConfig);
+}
+const firestore = getFirestore();
 
 const APP_URL = 'https://your-app-url.com'; // Replace with your actual app URL
 
@@ -13,7 +21,6 @@ type SitemapEntry = {
 };
 
 async function generateDynamicSitemaps() {
-    const { firestore } = initializeFirebase();
     const sitemapEntries: SitemapEntry[] = [];
     const today = new Date().toISOString().split('T')[0];
 
